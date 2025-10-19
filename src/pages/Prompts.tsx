@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePrompts, useToggleFavorite } from "@/hooks/usePrompts";
+import { usePrompts, useToggleFavorite, useDeletePrompt } from "@/hooks/usePrompts";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePromptFilters } from "@/features/prompts/hooks/usePromptFilters";
 import { PromptList } from "@/features/prompts/components/PromptList";
@@ -22,6 +22,7 @@ const Prompts = () => {
   const debouncedSearch = useDebounce(searchQuery, 300);
   const { data: prompts = [], isLoading } = usePrompts();
   const { mutate: toggleFavorite } = useToggleFavorite();
+  const { mutate: deletePrompt } = useDeletePrompt();
   const { filteredPrompts } = usePromptFilters(prompts, debouncedSearch);
 
   if (!authLoading && !user) {
@@ -80,8 +81,10 @@ const Prompts = () => {
           onToggleFavorite={(id, currentState) =>
             toggleFavorite({ id, currentState })
           }
+          onDelete={(id) => deletePrompt(id)}
           emptySearchState={!!searchQuery}
           searchQuery={searchQuery}
+          currentUserId={user?.id}
         />
       </main>
       
