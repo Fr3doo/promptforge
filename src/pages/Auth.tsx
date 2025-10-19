@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { Loader2, Code2 } from "lucide-react";
 import { authSchema } from "@/lib/validation";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -59,7 +61,10 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex flex-col bg-background">
+      <Header />
+      
+      <div className="flex-1 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
@@ -132,6 +137,9 @@ const Auth = () => {
           </div>
         </CardContent>
       </Card>
+      </div>
+      
+      <Footer />
     </div>
   );
 };
