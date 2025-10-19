@@ -38,8 +38,9 @@ export function VersionTimeline({
 
   return (
     <div className="space-y-3">
-      {versions.map((version) => {
+      {versions.map((version, index) => {
         const isCurrent = version.semver === currentVersion;
+        const isLatest = index === 0;
 
         return (
           <Card key={version.id} className={isCurrent ? "border-primary" : ""}>
@@ -62,29 +63,25 @@ export function VersionTimeline({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {!isCurrent && (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onViewDiff(version.id)}
-                        className="gap-2"
-                      >
-                        <Eye className="h-3 w-3" />
-                        Diff
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => onRestore(version.id)}
-                        disabled={isRestoring}
-                        className="gap-2"
-                      >
-                        <RotateCcw className="h-3 w-3" />
-                        Restaurer
-                      </Button>
-                    </>
-                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onViewDiff(version.id)}
+                    className="gap-2"
+                  >
+                    <Eye className="h-3 w-3" />
+                    Diff
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => onRestore(version.id)}
+                    disabled={isRestoring}
+                    className="gap-2"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Restaurer
+                  </Button>
                 </div>
               </div>
             </CardHeader>
