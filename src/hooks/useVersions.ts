@@ -30,6 +30,7 @@ export function useCreateVersion() {
 
   return useMutation({
     mutationFn: async (version: VersionInsert) => {
+      // Créer la nouvelle version
       const { data, error } = await supabase
         .from("versions")
         .insert(version)
@@ -37,10 +38,21 @@ export function useCreateVersion() {
         .single();
 
       if (error) throw error;
+
+      // Mettre à jour le numéro de version du prompt
+      const { error: updateError } = await supabase
+        .from("prompts")
+        .update({ version: version.semver })
+        .eq("id", version.prompt_id);
+
+      if (updateError) throw updateError;
+
       return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["versions", variables.prompt_id] });
+      queryClient.invalidateQueries({ queryKey: ["prompts", variables.prompt_id] });
+      queryClient.invalidateQueries({ queryKey: ["prompts"] });
       successToast("Version créée");
     },
     onError: () => {
