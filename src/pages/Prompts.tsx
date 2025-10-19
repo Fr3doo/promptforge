@@ -8,7 +8,7 @@ import { PromptSearchBar } from "@/features/prompts/components/PromptSearchBar";
 import { Button } from "@/components/ui/button";
 import { Plus, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PromptAnalyzer } from "@/components/PromptAnalyzer";
 
 const Prompts = () => {
@@ -44,6 +44,9 @@ const Prompts = () => {
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Analyseur de Prompts IA</DialogTitle>
+                    <DialogDescription>
+                      Extraction intelligente des sections, variables et métadonnées
+                    </DialogDescription>
                   </DialogHeader>
                   <PromptAnalyzer />
                 </DialogContent>
