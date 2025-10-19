@@ -3,7 +3,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Wand2, Copy, Check } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 
 interface PromptEditorProps {
   content: string;
@@ -39,7 +39,7 @@ export const PromptEditor = ({
   const handleCopy = async () => {
     await navigator.clipboard.writeText(preview);
     setCopied(true);
-    toast.success("Copié dans le presse-papiers !");
+    toast({ title: "✅ Copié dans le presse-papiers !" });
     setTimeout(() => setCopied(false), 2000);
   };
 

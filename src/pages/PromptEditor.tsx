@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { usePrompt, useCreatePrompt, useUpdatePrompt } from "@/hooks/usePrompts";
+import { useVariables, useBulkUpsertVariables } from "@/hooks/useVariables";
+import { useVariableDetection } from "@/hooks/useVariableDetection";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +12,8 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PromptEditor as Editor } from "@/components/PromptEditor";
 import { VariableManager } from "@/components/VariableManager";
-import { toast } from "sonner";
-import { ArrowLeft, Save, Tag } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { ArrowLeft, Save, Tag, Loader2, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { promptSchema, variableSchema } from "@/lib/validation";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
@@ -20,13 +22,18 @@ const PromptEditorPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const isEditMode = !!id;
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, authLoading, navigate]);
+  // Queries
+  const { data: prompt, isLoading: loadingPrompt } = usePrompt(id);
+  const { data: existingVariables = [], isLoading: loadingVariables } = useVariables(id);
+
+  // Mutations
+  const { mutate: createPrompt, isPending: creating } = useCreatePrompt();
+  const { mutate: updatePrompt, isPending: updating } = useUpdatePrompt();
+  const { mutate: saveVariables } = useBulkUpsertVariables();
+
+  // Form state
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
@@ -36,74 +43,50 @@ const PromptEditorPage = () => {
   const [variables, setVariables] = useState<any[]>([]);
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
 
+  const { detectedNames } = useVariableDetection(content);
+
+  // Redirect if not authenticated
   useEffect(() => {
-    if (id) {
-      fetchPrompt();
+    if (!authLoading && !user) {
+      navigate("/auth");
     }
-  }, [id]);
+  }, [user, authLoading, navigate]);
 
-  const fetchPrompt = async () => {
-    try {
-      const { data: prompt, error: promptError } = await supabase
-        .from("prompts")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (promptError) throw promptError;
-
+  // Initialize form with existing data
+  useEffect(() => {
+    if (prompt) {
       setTitle(prompt.title);
       setDescription(prompt.description || "");
       setContent(prompt.content);
-      setVisibility(prompt.visibility);
+      setVisibility(prompt.visibility || "PRIVATE");
       setTags(prompt.tags || []);
-
-      const { data: vars, error: varsError } = await supabase
-        .from("variables")
-        .select("*")
-        .eq("prompt_id", id)
-        .order("order_index");
-
-      if (!varsError && vars) {
-        setVariables(vars);
-      }
-    } catch (error: any) {
-      toast.error("Erreur lors du chargement");
-      navigate("/prompts");
     }
-  };
+  }, [prompt]);
+
+  useEffect(() => {
+    if (existingVariables.length > 0) {
+      setVariables(existingVariables);
+    }
+  }, [existingVariables]);
 
   const detectVariables = () => {
-    const regex = /{{(\w+)}}/g;
-    const matches = content.matchAll(regex);
-    const detected = new Set<string>();
-    
-    for (const match of matches) {
-      detected.add(match[1]);
-    }
-
-    const newVars = Array.from(detected).map((name, index) => {
-      const existing = variables.find(v => v.name === name);
-      return existing || {
+    const newVariables = detectedNames
+      .filter(name => !variables.some(v => v.name === name))
+      .map((name, index) => ({
         name,
         type: "STRING",
         required: false,
-        default_value: "",
-        help: "",
-        order_index: index,
-      };
-    });
+        order_index: variables.length + index,
+      }));
 
-    setVariables(newVars);
-    toast.success(`${detected.size} variable(s) détectée(s)`);
+    setVariables([...variables, ...newVariables]);
+    toast({ title: `✨ ${newVariables.length} variable(s) détectée(s)` });
   };
 
   const handleSave = async () => {
-    if (!user) return;
-
     try {
-      // Validate prompt data
-      const validatedPrompt = promptSchema.parse({
+      // Validation
+      promptSchema.parse({
         title,
         description,
         content,
@@ -111,77 +94,82 @@ const PromptEditorPage = () => {
         visibility,
       });
 
-      // Validate all variables
+      // Validate variables
       const validatedVariables = variables.map(v => variableSchema.parse(v));
 
-      let promptId = id;
-
-      if (id) {
-        // Update existing prompt
-        const { error: updateError } = await supabase
-          .from('prompts')
-          .update({
-            title: validatedPrompt.title,
-            description: validatedPrompt.description || null,
-            content: validatedPrompt.content,
-            tags: validatedPrompt.tags,
-            visibility: validatedPrompt.visibility,
-          })
-          .eq('id', id);
-
-        if (updateError) throw updateError;
-
-        // Delete existing variables
-        const { error: deleteError } = await supabase
-          .from('variables')
-          .delete()
-          .eq('prompt_id', id);
-
-        if (deleteError) throw deleteError;
+      if (isEditMode && id) {
+        // Update existing
+        updatePrompt(
+          { 
+            id, 
+            updates: {
+              title,
+              description: description || null,
+              content,
+              tags,
+              visibility,
+            }
+          },
+          {
+            onSuccess: () => {
+              if (validatedVariables.length > 0) {
+                saveVariables({ 
+                  promptId: id, 
+                  variables: validatedVariables.map(v => ({
+                    name: v.name,
+                    type: v.type,
+                    required: v.required,
+                    default_value: v.default_value,
+                    help: v.help,
+                    pattern: v.pattern,
+                    options: v.options,
+                    order_index: 0,
+                  }))
+                });
+              }
+              navigate("/prompts");
+            },
+          }
+        );
       } else {
-        // Create new prompt
-        const { data: newPrompt, error: insertError } = await supabase
-          .from('prompts')
-          .insert({
-            owner_id: user.id,
-            title: validatedPrompt.title,
-            description: validatedPrompt.description || null,
-            content: validatedPrompt.content,
-            tags: validatedPrompt.tags,
-            visibility: validatedPrompt.visibility,
-          })
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        promptId = newPrompt.id;
+        // Create new
+        createPrompt({
+          title,
+          description: description || null,
+          content,
+          tags,
+          visibility,
+          is_favorite: false,
+          version: "1.0.0",
+        }, {
+          onSuccess: (newPrompt) => {
+            if (validatedVariables.length > 0) {
+              saveVariables({ 
+                promptId: newPrompt.id, 
+                variables: validatedVariables.map(v => ({
+                  name: v.name,
+                  type: v.type,
+                  required: v.required,
+                  default_value: v.default_value,
+                  help: v.help,
+                  pattern: v.pattern,
+                  options: v.options,
+                  order_index: 0,
+                }))
+              });
+            }
+            navigate("/prompts");
+          },
+        });
       }
-
-      // Insert variables if any
-      if (validatedVariables.length > 0) {
-        const { error: varsError } = await supabase
-          .from('variables')
-          .insert(
-            validatedVariables.map((v, index) => ({
-              prompt_id: promptId,
-              name: v.name,
-              type: v.type,
-              required: v.required,
-              default_value: v.default_value || null,
-              help: v.help || null,
-              pattern: v.pattern || null,
-              options: v.options || null,
-              order_index: index,
-            }))
-          );
-
-        if (varsError) throw varsError;
-      }
-
-      toast.success(id ? "Prompt mis à jour !" : "Prompt créé !");
-      navigate(`/prompts/${promptId}`);
     } catch (error: any) {
-      toast.error(getSafeErrorMessage(error));
+      if (error?.errors?.[0]?.message) {
+        toast({ 
+          title: "❌ Validation échouée", 
+          description: error.errors[0].message,
+          variant: "destructive" 
+        });
+      }
     }
   };
 
@@ -196,6 +184,16 @@ const PromptEditorPage = () => {
     setTags(tags.filter(t => t !== tag));
   };
 
+  if (loadingPrompt || loadingVariables) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const isSaving = creating || updating;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card sticky top-0 z-10">
@@ -205,9 +203,13 @@ const PromptEditorPage = () => {
               <ArrowLeft className="h-4 w-4" />
               Retour
             </Button>
-            <Button onClick={handleSave} disabled={loading} className="gap-2">
-              <Save className="h-4 w-4" />
-              {loading ? "Enregistrement..." : "Enregistrer"}
+            <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {isSaving ? "Enregistrement..." : "Enregistrer"}
             </Button>
           </div>
         </div>
@@ -283,14 +285,20 @@ const PromptEditorPage = () => {
 
         {/* Editor Section */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold">Éditeur de prompt</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Éditeur de prompt</h2>
+            <Button onClick={detectVariables} variant="outline" className="gap-2">
+              <Sparkles className="h-4 w-4" />
+              Détecter variables
+            </Button>
+          </div>
           <Editor
             content={content}
             onChange={setContent}
             onDetectVariables={detectVariables}
             variables={variables}
             variableValues={variableValues}
-            onVariableValueChange={(name, value) =>
+            onVariableValueChange={(name, value) => 
               setVariableValues({ ...variableValues, [name]: value })
             }
           />
