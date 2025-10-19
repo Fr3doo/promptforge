@@ -123,6 +123,7 @@ const PromptEditorPage = () => {
           onTagInputChange={form.setTagInput}
           onAddTag={form.addTag}
           onRemoveTag={form.removeTag}
+          isEditMode={isEditMode}
         />
 
         {/* Tabs for Editor, Variables, and Versions */}

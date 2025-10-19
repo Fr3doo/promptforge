@@ -20,6 +20,7 @@ interface PromptMetadataFormProps {
   onTagInputChange: (input: string) => void;
   onAddTag: () => void;
   onRemoveTag: (tag: string) => void;
+  isEditMode?: boolean;
 }
 
 export const PromptMetadataForm = ({
@@ -34,14 +35,21 @@ export const PromptMetadataForm = ({
   onTagInputChange,
   onAddTag,
   onRemoveTag,
+  isEditMode = false,
 }: PromptMetadataFormProps) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Créez votre prompt</h1>
-        <p className="text-muted-foreground mt-2">Remplissez les informations essentielles pour commencer</p>
+        <h1 className="text-3xl font-bold">
+          {isEditMode ? "Modifier votre prompt" : "Créez votre prompt"}
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          {isEditMode 
+            ? "Modifiez les informations de votre prompt" 
+            : "Remplissez les informations essentielles pour commencer"}
+        </p>
       </div>
 
       <Card className="p-6 space-y-6">
