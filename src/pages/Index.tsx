@@ -42,11 +42,13 @@ const Index = () => {
           <div className="text-center max-w-3xl space-y-8">
             <div className="space-y-4">
               <h1 className="text-5xl font-bold tracking-tight">
-                Gérez vos prompts comme du code
+                Gérez et optimisez vos prompts IA – dans un seul outil
               </h1>
               <p className="text-xl text-muted-foreground">
-                Créez, versionnez et réutilisez vos prompts avec variables paramétrables.
-                L'outil professionnel pour les équipes qui utilisent l'IA.
+                Créez, versionnez, partagez vos prompts, et mesurez leur efficacité
+              </p>
+              <p className="text-base text-muted-foreground max-w-2xl mx-auto">
+                Centralisez vos templates IA, automatisez vos workflows et collaborez en équipe avec un système de versioning professionnel
               </p>
             </div>
 
@@ -59,33 +61,57 @@ const Index = () => {
               </Button>
             </div>
 
+            {/* Workflow visuel */}
+            <div className="bg-card border border-border rounded-lg p-8 mt-12">
+              <div className="grid md:grid-cols-3 gap-4 items-center">
+                <div className="text-center space-y-2">
+                  <div className="h-16 w-16 rounded-full bg-destructive/20 flex items-center justify-center mx-auto">
+                    <FileText className="h-8 w-8 text-destructive" />
+                  </div>
+                  <p className="font-semibold">Avant</p>
+                  <p className="text-sm text-muted-foreground">Prompts éparpillés, non versionnés</p>
+                </div>
+                <div className="flex justify-center">
+                  <div className="h-0.5 w-12 bg-primary md:rotate-0 rotate-90" />
+                </div>
+                <div className="text-center space-y-2">
+                  <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
+                    <Code2 className="h-8 w-8 text-primary" />
+                  </div>
+                  <p className="font-semibold">Après</p>
+                  <p className="text-sm text-muted-foreground">Bibliothèque centralisée et optimisée</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Use cases */}
             <div className="grid gap-6 md:grid-cols-3 mt-16">
-              <Card>
+              <Card className="border-primary/20 hover:border-primary/40 transition-all">
                 <CardHeader>
                   <Zap className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle className="text-lg">Variables dynamiques</CardTitle>
+                  <CardTitle className="text-lg">Marketing</CardTitle>
                   <CardDescription>
-                    Insérez des variables avec <code className="font-mono bg-muted px-1 rounded">{"{{variable}}"}</code> pour créer des templates réutilisables
+                    Générez des campagnes ciblées avec des templates personnalisables. Créez des variations A/B et suivez les performances.
                   </CardDescription>
                 </CardHeader>
               </Card>
 
-              <Card>
+              <Card className="border-primary/20 hover:border-primary/40 transition-all">
                 <CardHeader>
                   <GitBranch className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle className="text-lg">Versioning SemVer</CardTitle>
+                  <CardTitle className="text-lg">Développement</CardTitle>
                   <CardDescription>
-                    Historique complet, diff visuel et retour arrière sur toutes vos versions
+                    Automatisez vos prompts d'IA avec versioning SemVer. Intégrez dans vos workflows CI/CD et partagez avec l'équipe.
                   </CardDescription>
                 </CardHeader>
               </Card>
 
-              <Card>
+              <Card className="border-primary/20 hover:border-primary/40 transition-all">
                 <CardHeader>
                   <FileText className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle className="text-lg">Export/Import</CardTitle>
+                  <CardTitle className="text-lg">Recherche</CardTitle>
                   <CardDescription>
-                    Exportez en JSON ou Markdown pour partager avec votre équipe
+                    Centralisez vos templates de recherche. Exportez en JSON/Markdown et collaborez efficacement sur vos projets.
                   </CardDescription>
                 </CardHeader>
               </Card>
