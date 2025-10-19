@@ -2,24 +2,58 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
-import { Loader2, Sparkles, Copy } from "lucide-react";
+import { Loader2, Sparkles, Copy, Save, RotateCcw } from "lucide-react";
 import { usePromptAnalysis } from "@/hooks/usePromptAnalysis";
+import { useCreatePrompt } from "@/hooks/usePrompts";
 import { MetadataView } from "./analyzer/MetadataView";
 import { ExportActions } from "./analyzer/ExportActions";
 import { Badge } from "@/components/ui/badge";
 import { successToast } from "@/lib/toastUtils";
 
-export function PromptAnalyzer() {
+interface PromptAnalyzerProps {
+  onClose?: () => void;
+}
+
+export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
   const [promptContent, setPromptContent] = useState("");
-  const { result, isAnalyzing, analyze } = usePromptAnalysis();
+  const { result, isAnalyzing, analyze, reset } = usePromptAnalysis();
+  const { mutate: createPrompt, isPending: isSaving } = useCreatePrompt();
 
   const copyTemplate = () => {
     if (result) {
       navigator.clipboard.writeText(result.prompt_template);
       successToast("Copié", "Template copié");
     }
+  };
+
+  const handleSavePrompt = () => {
+    if (!result) return;
+
+    const categories = result.metadata.categories || [];
+    
+    createPrompt(
+      {
+        title: result.metadata.objectifs?.[0] || "Prompt analysé",
+        content: result.prompt_template,
+        description: result.metadata.role || "",
+        tags: categories,
+        is_favorite: false,
+        version: "1.0.0",
+        visibility: "PRIVATE",
+      },
+      {
+        onSuccess: () => {
+          successToast("Prompt sauvegardé");
+          onClose?.();
+        },
+      }
+    );
+  };
+
+  const handleNewAnalysis = () => {
+    setPromptContent("");
+    reset();
   };
 
   return (
@@ -56,8 +90,41 @@ export function PromptAnalyzer() {
       {result && (
         <Card>
           <CardHeader>
-            <CardTitle>Résultats</CardTitle>
-            <CardDescription>Prompt structuré</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Résultats</CardTitle>
+                <CardDescription>Prompt structuré</CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNewAnalysis}
+                  className="gap-2"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Nouvelle analyse
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSavePrompt}
+                  disabled={isSaving}
+                  className="gap-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Sauvegarde...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Sauvegarder
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="metadata">

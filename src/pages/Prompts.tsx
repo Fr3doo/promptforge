@@ -8,7 +8,7 @@ import { PromptSearchBar } from "@/features/prompts/components/PromptSearchBar";
 import { Button } from "@/components/ui/button";
 import { Plus, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerTrigger } from "@/components/ui/drawer";
 import { PromptAnalyzer } from "@/components/PromptAnalyzer";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -38,23 +38,25 @@ const Prompts = () => {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Mes Prompts</h1>
             <div className="flex gap-2">
-              <Dialog open={analyzerOpen} onOpenChange={setAnalyzerOpen}>
-                <DialogTrigger asChild>
+              <Drawer open={analyzerOpen} onOpenChange={setAnalyzerOpen}>
+                <DrawerTrigger asChild>
                   <Button variant="outline" className="gap-2">
                     <Sparkles className="h-4 w-4" />
                     Analyser un prompt
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Analyseur de Prompts IA</DialogTitle>
-                    <DialogDescription>
+                </DrawerTrigger>
+                <DrawerContent className="max-h-[95vh]">
+                  <DrawerHeader>
+                    <DrawerTitle>Analyseur de Prompts IA</DrawerTitle>
+                    <DrawerDescription>
                       Extraction intelligente des sections, variables et métadonnées
-                    </DialogDescription>
-                  </DialogHeader>
-                  <PromptAnalyzer />
-                </DialogContent>
-              </Dialog>
+                    </DrawerDescription>
+                  </DrawerHeader>
+                  <div className="overflow-y-auto px-4 pb-8">
+                    <PromptAnalyzer onClose={() => setAnalyzerOpen(false)} />
+                  </div>
+                </DrawerContent>
+              </Drawer>
               <Button onClick={() => navigate("/prompts/new")} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Nouveau prompt
