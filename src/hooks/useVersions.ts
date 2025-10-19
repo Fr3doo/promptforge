@@ -72,6 +72,8 @@ export function useRestoreVersion() {
       versionId: string; 
       promptId: string;
     }) => {
+      console.log("🔄 Début restauration - versionId:", versionId, "promptId:", promptId);
+      
       // Récupérer la version
       const { data: version, error: versionError } = await supabase
         .from("versions")
@@ -79,7 +81,12 @@ export function useRestoreVersion() {
         .eq("id", versionId)
         .single();
 
-      if (versionError) throw versionError;
+      if (versionError) {
+        console.error("❌ Erreur récupération version:", versionError);
+        throw versionError;
+      }
+
+      console.log("✅ Version récupérée:", version.semver, "contenu length:", version.content.length);
 
       // Restaurer dans le prompt
       const { error: updateError } = await supabase
@@ -90,30 +97,59 @@ export function useRestoreVersion() {
         })
         .eq("id", promptId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("❌ Erreur mise à jour prompt:", updateError);
+        throw updateError;
+      }
+
+      console.log("✅ Prompt mis à jour vers version:", version.semver);
 
       // Restaurer les variables si présentes
       if (version.variables) {
+        console.log("🔄 Restauration des variables...");
+        
         // Supprimer anciennes variables
-        await supabase.from("variables").delete().eq("prompt_id", promptId);
+        const { error: deleteError } = await supabase
+          .from("variables")
+          .delete()
+          .eq("prompt_id", promptId);
+
+        if (deleteError) {
+          console.error("❌ Erreur suppression variables:", deleteError);
+        }
 
         // Insérer variables de la version
         const variablesArray = version.variables as any[];
         if (variablesArray.length > 0) {
-          await supabase.from("variables").insert(
-            variablesArray.map(v => ({ ...v, prompt_id: promptId }))
-          );
+          const { error: insertError } = await supabase
+            .from("variables")
+            .insert(
+              variablesArray.map(v => ({ ...v, prompt_id: promptId }))
+            );
+
+          if (insertError) {
+            console.error("❌ Erreur insertion variables:", insertError);
+          } else {
+            console.log("✅ Variables restaurées:", variablesArray.length);
+          }
         }
       }
 
       return version;
     },
-    onSuccess: (_, { promptId }) => {
+    onSuccess: (version, { promptId }) => {
+      console.log("🎉 Restauration réussie vers version:", version.semver);
+      
+      // Invalider toutes les queries pertinentes
       queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
+      queryClient.invalidateQueries({ queryKey: ["prompts"] });
       queryClient.invalidateQueries({ queryKey: ["variables", promptId] });
-      successToast("Version restaurée");
+      queryClient.invalidateQueries({ queryKey: ["versions", promptId] });
+      
+      successToast(`Version ${version.semver} restaurée`);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("❌ Erreur lors de la restauration:", error);
       errorToast("Erreur lors de la restauration");
     },
   });
