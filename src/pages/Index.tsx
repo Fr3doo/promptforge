@@ -2,9 +2,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Code2, Zap, GitBranch, FileText, LogOut } from "lucide-react";
+import { Code2, Zap, GitBranch, FileText, LogOut, BookOpen, HelpCircle, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { SEO } from "@/components/SEO";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -25,7 +26,9 @@ const Index = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <>
+        <SEO />
+        <div className="min-h-screen flex flex-col bg-background">
         <header className="border-b border-border bg-card">
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -52,12 +55,17 @@ const Index = () => {
               </p>
             </div>
 
-            <div className="flex gap-4 justify-center">
+            <div className="flex gap-4 justify-center flex-wrap">
               <Button size="lg" onClick={() => navigate("/auth")} className="gap-2">
                 Commencer gratuitement
               </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate("/auth")}>
-                En savoir plus
+              <Button size="lg" variant="outline" onClick={() => navigate("/resources")}>
+                <BookOpen className="h-4 w-4 mr-2" />
+                Ressources
+              </Button>
+              <Button size="lg" variant="outline" onClick={() => navigate("/faq")}>
+                <HelpCircle className="h-4 w-4 mr-2" />
+                FAQ
               </Button>
             </div>
 
@@ -116,9 +124,58 @@ const Index = () => {
                 </CardHeader>
               </Card>
             </div>
+
+            {/* Quick links */}
+            <div className="grid gap-4 md:grid-cols-3 mt-16">
+              <Card 
+                className="cursor-pointer hover:border-primary/40 transition-all"
+                onClick={() => navigate("/resources")}
+              >
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">Ressources</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Guides et tutoriels sur le prompt engineering
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
+              <Card 
+                className="cursor-pointer hover:border-primary/40 transition-all"
+                onClick={() => navigate("/methodes")}
+              >
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Lightbulb className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">Méthodes</CardTitle>
+                  </div>
+                  <CardDescription>
+                    12 techniques de prompting expliquées
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
+              <Card 
+                className="cursor-pointer hover:border-primary/40 transition-all"
+                onClick={() => navigate("/faq")}
+              >
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <HelpCircle className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">FAQ</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Réponses à vos questions fréquentes
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </div>
           </div>
         </main>
       </div>
+      </>
     );
   }
 

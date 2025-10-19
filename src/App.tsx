@@ -7,6 +7,10 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Prompts from "./pages/Prompts";
 import PromptEditor from "./pages/PromptEditor";
+import Resources from "./pages/Resources";
+import ResourceArticle from "./pages/ResourceArticle";
+import FAQ from "./pages/FAQ";
+import PromptingMethods from "./pages/PromptingMethods";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +27,10 @@ const App = () => (
           <Route path="/prompts" element={<Prompts />} />
           <Route path="/prompts/new" element={<PromptEditor />} />
           <Route path="/prompts/:id" element={<PromptEditor />} />
+          <Route path="/resources" element={<Resources />} />
+          <Route path="/resources/:id" element={<ResourceArticle />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/methodes" element={<PromptingMethods />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
