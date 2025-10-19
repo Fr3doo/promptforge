@@ -96,7 +96,7 @@ const PromptEditorPage = () => {
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-8 space-y-8 max-w-4xl">
+      <main className="container mx-auto px-4 py-8 space-y-8 max-w-7xl">
         {/* Metadata Section */}
         <PromptMetadataForm
           title={form.title}
