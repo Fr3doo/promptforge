@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { usePrompt } from "@/hooks/usePrompts";
 import { useVariables } from "@/hooks/useVariables";
-import { useVersions } from "@/hooks/useVersions";
+import { useVersions, useDeleteVersions } from "@/hooks/useVersions";
 import { useAuth } from "@/hooks/useAuth";
 import { usePromptForm } from "@/features/prompts/hooks/usePromptForm";
 import { usePromptVersioning } from "@/hooks/usePromptVersioning";
@@ -50,6 +50,13 @@ const PromptEditorPage = () => {
     isCreating,
     isRestoring,
   } = usePromptVersioning(prompt, existingVariables);
+
+  const deleteVersionsMutation = useDeleteVersions();
+
+  const handleDeleteVersions = (versionIds: string[]) => {
+    if (!id) return;
+    deleteVersionsMutation.mutate({ versionIds, promptId: id });
+  };
 
   const handleViewDiff = (versionId: string) => {
     setSelectedVersionForDiff(versionId);
@@ -161,7 +168,9 @@ const PromptEditorPage = () => {
               currentVersion={prompt?.version || "1.0.0"}
               onRestore={handleRestoreVersion}
               onViewDiff={handleViewDiff}
+              onDelete={handleDeleteVersions}
               isRestoring={isRestoring}
+              isDeleting={deleteVersionsMutation.isPending}
             />
           </TabsContent>
         </Tabs>

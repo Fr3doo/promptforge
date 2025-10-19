@@ -61,6 +61,42 @@ export function useCreateVersion() {
   });
 }
 
+export function useDeleteVersions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      versionIds, 
+      promptId 
+    }: { 
+      versionIds: string[]; 
+      promptId: string;
+    }) => {
+      console.log("🗑️ Suppression de", versionIds.length, "version(s)");
+      
+      const { error } = await supabase
+        .from("versions")
+        .delete()
+        .in("id", versionIds);
+
+      if (error) {
+        console.error("❌ Erreur suppression versions:", error);
+        throw error;
+      }
+
+      console.log("✅ Versions supprimées");
+      return { promptId };
+    },
+    onSuccess: (_, { promptId }) => {
+      queryClient.invalidateQueries({ queryKey: ["versions", promptId] });
+      successToast("Version(s) supprimée(s)");
+    },
+    onError: () => {
+      errorToast("Erreur lors de la suppression");
+    },
+  });
+}
+
 export function useRestoreVersion() {
   const queryClient = useQueryClient();
 

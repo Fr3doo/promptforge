@@ -1,10 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { GitBranch, RotateCcw, Eye, Clock } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { GitBranch, RotateCcw, Eye, Clock, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
+import { useState } from "react";
 
 type Version = Tables<"versions">;
 
@@ -13,7 +15,9 @@ interface VersionTimelineProps {
   currentVersion: string;
   onRestore: (versionId: string) => void;
   onViewDiff: (versionId: string) => void;
+  onDelete: (versionIds: string[]) => void;
   isRestoring: boolean;
+  isDeleting: boolean;
 }
 
 export function VersionTimeline({
@@ -21,8 +25,26 @@ export function VersionTimeline({
   currentVersion,
   onRestore,
   onViewDiff,
+  onDelete,
   isRestoring,
+  isDeleting,
 }: VersionTimelineProps) {
+  const [selectedVersions, setSelectedVersions] = useState<string[]>([]);
+
+  const toggleVersion = (versionId: string) => {
+    setSelectedVersions(prev =>
+      prev.includes(versionId)
+        ? prev.filter(id => id !== versionId)
+        : [...prev, versionId]
+    );
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedVersions.length > 0) {
+      onDelete(selectedVersions);
+      setSelectedVersions([]);
+    }
+  };
   if (versions.length === 0) {
     return (
       <Card className="border-dashed">
@@ -38,6 +60,24 @@ export function VersionTimeline({
 
   return (
     <div className="space-y-3">
+      {selectedVersions.length > 0 && (
+        <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+          <span className="text-sm font-medium">
+            {selectedVersions.length} version(s) sélectionnée(s)
+          </span>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleDeleteSelected}
+            disabled={isDeleting}
+            className="gap-2"
+          >
+            <Trash2 className="h-4 w-4" />
+            Supprimer
+          </Button>
+        </div>
+      )}
+      
       {versions.map((version, index) => {
         const isCurrent = version.semver === currentVersion;
         const isLatest = index === 0;
@@ -45,8 +85,15 @@ export function VersionTimeline({
         return (
           <Card key={version.id} className={isCurrent ? "border-primary" : ""}>
             <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  checked={selectedVersions.includes(version.id)}
+                  onCheckedChange={() => toggleVersion(version.id)}
+                  className="mt-1"
+                />
+                
+                <div className="flex-1 flex items-start justify-between">
+                  <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <Badge variant={isCurrent ? "default" : "secondary"} className="font-mono">
                       v{version.semver}
@@ -82,6 +129,7 @@ export function VersionTimeline({
                     <RotateCcw className="h-3 w-3" />
                     Restaurer
                   </Button>
+                </div>
                 </div>
               </div>
             </CardHeader>
