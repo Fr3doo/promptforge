@@ -30,13 +30,36 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
   const handleSavePrompt = () => {
     if (!result) return;
 
+    // Construire la description à partir des métadonnées
+    let description = "";
+    
+    // Ajouter l'objectif
+    if (result.metadata.objectifs && result.metadata.objectifs.length > 0) {
+      description += "**Objectif:**\n" + result.metadata.objectifs.map(obj => `- ${obj}`).join('\n') + "\n\n";
+    }
+    
+    // Ajouter les étapes
+    if (result.metadata.etapes && result.metadata.etapes.length > 0) {
+      description += "**Étapes:**\n" + result.metadata.etapes.map((etape, i) => `${i + 1}. ${etape}`).join('\n') + "\n\n";
+    }
+    
+    // Ajouter les critères de qualité
+    if (result.metadata.criteres && result.metadata.criteres.length > 0) {
+      description += "**Critères de qualité:**\n" + result.metadata.criteres.map(crit => `- ${crit}`).join('\n');
+    }
+    
+    // Utiliser le rôle si aucune autre information n'est disponible
+    if (!description && result.metadata.role) {
+      description = result.metadata.role;
+    }
+
     const categories = result.metadata.categories || [];
     
     createPrompt(
       {
         title: result.metadata.objectifs?.[0] || "Prompt analysé",
         content: result.prompt_template,
-        description: result.metadata.role || "",
+        description: description.trim(),
         tags: categories,
         is_favorite: false,
         version: "1.0.0",
