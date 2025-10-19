@@ -21,7 +21,6 @@ export type Database = {
           id: string
           image: string | null
           name: string | null
-          role: Database["public"]["Enums"]["app_role"] | null
           updated_at: string | null
         }
         Insert: {
@@ -30,7 +29,6 @@ export type Database = {
           id: string
           image?: string | null
           name?: string | null
-          role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string | null
         }
         Update: {
@@ -39,7 +37,6 @@ export type Database = {
           id?: string
           image?: string | null
           name?: string | null
-          role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string | null
         }
         Relationships: []
@@ -93,6 +90,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_roles: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
       }
       variable_sets: {
         Row: {
@@ -219,7 +240,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "USER" | "ADMIN"

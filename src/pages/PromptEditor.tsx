@@ -13,6 +13,8 @@ import { VariableManager } from "@/components/VariableManager";
 import { toast } from "sonner";
 import { ArrowLeft, Save, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { promptSchema, variableSchema } from "@/lib/validation";
+import { getSafeErrorMessage } from "@/lib/errorHandler";
 
 const PromptEditorPage = () => {
   const { id } = useParams();
@@ -97,80 +99,89 @@ const PromptEditorPage = () => {
   };
 
   const handleSave = async () => {
-    if (!title.trim() || !content.trim()) {
-      toast.error("Le titre et le contenu sont obligatoires");
-      return;
-    }
+    if (!user) return;
 
-    setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Non authentifié");
+      // Validate prompt data
+      const validatedPrompt = promptSchema.parse({
+        title,
+        description,
+        content,
+        tags,
+        visibility,
+      });
+
+      // Validate all variables
+      const validatedVariables = variables.map(v => variableSchema.parse(v));
 
       let promptId = id;
 
       if (id) {
-        // Update existing
-        const { error } = await supabase
-          .from("prompts")
+        // Update existing prompt
+        const { error: updateError } = await supabase
+          .from('prompts')
           .update({
-            title,
-            description,
-            content,
-            visibility,
-            tags,
+            title: validatedPrompt.title,
+            description: validatedPrompt.description || null,
+            content: validatedPrompt.content,
+            tags: validatedPrompt.tags,
+            visibility: validatedPrompt.visibility,
           })
-          .eq("id", id);
+          .eq('id', id);
 
-        if (error) throw error;
+        if (updateError) throw updateError;
 
-        // Delete old variables
-        await supabase.from("variables").delete().eq("prompt_id", id);
+        // Delete existing variables
+        const { error: deleteError } = await supabase
+          .from('variables')
+          .delete()
+          .eq('prompt_id', id);
+
+        if (deleteError) throw deleteError;
       } else {
-        // Create new
-        const { data, error } = await supabase
-          .from("prompts")
+        // Create new prompt
+        const { data: newPrompt, error: insertError } = await supabase
+          .from('prompts')
           .insert({
             owner_id: user.id,
-            title,
-            description,
-            content,
-            visibility,
-            tags,
+            title: validatedPrompt.title,
+            description: validatedPrompt.description || null,
+            content: validatedPrompt.content,
+            tags: validatedPrompt.tags,
+            visibility: validatedPrompt.visibility,
           })
           .select()
           .single();
 
-        if (error) throw error;
-        promptId = data.id;
+        if (insertError) throw insertError;
+        promptId = newPrompt.id;
       }
 
-      // Insert variables
-      if (variables.length > 0 && promptId) {
-        const varsToInsert = variables.map((v, index) => ({
-          prompt_id: promptId,
-          name: v.name,
-          type: v.type,
-          required: v.required,
-          default_value: v.default_value,
-          help: v.help,
-          pattern: v.pattern,
-          order_index: index,
-        }));
-
+      // Insert variables if any
+      if (validatedVariables.length > 0) {
         const { error: varsError } = await supabase
-          .from("variables")
-          .insert(varsToInsert);
+          .from('variables')
+          .insert(
+            validatedVariables.map((v, index) => ({
+              prompt_id: promptId,
+              name: v.name,
+              type: v.type,
+              required: v.required,
+              default_value: v.default_value || null,
+              help: v.help || null,
+              pattern: v.pattern || null,
+              options: v.options || null,
+              order_index: index,
+            }))
+          );
 
         if (varsError) throw varsError;
       }
 
-      toast.success(id ? "Prompt mis à jour" : "Prompt créé");
+      toast.success(id ? "Prompt mis à jour !" : "Prompt créé !");
       navigate(`/prompts/${promptId}`);
     } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setLoading(false);
+      toast.error(getSafeErrorMessage(error));
     }
   };
 

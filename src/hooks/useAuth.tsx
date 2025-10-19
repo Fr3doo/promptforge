@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { createExampleTemplates } from "@/lib/exampleTemplates";
+import { getSafeErrorMessage } from "@/lib/errorHandler";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -18,14 +19,18 @@ export function useAuth() {
         // Create example templates on first signup
         if (event === 'SIGNED_IN' && session?.user) {
           setTimeout(async () => {
-            const { data: prompts } = await supabase
-              .from('prompts')
-              .select('id')
-              .eq('owner_id', session.user.id)
-              .limit(1);
-            
-            if (!prompts || prompts.length === 0) {
-              await createExampleTemplates(session.user.id, supabase);
+            try {
+              const { data: prompts } = await supabase
+                .from('prompts')
+                .select('id')
+                .eq('owner_id', session.user.id)
+                .limit(1);
+              
+              if (!prompts || prompts.length === 0) {
+                await createExampleTemplates(session.user.id, supabase);
+              }
+            } catch (error) {
+              console.error('Error creating example templates:', getSafeErrorMessage(error));
             }
           }, 0);
         }

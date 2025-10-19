@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, Code2 } from "lucide-react";
+import { authSchema } from "@/lib/validation";
+import { getSafeErrorMessage } from "@/lib/errorHandler";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -21,12 +23,19 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
+      // Validate input
+      const validatedData = authSchema.parse({
+        email,
+        password,
+        name: isSignUp ? (name || email) : undefined,
+      });
+
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({
-          email,
-          password,
+          email: validatedData.email,
+          password: validatedData.password,
           options: {
-            data: { name },
+            data: { name: validatedData.name || validatedData.email },
             emailRedirectTo: `${window.location.origin}/`,
           },
         });
@@ -35,15 +44,15 @@ const Auth = () => {
         navigate("/");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+          email: validatedData.email,
+          password: validatedData.password,
         });
         if (error) throw error;
         toast.success("Connexion réussie !");
         navigate("/");
       }
     } catch (error: any) {
-      toast.error(error.message || "Une erreur est survenue");
+      toast.error(getSafeErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
