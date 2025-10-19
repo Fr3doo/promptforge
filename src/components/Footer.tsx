@@ -5,7 +5,7 @@ export const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-border bg-card mt-16">
+    <footer className="border-t border-border bg-card mt-24">
       <div className="container mx-auto px-4 py-8">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
@@ -80,17 +80,13 @@ export const Footer = () => {
                 <Mail className="h-5 w-5" />
               </a>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Des questions ? Contactez-nous
-            </p>
+            <p className="text-sm text-muted-foreground">Des questions ? Contactez-nous</p>
           </div>
         </div>
 
         {/* Copyright */}
         <div className="mt-6 pt-6 border-t border-border text-center">
-          <p className="text-sm text-muted-foreground">
-            © {currentYear} PromptForge. Tous droits réservés.
-          </p>
+          <p className="text-sm text-muted-foreground">© {currentYear} PromptForge. Tous droits réservés.</p>
         </div>
       </div>
     </footer>
