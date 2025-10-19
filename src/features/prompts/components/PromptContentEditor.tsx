@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { PromptEditor } from "@/components/PromptEditor";
-import { VariableManager } from "@/components/VariableManager";
+import { VariableConfigPanel } from "@/features/variables/components/VariableConfigPanel";
 import { Sparkles } from "lucide-react";
 import type { Variable } from "../types";
 
@@ -51,13 +51,10 @@ export const PromptContentEditor = ({
       {/* Variables Section */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold">Variables ({variables.length})</h2>
-        <VariableManager
+        <VariableConfigPanel
           variables={variables}
-          values={variableValues}
-          onValuesChange={onVariableValuesChange}
           onVariableUpdate={onVariableUpdate}
           onVariableDelete={onVariableDelete}
-          editable
         />
       </div>
     </>
