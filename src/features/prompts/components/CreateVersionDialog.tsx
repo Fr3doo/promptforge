@@ -22,6 +22,7 @@ interface CreateVersionDialogProps {
   onTypeChange: (type: VersionBump) => void;
   onConfirm: () => void;
   isCreating: boolean;
+  hasUnsavedChanges: boolean;
 }
 
 export function CreateVersionDialog({
@@ -32,13 +33,19 @@ export function CreateVersionDialog({
   onTypeChange,
   onConfirm,
   isCreating,
+  hasUnsavedChanges,
 }: CreateVersionDialogProps) {
   const previewVersion = bumpVersion(currentVersion, versionType);
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button 
+          variant="outline" 
+          className="gap-2"
+          disabled={!hasUnsavedChanges}
+          title={!hasUnsavedChanges ? "Aucune modification à versionner" : ""}
+        >
           <GitBranch className="h-4 w-4" />
           Créer une version
         </Button>
@@ -47,7 +54,9 @@ export function CreateVersionDialog({
         <DialogHeader>
           <DialogTitle>Créer une nouvelle version</DialogTitle>
           <DialogDescription>
-            Sauvegardez une version de ce prompt pour suivre son évolution
+            {hasUnsavedChanges 
+              ? "Sauvegardez une version de ce prompt pour suivre son évolution"
+              : "Modifiez d'abord votre prompt pour créer une nouvelle version"}
           </DialogDescription>
         </DialogHeader>
 
@@ -104,7 +113,11 @@ export function CreateVersionDialog({
         </div>
 
         <DialogFooter>
-          <Button onClick={onConfirm} disabled={isCreating} className="gap-2">
+          <Button 
+            onClick={onConfirm} 
+            disabled={isCreating || !hasUnsavedChanges} 
+            className="gap-2"
+          >
             {isCreating && <Loader2 className="h-4 w-4 animate-spin" />}
             {isCreating ? "Création..." : "Créer la version"}
           </Button>

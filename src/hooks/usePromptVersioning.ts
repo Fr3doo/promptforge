@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useCreateVersion, useRestoreVersion } from "./useVersions";
 import { bumpVersion, type VersionBump } from "@/lib/semver";
 import type { Tables } from "@/integrations/supabase/types";
@@ -6,12 +6,24 @@ import type { Tables } from "@/integrations/supabase/types";
 type Prompt = Tables<"prompts">;
 type Variable = Tables<"variables">;
 
-export function usePromptVersioning(prompt?: Prompt, variables?: Variable[]) {
+export function usePromptVersioning(
+  prompt?: Prompt, 
+  variables?: Variable[],
+  currentContent?: string
+) {
   const [versionMessage, setVersionMessage] = useState("");
   const [versionType, setVersionType] = useState<VersionBump>("patch");
 
   const { mutate: createVersion, isPending: creating } = useCreateVersion();
   const { mutate: restoreVersion, isPending: restoring } = useRestoreVersion();
+
+  // Détecter si le contenu a changé par rapport à la dernière version sauvegardée
+  const hasUnsavedChanges = useMemo(() => {
+    if (!prompt || !currentContent) return false;
+    
+    // Comparer le contenu actuel avec le contenu du prompt (dernière version sauvegardée)
+    return currentContent !== prompt.content;
+  }, [prompt?.content, currentContent]);
 
   const handleCreateVersion = () => {
     if (!prompt) return;
@@ -47,5 +59,6 @@ export function usePromptVersioning(prompt?: Prompt, variables?: Variable[]) {
     handleRestoreVersion,
     isCreating: creating,
     isRestoring: restoring,
+    hasUnsavedChanges,
   };
 }

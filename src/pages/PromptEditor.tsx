@@ -14,7 +14,8 @@ import { DiffViewer } from "@/features/prompts/components/DiffViewer";
 import { LoadingButton } from "@/components/LoadingButton";
 import { SaveProgress } from "@/components/SaveProgress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
@@ -49,7 +50,8 @@ const PromptEditorPage = () => {
     handleRestoreVersion,
     isCreating,
     isRestoring,
-  } = usePromptVersioning(prompt, existingVariables);
+    hasUnsavedChanges,
+  } = usePromptVersioning(prompt, existingVariables, form.content);
 
   const deleteVersionsMutation = useDeleteVersions();
 
@@ -146,8 +148,16 @@ const PromptEditorPage = () => {
 
           <TabsContent value="versions" className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold">Historique des versions</h3>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-lg font-semibold">Historique des versions</h3>
+                  {hasUnsavedChanges && (
+                    <Badge variant="secondary" className="gap-1.5">
+                      <AlertCircle className="h-3 w-3" />
+                      Modifications non sauvegardées
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">
                   Suivez l'évolution de votre prompt avec SemVer
                 </p>
@@ -160,6 +170,7 @@ const PromptEditorPage = () => {
                 onTypeChange={setVersionType}
                 onConfirm={handleCreateVersion}
                 isCreating={isCreating}
+                hasUnsavedChanges={hasUnsavedChanges}
               />
             </div>
 
