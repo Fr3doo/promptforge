@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Code2, Github, Twitter, Mail } from "lucide-react";
+import { Code2, Github, Twitter, Mail, Linkedin } from "lucide-react";
 
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -71,6 +71,15 @@ export const Footer = () => {
                 aria-label="Twitter"
               >
                 <Twitter className="h-5 w-5" />
+              </a>
+              <a
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-primary transition-colors"
+                aria-label="LinkedIn"
+              >
+                <Linkedin className="h-5 w-5" />
               </a>
               <a
                 href="mailto:contact@promptforge.com"
