@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,8 +12,14 @@ import { SEO } from "@/components/SEO";
 
 const Resources = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  if (!loading && !user) {
+    navigate("/auth");
+    return null;
+  }
 
   const categories = ["all", ...Array.from(new Set(blogArticles.map(a => a.category)))];
 

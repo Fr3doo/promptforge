@@ -1,8 +1,8 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Code2, Zap, GitBranch, FileText, LogOut, BookOpen, HelpCircle, Lightbulb } from "lucide-react";
+import { Code2, Zap, GitBranch, FileText, LogOut, BookOpen, HelpCircle, Lightbulb, LayoutDashboard } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { SEO } from "@/components/SEO";
@@ -56,17 +56,33 @@ const Index = () => {
             </div>
 
             <div className="flex gap-4 justify-center flex-wrap">
-              <Button size="lg" onClick={() => navigate("/auth")} className="gap-2">
-                Commencer gratuitement
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate("/resources")}>
-                <BookOpen className="h-4 w-4 mr-2" />
-                Ressources
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate("/faq")}>
-                <HelpCircle className="h-4 w-4 mr-2" />
-                FAQ
-              </Button>
+              {user ? (
+                <>
+                  <Button size="lg" asChild className="gap-2">
+                    <Link to="/dashboard">
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Tableau de bord
+                    </Link>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild>
+                    <Link to="/prompts">Mes prompts</Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button size="lg" onClick={() => navigate("/auth")} className="gap-2">
+                    Commencer gratuitement
+                  </Button>
+                  <Button size="lg" variant="outline" disabled className="cursor-not-allowed opacity-60">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Ressources (Connexion requise)
+                  </Button>
+                  <Button size="lg" variant="outline" disabled className="cursor-not-allowed opacity-60">
+                    <HelpCircle className="h-4 w-4 mr-2" />
+                    FAQ (Connexion requise)
+                  </Button>
+                </>
+              )}
             </div>
 
             {/* Workflow visuel */}
@@ -128,8 +144,8 @@ const Index = () => {
             {/* Quick links */}
             <div className="grid gap-4 md:grid-cols-3 mt-16">
               <Card 
-                className="cursor-pointer hover:border-primary/40 transition-all"
-                onClick={() => navigate("/resources")}
+                className={`${user ? 'cursor-pointer hover:border-primary/40' : 'opacity-60 cursor-not-allowed'} transition-all`}
+                onClick={user ? () => navigate("/resources") : undefined}
               >
                 <CardHeader>
                   <div className="flex items-center gap-2">
@@ -138,13 +154,14 @@ const Index = () => {
                   </div>
                   <CardDescription>
                     Guides et tutoriels sur le prompt engineering
+                    {!user && <span className="block mt-2 text-xs italic">(Connexion requise)</span>}
                   </CardDescription>
                 </CardHeader>
               </Card>
 
               <Card 
-                className="cursor-pointer hover:border-primary/40 transition-all"
-                onClick={() => navigate("/methodes")}
+                className={`${user ? 'cursor-pointer hover:border-primary/40' : 'opacity-60 cursor-not-allowed'} transition-all`}
+                onClick={user ? () => navigate("/methodes") : undefined}
               >
                 <CardHeader>
                   <div className="flex items-center gap-2">
@@ -153,13 +170,14 @@ const Index = () => {
                   </div>
                   <CardDescription>
                     12 techniques de prompting expliquées
+                    {!user && <span className="block mt-2 text-xs italic">(Connexion requise)</span>}
                   </CardDescription>
                 </CardHeader>
               </Card>
 
               <Card 
-                className="cursor-pointer hover:border-primary/40 transition-all"
-                onClick={() => navigate("/faq")}
+                className={`${user ? 'cursor-pointer hover:border-primary/40' : 'opacity-60 cursor-not-allowed'} transition-all`}
+                onClick={user ? () => navigate("/faq") : undefined}
               >
                 <CardHeader>
                   <div className="flex items-center gap-2">
@@ -168,6 +186,7 @@ const Index = () => {
                   </div>
                   <CardDescription>
                     Réponses à vos questions fréquentes
+                    {!user && <span className="block mt-2 text-xs italic">(Connexion requise)</span>}
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -205,7 +224,19 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-3">
+            <Card className="cursor-pointer hover:border-primary transition-all" onClick={() => navigate("/dashboard")}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LayoutDashboard className="h-5 w-5" />
+                  Tableau de bord
+                </CardTitle>
+                <CardDescription>
+                  Vue d'ensemble et statistiques
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
             <Card className="cursor-pointer hover:border-primary transition-all" onClick={() => navigate("/prompts/new")}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

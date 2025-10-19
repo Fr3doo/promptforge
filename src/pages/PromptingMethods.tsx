@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,13 @@ import {
 
 const PromptingMethods = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+
+  if (!loading && !user) {
+    navigate("/auth");
+    return null;
+  }
 
   const filteredMethods = promptingMethods.filter(method =>
     method.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

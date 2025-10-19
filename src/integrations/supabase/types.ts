@@ -41,6 +41,41 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_usage: {
+        Row: {
+          id: string
+          notes: string | null
+          prompt_id: string
+          success: boolean | null
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          notes?: string | null
+          prompt_id: string
+          success?: boolean | null
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          notes?: string | null
+          prompt_id?: string
+          success?: boolean | null
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_usage_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prompts: {
         Row: {
           content: string

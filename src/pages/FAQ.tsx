@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Code2, ArrowLeft, Search, HelpCircle } from "lucide-react";
@@ -15,8 +16,14 @@ import { SEO } from "@/components/SEO";
 
 const FAQ = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  if (!loading && !user) {
+    navigate("/auth");
+    return null;
+  }
 
   const categories = ["all", ...Array.from(new Set(faqData.map(f => f.category)))];
 
