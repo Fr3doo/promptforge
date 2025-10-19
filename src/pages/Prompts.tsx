@@ -6,12 +6,15 @@ import { usePromptFilters } from "@/features/prompts/hooks/usePromptFilters";
 import { PromptList } from "@/features/prompts/components/PromptList";
 import { PromptSearchBar } from "@/features/prompts/components/PromptSearchBar";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { PromptAnalyzer } from "@/components/PromptAnalyzer";
 
 const Prompts = () => {
   const { user, loading: authLoading } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+  const [analyzerOpen, setAnalyzerOpen] = useState(false);
   const navigate = useNavigate();
   
   const debouncedSearch = useDebounce(searchQuery, 300);
@@ -30,10 +33,26 @@ const Prompts = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Mes Prompts</h1>
-            <Button onClick={() => navigate("/prompts/new")} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Nouveau prompt
-            </Button>
+            <div className="flex gap-2">
+              <Dialog open={analyzerOpen} onOpenChange={setAnalyzerOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    Analyser un prompt
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Analyseur de Prompts IA</DialogTitle>
+                  </DialogHeader>
+                  <PromptAnalyzer />
+                </DialogContent>
+              </Dialog>
+              <Button onClick={() => navigate("/prompts/new")} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Nouveau prompt
+              </Button>
+            </div>
           </div>
         </div>
       </header>
