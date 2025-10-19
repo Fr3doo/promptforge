@@ -85,7 +85,7 @@ export const Footer = () => {
         </div>
 
         {/* Copyright */}
-        <div className="mt-6 pt-6 border-t border-border text-center">
+        <div className="mt-4 pt-4 border-t border-border text-center">
           <p className="text-sm text-muted-foreground">© {currentYear} PromptForge. Tous droits réservés.</p>
         </div>
       </div>
