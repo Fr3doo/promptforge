@@ -42,14 +42,14 @@ export const PromptContentEditor = ({
                 Détecter variables
               </Button>
               {variables.length > 0 && (
-                <Sheet open={isVariablesOpen} onOpenChange={setIsVariablesOpen}>
+                <Sheet open={isVariablesOpen} onOpenChange={setIsVariablesOpen} modal={false}>
                   <SheetTrigger asChild>
                     <Button variant="outline" className="gap-2">
                       <Edit3 className="h-4 w-4" />
                       Variables ({variables.length})
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="right" className="w-[500px] sm:w-[700px] overflow-y-auto">
+                  <SheetContent side="right" className="w-[700px] sm:w-[900px] overflow-y-auto">
                     <SheetHeader>
                       <SheetTitle>Configuration des variables</SheetTitle>
                       <SheetDescription>
