@@ -188,13 +188,13 @@ const PromptEditorPage = () => {
       </main>
 
       {/* Diff Dialog */}
-      {selectedVersion && previousVersion && (
+      {selectedVersion && (
         <DiffViewer
           isOpen={diffOpen}
           onClose={() => setDiffOpen(false)}
-          oldContent={previousVersion.content}
+          oldContent={previousVersion?.content || ""}
           newContent={selectedVersion.content}
-          oldVersion={previousVersion.semver}
+          oldVersion={previousVersion?.semver || "Version précédente"}
           newVersion={selectedVersion.semver}
         />
       )}
