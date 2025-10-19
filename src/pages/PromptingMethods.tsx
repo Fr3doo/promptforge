@@ -177,7 +177,7 @@ const PromptingMethods = () => {
                         </div>
                       </div>
 
-                      <Accordion type="single" collapsible>
+                      <Accordion type="single" collapsible className="w-full">
                         <AccordionItem value="example" className="border-none">
                           <AccordionTrigger className="hover:no-underline pt-4 border-t">
                             <div className="flex items-center gap-2 text-sm font-semibold">
@@ -185,8 +185,8 @@ const PromptingMethods = () => {
                               <span>Voir un exemple</span>
                             </div>
                           </AccordionTrigger>
-                          <AccordionContent>
-                            <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+                          <AccordionContent className="overflow-hidden">
+                            <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm whitespace-pre-wrap break-words">
                               <code>{method.example}</code>
                             </pre>
                           </AccordionContent>
