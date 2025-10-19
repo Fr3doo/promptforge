@@ -55,7 +55,7 @@ export const Footer = () => {
             <h3 className="font-semibold">Communauté</h3>
             <div className="flex gap-4">
               <a
-                href="https://github.com"
+                href="https://github.com/Fr3doo"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-primary transition-colors"
@@ -64,7 +64,7 @@ export const Footer = () => {
                 <Github className="h-5 w-5" />
               </a>
               <a
-                href="https://twitter.com"
+                href="https://x.com/fverissim0"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-primary transition-colors"
@@ -73,7 +73,7 @@ export const Footer = () => {
                 <Twitter className="h-5 w-5" />
               </a>
               <a
-                href="https://linkedin.com"
+                href="https://www.linkedin.com/in/fredericverissimo/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-primary transition-colors"
@@ -82,7 +82,7 @@ export const Footer = () => {
                 <Linkedin className="h-5 w-5" />
               </a>
               <a
-                href="mailto:contact@promptforge.com"
+                href="mailto:frederic.verissimo@gmail.com"
                 className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Email"
               >
