@@ -5,6 +5,7 @@ import { Code2, Zap, GitBranch, FileText, BookOpen, HelpCircle, Lightbulb, Layou
 import { useAuth } from "@/hooks/useAuth";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -144,6 +145,8 @@ const Index = () => {
             </div>
           </div>
         </main>
+        
+        <Footer />
       </div>
       </>
     );
@@ -201,6 +204,8 @@ const Index = () => {
           </div>
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 };

@@ -9,6 +9,7 @@ import { BookOpen, Search, Clock, User } from "lucide-react";
 import { blogArticles } from "@/data/blogArticles";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 const Resources = () => {
   const navigate = useNavigate();
@@ -131,6 +132,8 @@ const Resources = () => {
             )}
           </div>
         </main>
+        
+        <Footer />
       </div>
     </>
   );

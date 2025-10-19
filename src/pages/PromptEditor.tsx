@@ -16,6 +16,7 @@ import { SaveProgress } from "@/components/SaveProgress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 const PromptEditorPage = () => {
   const { id } = useParams();
@@ -192,6 +193,8 @@ const PromptEditorPage = () => {
 
       {/* Save Progress Indicator */}
       <SaveProgress isSaving={form.isSaving} />
+      
+      <Footer />
     </div>
   );
 };

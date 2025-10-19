@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { faqData } from "@/data/faqData";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 const FAQ = () => {
   const navigate = useNavigate();
@@ -124,6 +125,8 @@ const FAQ = () => {
             </div>
           </div>
         </main>
+        
+        <Footer />
       </div>
     </>
   );

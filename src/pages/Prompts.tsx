@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PromptAnalyzer } from "@/components/PromptAnalyzer";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 const Prompts = () => {
   const { user, loading: authLoading } = useAuth();
@@ -81,6 +82,8 @@ const Prompts = () => {
           searchQuery={searchQuery}
         />
       </main>
+      
+      <Footer />
     </div>
   );
 };

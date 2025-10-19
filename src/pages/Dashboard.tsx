@@ -7,6 +7,7 @@ import { useToggleFavorite } from "@/hooks/usePrompts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, Star, Share2, Clock } from "lucide-react";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -164,6 +165,8 @@ const Dashboard = () => {
           </Card>
         )}
       </main>
+      
+      <Footer />
     </div>
   );
 };

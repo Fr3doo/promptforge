@@ -8,6 +8,7 @@ import { Search, Lightbulb, Target, Code } from "lucide-react";
 import { promptingMethods } from "@/data/promptingMethods";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import {
   Accordion,
   AccordionContent,
@@ -150,6 +151,8 @@ const PromptingMethods = () => {
             )}
           </div>
         </main>
+        
+        <Footer />
       </div>
     </>
   );
