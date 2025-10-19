@@ -4,11 +4,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Lightbulb, Target, Code } from "lucide-react";
-import { promptingMethods } from "@/data/promptingMethods";
+import { promptingMethods, type PromptingMethod } from "@/data/promptingMethods";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import {
   Accordion,
   AccordionContent,
@@ -20,11 +21,16 @@ const PromptingMethods = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [selectedMethod, setSelectedMethod] = useState<string>(promptingMethods[0]?.id);
+  const [difficultyFilter, setDifficultyFilter] = useState<PromptingMethod["difficulty"] | "Tous">("Tous");
 
   if (!loading && !user) {
     navigate("/auth");
     return null;
   }
+
+  const filteredMethods = difficultyFilter === "Tous" 
+    ? promptingMethods 
+    : promptingMethods.filter(method => method.difficulty === difficultyFilter);
 
   const scrollToMethod = (methodId: string) => {
     setSelectedMethod(methodId);
@@ -67,6 +73,38 @@ const PromptingMethods = () => {
               <p className="text-xl text-muted-foreground">
                 Maîtrisez les méthodes avancées pour créer des prompts IA performants
               </p>
+
+              {/* Filtres */}
+              <div className="flex justify-center gap-2 pt-4">
+                <Button
+                  variant={difficultyFilter === "Tous" ? "default" : "outline"}
+                  onClick={() => setDifficultyFilter("Tous")}
+                  size="sm"
+                >
+                  Tous
+                </Button>
+                <Button
+                  variant={difficultyFilter === "Débutant" ? "default" : "outline"}
+                  onClick={() => setDifficultyFilter("Débutant")}
+                  size="sm"
+                >
+                  Débutant
+                </Button>
+                <Button
+                  variant={difficultyFilter === "Intermédiaire" ? "default" : "outline"}
+                  onClick={() => setDifficultyFilter("Intermédiaire")}
+                  size="sm"
+                >
+                  Intermédiaire
+                </Button>
+                <Button
+                  variant={difficultyFilter === "Avancé" ? "default" : "outline"}
+                  onClick={() => setDifficultyFilter("Avancé")}
+                  size="sm"
+                >
+                  Avancé
+                </Button>
+              </div>
             </div>
 
             <div className="flex gap-6">
@@ -75,29 +113,17 @@ const PromptingMethods = () => {
                 <div className="sticky top-4">
                   <ScrollArea className="h-[calc(100vh-8rem)]">
                     <nav className="space-y-1 pr-4">
-                      {promptingMethods.map((method) => (
+                      {filteredMethods.map((method) => (
                         <button
                           key={method.id}
                           onClick={() => scrollToMethod(method.id)}
-                          className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                          className={`w-full text-left px-4 py-2.5 rounded-lg transition-colors text-sm ${
                             selectedMethod === method.id
-                              ? "bg-primary text-primary-foreground"
+                              ? "bg-primary text-primary-foreground font-medium"
                               : "hover:bg-muted"
                           }`}
                         >
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{method.icon}</span>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">
-                                {method.name}
-                              </p>
-                              <Badge
-                                className={`mt-1 text-xs ${getDifficultyColor(method.difficulty)}`}
-                              >
-                                {method.difficulty}
-                              </Badge>
-                            </div>
-                          </div>
+                          {method.name}
                         </button>
                       ))}
                     </nav>
@@ -107,7 +133,7 @@ const PromptingMethods = () => {
 
               {/* Main Content */}
               <div className="flex-1 space-y-6">
-                {promptingMethods.map((method) => (
+                {filteredMethods.map((method) => (
                   <Card key={method.id} id={method.id} className="overflow-hidden scroll-mt-4">
                     <CardHeader>
                       <div className="flex items-start justify-between gap-4">
