@@ -114,9 +114,8 @@ const PromptEditorPage = () => {
 
         {/* Tabs for Editor, Variables, and Versions */}
         <Tabs defaultValue="editor" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="editor">Éditeur</TabsTrigger>
-            <TabsTrigger value="variables">Variables ({form.variables.length})</TabsTrigger>
             <TabsTrigger value="versions">Versions ({versions.length})</TabsTrigger>
           </TabsList>
 
@@ -133,21 +132,6 @@ const PromptEditorPage = () => {
             />
           </TabsContent>
 
-          <TabsContent value="variables" className="mt-6">
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold">Variables ({form.variables.length})</h2>
-              <PromptContentEditor
-                content={form.content}
-                onContentChange={form.setContent}
-                variables={form.variables}
-                variableValues={form.variableValues}
-                onVariableValuesChange={form.setVariableValues}
-                onDetectVariables={form.detectVariables}
-                onVariableUpdate={form.updateVariable}
-                onVariableDelete={form.deleteVariable}
-              />
-            </div>
-          </TabsContent>
 
           <TabsContent value="versions" className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
