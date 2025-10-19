@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { successToast, errorToast } from "@/lib/toastUtils";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Version = Tables<"versions">;
@@ -41,7 +41,10 @@ export function useCreateVersion() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["versions", variables.prompt_id] });
-      toast({ title: "📦 Version créée" });
+      successToast("Version créée");
+    },
+    onError: () => {
+      errorToast("Erreur lors de la création de la version");
     },
   });
 }
@@ -96,7 +99,10 @@ export function useRestoreVersion() {
     onSuccess: (_, { promptId }) => {
       queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
       queryClient.invalidateQueries({ queryKey: ["variables", promptId] });
-      toast({ title: "✅ Version restaurée" });
+      successToast("Version restaurée");
+    },
+    onError: () => {
+      errorToast("Erreur lors de la restauration");
     },
   });
 }

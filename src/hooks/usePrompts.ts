@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { successToast, errorToast } from "@/lib/toastUtils";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -66,14 +66,10 @@ export function useCreatePrompt() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
-      toast({ title: "✅ Prompt créé avec succès" });
+      successToast("Prompt créé");
     },
     onError: (error) => {
-      toast({ 
-        title: "❌ Erreur", 
-        description: getSafeErrorMessage(error),
-        variant: "destructive" 
-      });
+      errorToast("Erreur", getSafeErrorMessage(error));
     },
   });
 }
@@ -107,16 +103,12 @@ export function useUpdatePrompt() {
     },
     onError: (err, { id }, context) => {
       queryClient.setQueryData(["prompts", id], context?.previous);
-      toast({ 
-        title: "❌ Erreur de mise à jour", 
-        description: getSafeErrorMessage(err),
-        variant: "destructive" 
-      });
+      errorToast("Erreur de mise à jour", getSafeErrorMessage(err));
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
       queryClient.invalidateQueries({ queryKey: ["prompts", id] });
-      toast({ title: "✅ Prompt mis à jour" });
+      successToast("Prompt mis à jour");
     },
   });
 }
@@ -136,14 +128,10 @@ export function useDeletePrompt() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
-      toast({ title: "🗑️ Prompt supprimé" });
+      successToast("Prompt supprimé");
     },
     onError: (error) => {
-      toast({ 
-        title: "❌ Erreur de suppression", 
-        description: getSafeErrorMessage(error),
-        variant: "destructive" 
-      });
+      errorToast("Erreur de suppression", getSafeErrorMessage(error));
     },
   });
 }
@@ -173,11 +161,7 @@ export function useToggleFavorite() {
     },
     onError: (err, variables, context) => {
       queryClient.setQueryData(["prompts"], context?.previous);
-      toast({ 
-        title: "❌ Erreur", 
-        description: getSafeErrorMessage(err),
-        variant: "destructive" 
-      });
+      errorToast("Erreur", getSafeErrorMessage(err));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });

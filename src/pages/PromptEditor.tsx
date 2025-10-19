@@ -11,9 +11,10 @@ import { PromptContentEditor } from "@/features/prompts/components/PromptContent
 import { VersionTimeline } from "@/features/prompts/components/VersionTimeline";
 import { CreateVersionDialog } from "@/features/prompts/components/CreateVersionDialog";
 import { DiffViewer } from "@/features/prompts/components/DiffViewer";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/LoadingButton";
+import { SaveProgress } from "@/components/SaveProgress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 const PromptEditorPage = () => {
   const { id } = useParams();
@@ -75,18 +76,18 @@ const PromptEditorPage = () => {
       <header className="border-b border-border bg-card sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Button variant="ghost" onClick={() => navigate("/prompts")} className="gap-2">
+            <LoadingButton variant="ghost" onClick={() => navigate("/prompts")} className="gap-2">
               <ArrowLeft className="h-4 w-4" />
               Retour
-            </Button>
-            <Button onClick={() => form.handleSave(id)} disabled={form.isSaving} className="gap-2">
-              {form.isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              {form.isSaving ? "Enregistrement..." : "Enregistrer"}
-            </Button>
+            </LoadingButton>
+            <LoadingButton
+              onClick={() => form.handleSave(id)}
+              isLoading={form.isSaving}
+              loadingText="Enregistrement..."
+              className="gap-2"
+            >
+              Enregistrer
+            </LoadingButton>
           </div>
         </div>
       </header>
@@ -185,6 +186,9 @@ const PromptEditorPage = () => {
           newVersion={prompt.version || "1.0.0"}
         />
       )}
+
+      {/* Save Progress Indicator */}
+      <SaveProgress isSaving={form.isSaving} />
     </div>
   );
 };

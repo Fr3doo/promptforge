@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, Eye, Lock } from "lucide-react";
@@ -7,14 +8,22 @@ interface PromptCardProps {
   prompt: Prompt;
   onToggleFavorite: (id: string, currentState: boolean) => void;
   onClick: () => void;
+  index?: number;
 }
 
-export const PromptCard = ({ prompt, onToggleFavorite, onClick }: PromptCardProps) => {
+export const PromptCard = ({ prompt, onToggleFavorite, onClick, index = 0 }: PromptCardProps) => {
   return (
-    <Card
-      className="cursor-pointer transition-all hover:border-primary"
-      onClick={onClick}
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.2, delay: index * 0.05 }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
     >
+      <Card
+        className="cursor-pointer transition-all hover:border-primary hover:shadow-lg"
+        onClick={onClick}
+      >
       <CardHeader>
         <div className="flex items-start justify-between">
           <CardTitle className="text-lg">{prompt.title}</CardTitle>
@@ -60,7 +69,8 @@ export const PromptCard = ({ prompt, onToggleFavorite, onClick }: PromptCardProp
           </div>
           <span>v{prompt.version}</span>
         </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 };
