@@ -57,6 +57,10 @@ const PromptEditorPage = () => {
   };
 
   const selectedVersion = versions.find(v => v.id === selectedVersionForDiff);
+  const selectedVersionIndex = versions.findIndex(v => v.id === selectedVersionForDiff);
+  const previousVersion = selectedVersionIndex < versions.length - 1 
+    ? versions[selectedVersionIndex + 1] 
+    : null;
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -164,14 +168,14 @@ const PromptEditorPage = () => {
       </main>
 
       {/* Diff Dialog */}
-      {selectedVersion && prompt && (
+      {selectedVersion && previousVersion && (
         <DiffViewer
           isOpen={diffOpen}
           onClose={() => setDiffOpen(false)}
-          oldContent={selectedVersion.content}
-          newContent={prompt.content}
-          oldVersion={selectedVersion.semver}
-          newVersion={prompt.version || "1.0.0"}
+          oldContent={previousVersion.content}
+          newContent={selectedVersion.content}
+          oldVersion={previousVersion.semver}
+          newVersion={selectedVersion.semver}
         />
       )}
 

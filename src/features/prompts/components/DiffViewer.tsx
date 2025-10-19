@@ -27,7 +27,7 @@ export function DiffViewer({
 }: DiffViewerProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[80vh]">
+      <DialogContent className="max-w-[95vw] w-full h-[90vh]">
         <DialogHeader>
           <DialogTitle>Comparaison de versions</DialogTitle>
           <DialogDescription className="flex items-center gap-2">
