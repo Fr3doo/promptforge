@@ -1,73 +1,40 @@
-# Welcome to your Lovable project
+# PromptForge v2 🚀
 
-## Project info
+**Gestionnaire de prompts IA avancé avec versioning, variables et collaboration**
 
-**URL**: https://lovable.dev/projects/fada4f55-e987-40b8-ba85-5dc23d5c346d
+PromptForge est une application web moderne permettant de créer, gérer et versionner vos prompts IA avec un système de variables dynamiques et un historique complet de versions sémantiques.
 
-## How can I edit this code?
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-There are several ways of editing your application.
+## ✨ Fonctionnalités
 
-**Use Lovable**
+- 🎯 **Gestion de prompts** - Éditeur riche avec tags, favoris, recherche
+- 🔄 **Versioning SemVer** - Historique complet avec diff visuel
+- 🎨 **Variables dynamiques** - Détection auto, types multiples, validation
+- 💫 **UX Premium** - Animations Framer Motion, feedback immédiat
+- 🧪 **Tests complets** - Vitest, Testing Library, CI/CD
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/fada4f55-e987-40b8-ba85-5dc23d5c346d) and start prompting.
+## 🚀 Installation
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+git clone <repo>
+cd promptforge
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 📖 Documentation
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- [Architecture](./ARCHITECTURE.md) - Structure interne détaillée
+- [Changelog](./CHANGELOG.md) - Historique des versions
+- [Tests](./TESTING.md) - Guide de tests
+- [Contributing](./CONTRIBUTING.md) - Guide de contribution
 
-**Use GitHub Codespaces**
+## 🛠️ Stack
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+React 18 • TypeScript • Vite • Tailwind CSS • Framer Motion • React Query • Supabase
 
-## What technologies are used for this project?
+---
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/fada4f55-e987-40b8-ba85-5dc23d5c346d) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+**Développé avec ❤️ sur [Lovable](https://lovable.dev)**
