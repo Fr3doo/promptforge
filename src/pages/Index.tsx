@@ -1,20 +1,14 @@
 import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Code2, Zap, GitBranch, FileText, LogOut, BookOpen, HelpCircle, Lightbulb, LayoutDashboard } from "lucide-react";
-import { toast } from "sonner";
+import { Code2, Zap, GitBranch, FileText, BookOpen, HelpCircle, Lightbulb, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { SEO } from "@/components/SEO";
+import { Header } from "@/components/Header";
 
 const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast.success("Déconnexion réussie");
-  };
 
   if (loading) {
     return (
@@ -29,17 +23,7 @@ const Index = () => {
       <>
         <SEO />
         <div className="min-h-screen flex flex-col bg-background">
-        <header className="border-b border-border bg-card">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <Code2 className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold">PromptForge</span>
-            </div>
-            <Button onClick={() => navigate("/auth")}>Connexion</Button>
-          </div>
-        </header>
+        <Header />
 
         <main className="flex-1 flex flex-col items-center justify-center px-4 py-16">
           <div className="text-center max-w-3xl space-y-8">
@@ -56,33 +40,9 @@ const Index = () => {
             </div>
 
             <div className="flex gap-4 justify-center flex-wrap">
-              {user ? (
-                <>
-                  <Button size="lg" asChild className="gap-2">
-                    <Link to="/dashboard">
-                      <LayoutDashboard className="h-4 w-4 mr-2" />
-                      Tableau de bord
-                    </Link>
-                  </Button>
-                  <Button size="lg" variant="outline" asChild>
-                    <Link to="/prompts">Mes prompts</Link>
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button size="lg" onClick={() => navigate("/auth")} className="gap-2">
-                    Commencer gratuitement
-                  </Button>
-                  <Button size="lg" variant="outline" disabled className="cursor-not-allowed opacity-60">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    Ressources (Connexion requise)
-                  </Button>
-                  <Button size="lg" variant="outline" disabled className="cursor-not-allowed opacity-60">
-                    <HelpCircle className="h-4 w-4 mr-2" />
-                    FAQ (Connexion requise)
-                  </Button>
-                </>
-              )}
+              <Button size="lg" onClick={() => navigate("/auth")} className="gap-2">
+                Commencer gratuitement
+              </Button>
             </div>
 
             {/* Workflow visuel */}
@@ -143,10 +103,7 @@ const Index = () => {
 
             {/* Quick links */}
             <div className="grid gap-4 md:grid-cols-3 mt-16">
-              <Card 
-                className={`${user ? 'cursor-pointer hover:border-primary/40' : 'opacity-60 cursor-not-allowed'} transition-all`}
-                onClick={user ? () => navigate("/resources") : undefined}
-              >
+              <Card className="opacity-60 cursor-not-allowed transition-all">
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <BookOpen className="h-5 w-5 text-primary" />
@@ -154,15 +111,12 @@ const Index = () => {
                   </div>
                   <CardDescription>
                     Guides et tutoriels sur le prompt engineering
-                    {!user && <span className="block mt-2 text-xs italic">(Connexion requise)</span>}
+                    <span className="block mt-2 text-xs italic">(Connexion requise)</span>
                   </CardDescription>
                 </CardHeader>
               </Card>
 
-              <Card 
-                className={`${user ? 'cursor-pointer hover:border-primary/40' : 'opacity-60 cursor-not-allowed'} transition-all`}
-                onClick={user ? () => navigate("/methodes") : undefined}
-              >
+              <Card className="opacity-60 cursor-not-allowed transition-all">
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <Lightbulb className="h-5 w-5 text-primary" />
@@ -170,15 +124,12 @@ const Index = () => {
                   </div>
                   <CardDescription>
                     12 techniques de prompting expliquées
-                    {!user && <span className="block mt-2 text-xs italic">(Connexion requise)</span>}
+                    <span className="block mt-2 text-xs italic">(Connexion requise)</span>
                   </CardDescription>
                 </CardHeader>
               </Card>
 
-              <Card 
-                className={`${user ? 'cursor-pointer hover:border-primary/40' : 'opacity-60 cursor-not-allowed'} transition-all`}
-                onClick={user ? () => navigate("/faq") : undefined}
-              >
+              <Card className="opacity-60 cursor-not-allowed transition-all">
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <HelpCircle className="h-5 w-5 text-primary" />
@@ -186,7 +137,7 @@ const Index = () => {
                   </div>
                   <CardDescription>
                     Réponses à vos questions fréquentes
-                    {!user && <span className="block mt-2 text-xs italic">(Connexion requise)</span>}
+                    <span className="block mt-2 text-xs italic">(Connexion requise)</span>
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -200,20 +151,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <Code2 className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold">PromptForge</span>
-          </div>
-          <Button variant="ghost" onClick={handleSignOut} className="gap-2">
-            <LogOut className="h-4 w-4" />
-            Déconnexion
-          </Button>
-        </div>
-      </header>
+      <Header />
 
       <main className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto space-y-8">

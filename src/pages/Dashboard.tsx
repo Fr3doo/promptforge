@@ -6,6 +6,7 @@ import { PromptCard } from "@/features/prompts/components/PromptCard";
 import { useToggleFavorite } from "@/hooks/usePrompts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, Star, Share2, Clock } from "lucide-react";
+import { Header } from "@/components/Header";
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -21,11 +22,12 @@ const Dashboard = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-card">
+        <Header />
+        <div className="border-b border-border bg-card">
           <div className="container mx-auto px-4 py-4">
             <h1 className="text-2xl font-bold">Tableau de bord</h1>
           </div>
-        </header>
+        </div>
         <main className="container mx-auto px-4 py-8">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -39,12 +41,14 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
+      <Header />
+      
+      <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4">
           <h1 className="text-2xl font-bold">Tableau de bord</h1>
           <p className="text-muted-foreground">Vue d'ensemble de vos prompts et statistiques</p>
         </div>
-      </header>
+      </div>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Usage Statistics */}

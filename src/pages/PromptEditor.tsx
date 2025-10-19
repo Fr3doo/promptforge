@@ -15,6 +15,7 @@ import { LoadingButton } from "@/components/LoadingButton";
 import { SaveProgress } from "@/components/SaveProgress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { Header } from "@/components/Header";
 
 const PromptEditorPage = () => {
   const { id } = useParams();
@@ -73,7 +74,9 @@ const PromptEditorPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card sticky top-0 z-10">
+      <Header />
+      
+      <div className="border-b border-border bg-card sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <LoadingButton variant="ghost" onClick={() => navigate("/prompts")} className="gap-2">
@@ -90,7 +93,7 @@ const PromptEditorPage = () => {
             </LoadingButton>
           </div>
         </div>
-      </header>
+      </div>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Metadata Section */}

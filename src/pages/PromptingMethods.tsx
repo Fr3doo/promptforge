@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Code2, ArrowLeft, Search, Lightbulb, Target, Code } from "lucide-react";
+import { Search, Lightbulb, Target, Code } from "lucide-react";
 import { promptingMethods } from "@/data/promptingMethods";
 import { SEO } from "@/components/SEO";
+import { Header } from "@/components/Header";
 import {
   Accordion,
   AccordionContent,
@@ -49,31 +49,7 @@ const PromptingMethods = () => {
       />
       
       <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-card sticky top-0 z-10">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => navigate("/")}
-                  aria-label="Retour à l'accueil"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                    <Code2 className="h-5 w-5 text-primary-foreground" />
-                  </div>
-                  <span className="text-xl font-bold">PromptForge</span>
-                </div>
-              </div>
-              <Button onClick={() => navigate("/prompts")}>
-                Mes Prompts
-              </Button>
-            </div>
-          </div>
-        </header>
+        <Header />
 
         <main className="container mx-auto px-4 py-12">
           <div className="max-w-5xl mx-auto space-y-8">

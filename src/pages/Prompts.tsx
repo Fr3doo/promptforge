@@ -10,6 +10,7 @@ import { Plus, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PromptAnalyzer } from "@/components/PromptAnalyzer";
+import { Header } from "@/components/Header";
 
 const Prompts = () => {
   const { user, loading: authLoading } = useAuth();
@@ -29,7 +30,9 @@ const Prompts = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
+      <Header />
+      
+      <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Mes Prompts</h1>
@@ -58,7 +61,7 @@ const Prompts = () => {
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
