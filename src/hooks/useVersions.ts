@@ -89,6 +89,8 @@ export function useDeleteVersions() {
     },
     onSuccess: (_, { promptId }) => {
       queryClient.invalidateQueries({ queryKey: ["versions", promptId] });
+      queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
+      queryClient.invalidateQueries({ queryKey: ["prompts"] });
       successToast("Version(s) supprimée(s)");
     },
     onError: () => {
