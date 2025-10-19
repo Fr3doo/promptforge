@@ -49,7 +49,7 @@ export const PromptContentEditor = ({
                       Variables ({variables.length})
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="right" className="w-[700px] sm:w-[900px] overflow-y-auto">
+                  <SheetContent side="right" className="w-[90vw] sm:w-[1100px] overflow-y-auto">
                     <SheetHeader>
                       <SheetTitle>Configuration des variables</SheetTitle>
                       <SheetDescription>
