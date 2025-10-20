@@ -50,6 +50,16 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode }: Us
     }
   }, [existingVariables]);
 
+  // Synchroniser les variables avec le contenu
+  useEffect(() => {
+    // Nettoyer les variables qui ne sont plus dans le contenu
+    const validVariables = variables.filter(v => detectedNames.includes(v.name));
+    
+    if (validVariables.length !== variables.length) {
+      setVariables(validVariables);
+    }
+  }, [detectedNames]);
+
   const detectVariables = () => {
     const newVariables = detectedNames
       .filter(name => !variables.some(v => v.name === name))
