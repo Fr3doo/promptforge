@@ -65,17 +65,17 @@ const PromptingMethods = () => {
             <div className="text-center space-y-4 mb-8">
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full">
                 <Lightbulb className="h-4 w-4" />
-                <span className="font-medium">Méthodes de Prompting</span>
+                <span className="text-sm sm:text-base font-medium">Méthodes de Prompting</span>
               </div>
-              <h1 className="text-4xl font-bold">
+              <h1 className="text-3xl sm:text-4xl font-bold px-4">
                 12 Techniques de Prompt Engineering
               </h1>
-              <p className="text-xl text-muted-foreground">
+              <p className="text-lg sm:text-xl text-muted-foreground px-4">
                 Maîtrisez les méthodes avancées pour créer des prompts IA performants
               </p>
 
               {/* Filtres */}
-              <div className="flex justify-center gap-2 pt-4">
+              <div className="flex flex-wrap justify-center gap-2 pt-4 px-4">
                 <Button
                   variant={difficultyFilter === "Tous" ? "default" : "outline"}
                   onClick={() => setDifficultyFilter("Tous")}
@@ -107,9 +107,9 @@ const PromptingMethods = () => {
               </div>
             </div>
 
-            <div className="flex gap-6">
-              {/* Sidebar Menu */}
-              <aside className="w-64 flex-shrink-0">
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Sidebar Menu - Hidden on mobile, visible on large screens */}
+              <aside className="hidden lg:block lg:w-64 lg:flex-shrink-0">
                 <div className="sticky top-4">
                   <ScrollArea className="h-[calc(100vh-8rem)]">
                     <nav className="space-y-1 pr-4">
@@ -152,7 +152,7 @@ const PromptingMethods = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 text-sm font-semibold">
                             <Target className="h-4 w-4 text-primary" />

@@ -51,12 +51,12 @@ const Resources = () => {
             <div className="text-center space-y-4">
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full">
                 <BookOpen className="h-4 w-4" />
-                <span className="font-medium">Centre de Ressources</span>
+                <span className="text-sm sm:text-base font-medium">Centre de Ressources</span>
               </div>
-              <h1 className="text-4xl font-bold">
+              <h1 className="text-3xl sm:text-4xl font-bold px-4">
                 Maîtrisez le Prompt Engineering
               </h1>
-              <p className="text-xl text-muted-foreground">
+              <p className="text-lg sm:text-xl text-muted-foreground px-4">
                 Guides, tutoriels et bonnes pratiques pour créer des prompts IA performants
               </p>
             </div>
@@ -71,10 +71,10 @@ const Resources = () => {
                   className="pl-10"
                 />
               </div>
-              <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-                <TabsList>
+              <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full sm:w-auto">
+                <TabsList className="w-full sm:w-auto flex-wrap h-auto">
                   {categories.map(cat => (
-                    <TabsTrigger key={cat} value={cat}>
+                    <TabsTrigger key={cat} value={cat} className="flex-1 sm:flex-none">
                       {cat === "all" ? "Tous" : cat}
                     </TabsTrigger>
                   ))}

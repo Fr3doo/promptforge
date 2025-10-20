@@ -61,20 +61,20 @@ const ResourceArticle = () => {
           </div>
         </header>
 
-        <main className="container mx-auto px-4 py-12">
+        <main className="container mx-auto px-4 py-8 sm:py-12">
           <article className="max-w-3xl mx-auto space-y-8">
             <div className="space-y-4">
               <Badge variant="secondary">{article.category}</Badge>
-              <h1 className="text-4xl font-bold">{article.title}</h1>
-              <p className="text-xl text-muted-foreground">{article.description}</p>
+              <h1 className="text-3xl sm:text-4xl font-bold">{article.title}</h1>
+              <p className="text-lg sm:text-xl text-muted-foreground">{article.description}</p>
               
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <User className="h-4 w-4" />
+                  <User className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>{article.author}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
+                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>{new Date(article.date).toLocaleDateString('fr-FR', { 
                     year: 'numeric', 
                     month: 'long', 
@@ -82,7 +82,7 @@ const ResourceArticle = () => {
                   })}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>{article.readTime}</span>
                 </div>
               </div>

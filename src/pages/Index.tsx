@@ -28,14 +28,14 @@ const Index = () => {
 
         <main className="flex-1 flex flex-col items-center justify-center px-4 py-16">
           <div className="text-center max-w-3xl space-y-8">
-            <div className="space-y-4">
-              <h1 className="text-5xl font-bold tracking-tight">
+            <div className="space-y-4 px-4">
+              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
                 Gérez et optimisez vos prompts IA – dans un seul outil
               </h1>
-              <p className="text-xl text-muted-foreground">
+              <p className="text-lg sm:text-xl text-muted-foreground">
                 Créez, versionnez, partagez vos prompts, et mesurez leur efficacité
               </p>
-              <p className="text-base text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
                 Centralisez vos templates IA, automatisez vos workflows et collaborez en équipe avec un système de versioning professionnel
               </p>
             </div>
@@ -70,7 +70,7 @@ const Index = () => {
             </div>
 
             {/* Use cases */}
-            <div className="grid gap-6 md:grid-cols-3 mt-16">
+            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 mt-16 px-4">
               <Card className="border-primary/20 hover:border-primary/40 transition-all">
                 <CardHeader>
                   <Zap className="h-8 w-8 text-primary mb-2" />
@@ -103,7 +103,7 @@ const Index = () => {
             </div>
 
             {/* Quick links */}
-            <div className="grid gap-4 md:grid-cols-3 mt-16">
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 mt-16 px-4">
               <Card className="opacity-60 cursor-not-allowed transition-all">
                 <CardHeader>
                   <div className="flex items-center gap-2">
@@ -157,15 +157,15 @@ const Index = () => {
       <Header />
 
       <main className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-4xl mx-auto space-y-8 px-4">
           <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold">Bienvenue, {user.email}</h1>
-            <p className="text-xl text-muted-foreground">
+            <h1 className="text-3xl sm:text-4xl font-bold">Bienvenue, {user.email}</h1>
+            <p className="text-lg sm:text-xl text-muted-foreground">
               Prêt à créer des prompts professionnels ?
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
             <Card className="cursor-pointer hover:border-primary transition-all" onClick={() => navigate("/dashboard")}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

@@ -55,12 +55,12 @@ const FAQ = () => {
             <div className="text-center space-y-4">
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full">
                 <HelpCircle className="h-4 w-4" />
-                <span className="font-medium">Questions Fréquentes</span>
+                <span className="text-sm sm:text-base font-medium">Questions Fréquentes</span>
               </div>
-              <h1 className="text-4xl font-bold">
+              <h1 className="text-3xl sm:text-4xl font-bold px-4">
                 Comment pouvons-nous vous aider ?
               </h1>
-              <p className="text-xl text-muted-foreground">
+              <p className="text-lg sm:text-xl text-muted-foreground px-4">
                 Trouvez rapidement les réponses à vos questions sur PromptForge
               </p>
             </div>
@@ -75,10 +75,10 @@ const FAQ = () => {
                   className="pl-10"
                 />
               </div>
-              <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-                <TabsList>
+              <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full sm:w-auto">
+                <TabsList className="w-full sm:w-auto flex-wrap h-auto">
                   {categories.map(cat => (
-                    <TabsTrigger key={cat} value={cat}>
+                    <TabsTrigger key={cat} value={cat} className="flex-1 sm:flex-none">
                       {cat === "all" ? "Toutes" : cat}
                     </TabsTrigger>
                   ))}
