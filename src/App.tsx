@@ -12,6 +12,7 @@ import Resources from "./pages/Resources";
 import ResourceArticle from "./pages/ResourceArticle";
 import FAQ from "./pages/FAQ";
 import PromptingMethods from "./pages/PromptingMethods";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/resources/:id" element={<ResourceArticle />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/methodes" element={<PromptingMethods />} />
+          <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

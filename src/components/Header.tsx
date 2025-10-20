@@ -53,6 +53,9 @@ export const Header = () => {
                 <Link to="/faq" className="text-sm font-medium hover:text-primary transition-colors">
                   FAQ
                 </Link>
+                <Link to="/settings" className="text-sm font-medium hover:text-primary transition-colors">
+                  Paramètres
+                </Link>
                 <Button variant="ghost" onClick={handleSignOut} className="gap-2">
                   <LogOut className="h-4 w-4" />
                   Déconnexion
@@ -95,12 +98,19 @@ export const Header = () => {
                     >
                       Méthodes
                     </Button>
-                    <Button 
+                  <Button 
                       variant="ghost" 
                       className="justify-start text-base"
                       onClick={() => handleNavigation("/faq")}
                     >
                       FAQ
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      className="justify-start text-base"
+                      onClick={() => handleNavigation("/settings")}
+                    >
+                      Paramètres
                     </Button>
                     <div className="border-t border-border my-2" />
                     <Button 
