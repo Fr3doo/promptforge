@@ -55,28 +55,36 @@ export const PromptMetadataForm = ({
       <Card className="p-6 space-y-6">
         {/* Champ obligatoire */}
         <div className="space-y-2">
-          <Label htmlFor="title">Titre du prompt</Label>
+          <Label htmlFor="prompt-title">
+            Titre du prompt <span className="text-destructive" aria-label="requis">*</span>
+          </Label>
           <Input
-            id="title"
+            id="prompt-title"
             value={title}
             onChange={(e) => onTitleChange(e.target.value)}
             placeholder="Ex: Résumé d'articles de blog"
             required
+            aria-required="true"
+            aria-invalid={!title}
+            aria-describedby="title-help"
           />
-          <p className="text-xs text-muted-foreground">Donnez un nom clair et descriptif à votre prompt</p>
+          <p id="title-help" className="text-xs text-muted-foreground">Donnez un nom clair et descriptif à votre prompt</p>
         </div>
 
         {/* Champs optionnels de base */}
         <div className="space-y-2">
-          <Label htmlFor="description">Description <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
+          <Label htmlFor="prompt-description">
+            Description <span className="text-muted-foreground font-normal">(optionnel)</span>
+          </Label>
           <Textarea
-            id="description"
+            id="prompt-description"
             value={description}
             onChange={(e) => onDescriptionChange(e.target.value)}
             placeholder="Décrivez l'objectif et le contexte d'utilisation de ce prompt"
             className="min-h-[80px]"
+            aria-describedby="description-help"
           />
-          <p className="text-xs text-muted-foreground">Ajoutez des détails pour retrouver facilement ce prompt plus tard</p>
+          <p id="description-help" className="text-xs text-muted-foreground">Ajoutez des détails pour retrouver facilement ce prompt plus tard</p>
         </div>
 
         {/* Options avancées */}
@@ -86,29 +94,31 @@ export const PromptMetadataForm = ({
             variant="ghost"
             onClick={() => setShowAdvanced(!showAdvanced)}
             className="w-full justify-between"
+            aria-expanded={showAdvanced}
+            aria-controls="advanced-options"
           >
             <span className="font-semibold">Options avancées</span>
-            {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {showAdvanced ? <ChevronUp className="h-4 w-4" aria-hidden="true" /> : <ChevronDown className="h-4 w-4" aria-hidden="true" />}
           </Button>
 
           {showAdvanced && (
-            <div className="space-y-6 mt-4">
+            <div id="advanced-options" className="space-y-6 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="visibility">Visibilité</Label>
+                <Label htmlFor="prompt-visibility">Visibilité</Label>
                 <Select value={visibility} onValueChange={(value: any) => onVisibilityChange(value)}>
-                  <SelectTrigger id="visibility">
+                  <SelectTrigger id="prompt-visibility" aria-label="Sélectionner la visibilité du prompt">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="PRIVATE">
                       <div className="flex items-center gap-2">
-                        <Lock className="h-4 w-4" />
+                        <Lock className="h-4 w-4" aria-hidden="true" />
                         <span>Privé - Visible uniquement par vous</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="SHARED">
                       <div className="flex items-center gap-2">
-                        <Globe className="h-4 w-4" />
+                        <Globe className="h-4 w-4" aria-hidden="true" />
                         <span>Partagé - Visible par tous</span>
                       </div>
                     </SelectItem>
@@ -117,10 +127,12 @@ export const PromptMetadataForm = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="tags">Tags <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
+                <Label htmlFor="prompt-tags">
+                  Tags <span className="text-muted-foreground font-normal">(optionnel)</span>
+                </Label>
                 <div className="flex gap-2">
                   <Input
-                    id="tags"
+                    id="prompt-tags"
                     value={tagInput}
                     onChange={(e) => onTagInputChange(e.target.value)}
                     placeholder="Ex: marketing, email, SEO"
@@ -130,22 +142,31 @@ export const PromptMetadataForm = ({
                         onAddTag();
                       }
                     }}
+                    aria-describedby="tags-help"
                   />
-                  <Button onClick={onAddTag} variant="outline" className="gap-2 shrink-0">
-                    <Plus className="h-4 w-4" />
+                  <Button 
+                    onClick={onAddTag} 
+                    variant="outline" 
+                    className="gap-2 shrink-0"
+                    aria-label="Ajouter un tag"
+                  >
+                    <Plus className="h-4 w-4" aria-hidden="true" />
                     Ajouter
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">Organisez vos prompts avec des mots-clés</p>
+                <p id="tags-help" className="text-xs text-muted-foreground">Organisez vos prompts avec des mots-clés. Appuyez sur Entrée pour ajouter.</p>
                 {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <div className="flex flex-wrap gap-2 mt-2" role="list" aria-label="Tags sélectionnés">
                     {tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="gap-1">
+                      <Badge key={tag} variant="secondary" className="gap-1" role="listitem">
                         {tag}
-                        <X
-                          className="h-3 w-3 cursor-pointer"
+                        <button
                           onClick={() => onRemoveTag(tag)}
-                        />
+                          className="ml-1 hover:text-destructive focus:outline-none focus:ring-2 focus:ring-destructive rounded"
+                          aria-label={`Retirer le tag ${tag}`}
+                        >
+                          <X className="h-3 w-3" aria-hidden="true" />
+                        </button>
                       </Badge>
                     ))}
                   </div>
