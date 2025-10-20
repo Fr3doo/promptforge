@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Star, Eye, Lock, MoreVertical, Trash2, Edit, Copy, FileText } from "lucide-react";
+import { Star, Eye, Lock, MoreVertical, Trash2, Edit, Copy, FileText, Share2, Globe } from "lucide-react";
 import { useState } from "react";
 import type { Prompt } from "../types";
 
@@ -28,6 +28,7 @@ interface PromptCardProps {
   onToggleFavorite: (id: string, currentState: boolean) => void;
   onDelete?: (id: string) => void;
   onDuplicate?: (id: string) => void;
+  onToggleVisibility?: (id: string, currentVisibility: "PRIVATE" | "SHARED") => void;
   onClick: () => void;
   index?: number;
   currentUserId?: string;
@@ -38,6 +39,7 @@ export const PromptCard = ({
   onToggleFavorite, 
   onDelete,
   onDuplicate,
+  onToggleVisibility,
   onClick, 
   index = 0,
   currentUserId 
@@ -45,6 +47,7 @@ export const PromptCard = ({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const isOwner = currentUserId && prompt.owner_id === currentUserId;
   const isDraft = prompt.status === "DRAFT";
+  const isShared = prompt.visibility === "SHARED";
 
   const handleDelete = () => {
     if (onDelete) {
@@ -118,6 +121,24 @@ export const PromptCard = ({
                         }}>
                           <Copy className="h-4 w-4 mr-2" />
                           Dupliquer
+                        </DropdownMenuItem>
+                      )}
+                      {isOwner && onToggleVisibility && (
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleVisibility(prompt.id, prompt.visibility);
+                        }}>
+                          {isShared ? (
+                            <>
+                              <Lock className="h-4 w-4 mr-2" />
+                              Rendre privé
+                            </>
+                          ) : (
+                            <>
+                              <Share2 className="h-4 w-4 mr-2" />
+                              Partager
+                            </>
+                          )}
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuSeparator />

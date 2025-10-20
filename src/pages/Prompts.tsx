@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePrompts, useToggleFavorite, useDeletePrompt, useDuplicatePrompt } from "@/hooks/usePrompts";
+import { usePrompts, useToggleFavorite, useDeletePrompt, useDuplicatePrompt, useToggleVisibility } from "@/hooks/usePrompts";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePromptFilters } from "@/features/prompts/hooks/usePromptFilters";
 import { PromptList } from "@/features/prompts/components/PromptList";
@@ -24,6 +24,7 @@ const Prompts = () => {
   const { mutate: toggleFavorite } = useToggleFavorite();
   const { mutate: deletePrompt } = useDeletePrompt();
   const { mutate: duplicatePrompt } = useDuplicatePrompt();
+  const { mutate: toggleVisibility } = useToggleVisibility();
   const { filteredPrompts } = usePromptFilters(prompts, debouncedSearch);
 
   const handleDuplicate = async (id: string) => {
@@ -32,6 +33,10 @@ const Prompts = () => {
         navigate(`/prompts/${newPrompt.id}`);
       },
     });
+  };
+
+  const handleToggleVisibility = (id: string, currentVisibility: "PRIVATE" | "SHARED") => {
+    toggleVisibility({ id, currentVisibility });
   };
 
   if (!authLoading && !user) {
@@ -92,6 +97,7 @@ const Prompts = () => {
           }
           onDelete={(id) => deletePrompt(id)}
           onDuplicate={handleDuplicate}
+          onToggleVisibility={handleToggleVisibility}
           emptySearchState={!!searchQuery}
           searchQuery={searchQuery}
           currentUserId={user?.id}

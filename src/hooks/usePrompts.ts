@@ -240,3 +240,48 @@ export function useDuplicatePrompt() {
     },
   });
 }
+
+// Hook pour basculer la visibilité d'un prompt
+export function useToggleVisibility() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, currentVisibility }: { id: string; currentVisibility: "PRIVATE" | "SHARED" }) => {
+      const newVisibility = currentVisibility === "PRIVATE" ? "SHARED" : "PRIVATE";
+      
+      const { error } = await supabase
+        .from("prompts")
+        .update({ 
+          visibility: newVisibility,
+          status: "PUBLISHED" // Publier automatiquement lors du partage
+        })
+        .eq("id", id);
+      
+      if (error) throw error;
+      return newVisibility;
+    },
+    onMutate: async ({ id, currentVisibility }) => {
+      await queryClient.cancelQueries({ queryKey: ["prompts"] });
+      const previous = queryClient.getQueryData(["prompts"]);
+      const newVisibility = currentVisibility === "PRIVATE" ? "SHARED" : "PRIVATE";
+      
+      queryClient.setQueryData(["prompts"], (old: Prompt[] | undefined) =>
+        old ? old.map(p => p.id === id ? { ...p, visibility: newVisibility, status: "PUBLISHED" as const } : p) : old
+      );
+      
+      return { previous };
+    },
+    onSuccess: (newVisibility) => {
+      queryClient.invalidateQueries({ queryKey: ["prompts"] });
+      if (newVisibility === "SHARED") {
+        successToast("Prompt partagé avec la communauté");
+      } else {
+        successToast("Prompt redevenu privé");
+      }
+    },
+    onError: (err, variables, context) => {
+      queryClient.setQueryData(["prompts"], context?.previous);
+      errorToast("Erreur", getSafeErrorMessage(err));
+    },
+  });
+}
