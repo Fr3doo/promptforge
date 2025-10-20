@@ -10,6 +10,7 @@ interface PromptListProps {
   isLoading: boolean;
   onToggleFavorite: (id: string, currentState: boolean) => void;
   onDelete?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
   emptySearchState?: boolean;
   searchQuery?: string;
   currentUserId?: string;
@@ -20,6 +21,7 @@ export const PromptList = ({
   isLoading,
   onToggleFavorite,
   onDelete,
+  onDuplicate,
   emptySearchState = false,
   searchQuery = "",
   currentUserId,
@@ -61,6 +63,7 @@ export const PromptList = ({
           index={index}
           onToggleFavorite={onToggleFavorite}
           onDelete={onDelete}
+          onDuplicate={onDuplicate}
           onClick={() => navigate(`/prompts/${prompt.id}`)}
           currentUserId={currentUserId}
         />

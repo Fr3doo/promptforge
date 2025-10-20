@@ -5,6 +5,7 @@ import { useVariables } from "@/hooks/useVariables";
 import { useVersions, useDeleteVersions } from "@/hooks/useVersions";
 import { useAuth } from "@/hooks/useAuth";
 import { usePromptForm } from "@/features/prompts/hooks/usePromptForm";
+import { useAutoSave } from "@/features/prompts/hooks/useAutoSave";
 import { usePromptVersioning } from "@/hooks/usePromptVersioning";
 import { PromptMetadataForm } from "@/features/prompts/components/PromptMetadataForm";
 import { PromptContentEditor } from "@/features/prompts/components/PromptContentEditor";
@@ -70,6 +71,18 @@ const PromptEditorPage = () => {
   const previousVersion = selectedVersionIndex < versions.length - 1 
     ? versions[selectedVersionIndex + 1] 
     : null;
+
+  // Auto-save hook (seulement en mode édition)
+  useAutoSave({
+    promptId: id,
+    title: form.title,
+    content: form.content,
+    description: form.description,
+    tags: form.tags,
+    visibility: form.visibility,
+    enabled: isEditMode && !!id,
+    interval: 30000, // 30 secondes
+  });
 
   // Redirect if not authenticated
   useEffect(() => {

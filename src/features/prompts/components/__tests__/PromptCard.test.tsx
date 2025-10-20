@@ -11,6 +11,7 @@ const mockPrompt = {
   visibility: "PRIVATE" as const,
   is_favorite: false,
   version: "1.0.0",
+  status: "PUBLISHED" as const,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   owner_id: "user-1",

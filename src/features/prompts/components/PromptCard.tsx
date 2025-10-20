@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Star, Eye, Lock, MoreVertical, Trash2, Edit } from "lucide-react";
+import { Star, Eye, Lock, MoreVertical, Trash2, Edit, Copy, FileText } from "lucide-react";
 import { useState } from "react";
 import type { Prompt } from "../types";
 
@@ -27,6 +27,7 @@ interface PromptCardProps {
   prompt: Prompt;
   onToggleFavorite: (id: string, currentState: boolean) => void;
   onDelete?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
   onClick: () => void;
   index?: number;
   currentUserId?: string;
@@ -36,12 +37,14 @@ export const PromptCard = ({
   prompt, 
   onToggleFavorite, 
   onDelete,
+  onDuplicate,
   onClick, 
   index = 0,
   currentUserId 
 }: PromptCardProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const isOwner = currentUserId && prompt.owner_id === currentUserId;
+  const isDraft = prompt.status === "DRAFT";
 
   const handleDelete = () => {
     if (onDelete) {
@@ -62,8 +65,16 @@ export const PromptCard = ({
         <Card className="cursor-pointer transition-all hover:border-primary hover:shadow-lg">
           <CardHeader>
             <div className="flex items-start justify-between gap-2">
-              <div className="flex-1" onClick={onClick}>
-                <CardTitle className="text-lg">{prompt.title}</CardTitle>
+              <div className="flex-1 flex flex-col gap-2" onClick={onClick}>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">{prompt.title}</CardTitle>
+                  {isDraft && (
+                    <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+                      <FileText className="h-3 w-3 mr-1" />
+                      Brouillon
+                    </Badge>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-1">
                 <button
@@ -100,6 +111,15 @@ export const PromptCard = ({
                         <Edit className="h-4 w-4 mr-2" />
                         Modifier
                       </DropdownMenuItem>
+                      {onDuplicate && (
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation();
+                          onDuplicate(prompt.id);
+                        }}>
+                          <Copy className="h-4 w-4 mr-2" />
+                          Dupliquer
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"

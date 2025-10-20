@@ -84,6 +84,7 @@ export type Database = {
           id: string
           is_favorite: boolean | null
           owner_id: string
+          status: Database["public"]["Enums"]["prompt_status"] | null
           tags: string[] | null
           title: string
           updated_at: string | null
@@ -97,6 +98,7 @@ export type Database = {
           id?: string
           is_favorite?: boolean | null
           owner_id: string
+          status?: Database["public"]["Enums"]["prompt_status"] | null
           tags?: string[] | null
           title: string
           updated_at?: string | null
@@ -110,6 +112,7 @@ export type Database = {
           id?: string
           is_favorite?: boolean | null
           owner_id?: string
+          status?: Database["public"]["Enums"]["prompt_status"] | null
           tags?: string[] | null
           title?: string
           updated_at?: string | null
@@ -285,6 +288,7 @@ export type Database = {
     }
     Enums: {
       app_role: "USER" | "ADMIN"
+      prompt_status: "DRAFT" | "PUBLISHED"
       var_type:
         | "STRING"
         | "NUMBER"
@@ -421,6 +425,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["USER", "ADMIN"],
+      prompt_status: ["DRAFT", "PUBLISHED"],
       var_type: ["STRING", "NUMBER", "BOOLEAN", "ENUM", "DATE", "MULTISTRING"],
       visibility: ["PRIVATE", "SHARED"],
     },

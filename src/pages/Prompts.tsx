@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePrompts, useToggleFavorite, useDeletePrompt } from "@/hooks/usePrompts";
+import { usePrompts, useToggleFavorite, useDeletePrompt, useDuplicatePrompt } from "@/hooks/usePrompts";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePromptFilters } from "@/features/prompts/hooks/usePromptFilters";
 import { PromptList } from "@/features/prompts/components/PromptList";
@@ -23,7 +23,16 @@ const Prompts = () => {
   const { data: prompts = [], isLoading } = usePrompts();
   const { mutate: toggleFavorite } = useToggleFavorite();
   const { mutate: deletePrompt } = useDeletePrompt();
+  const { mutate: duplicatePrompt } = useDuplicatePrompt();
   const { filteredPrompts } = usePromptFilters(prompts, debouncedSearch);
+
+  const handleDuplicate = async (id: string) => {
+    duplicatePrompt(id, {
+      onSuccess: (newPrompt) => {
+        navigate(`/prompts/${newPrompt.id}`);
+      },
+    });
+  };
 
   if (!authLoading && !user) {
     navigate("/auth");
@@ -82,6 +91,7 @@ const Prompts = () => {
             toggleFavorite({ id, currentState })
           }
           onDelete={(id) => deletePrompt(id)}
+          onDuplicate={handleDuplicate}
           emptySearchState={!!searchQuery}
           searchQuery={searchQuery}
           currentUserId={user?.id}

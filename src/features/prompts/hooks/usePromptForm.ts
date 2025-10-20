@@ -128,6 +128,7 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode }: Us
           description: promptData.description || null,
           is_favorite: false,
           version: "1.0.0",
+          status: "PUBLISHED",
         }, {
           onSuccess: (newPrompt) => {
             if (validatedVariables.length > 0) {

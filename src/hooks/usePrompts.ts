@@ -168,3 +168,75 @@ export function useToggleFavorite() {
     },
   });
 }
+
+// Hook pour dupliquer un prompt
+export function useDuplicatePrompt() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (promptId: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Non authentifié");
+
+      // Récupérer le prompt original
+      const { data: originalPrompt, error: fetchError } = await supabase
+        .from("prompts")
+        .select("*")
+        .eq("id", promptId)
+        .single();
+      
+      if (fetchError) throw fetchError;
+
+      // Créer une copie
+      const { data: newPrompt, error: insertError } = await supabase
+        .from("prompts")
+        .insert({
+          title: `${originalPrompt.title} (Copie)`,
+          content: originalPrompt.content,
+          description: originalPrompt.description,
+          tags: originalPrompt.tags,
+          visibility: "PRIVATE", // Toujours privé au départ
+          version: "1.0.0",
+          status: "DRAFT", // Marquer comme brouillon
+          is_favorite: false,
+          owner_id: user.id,
+        })
+        .select()
+        .single();
+      
+      if (insertError) throw insertError;
+
+      // Récupérer et dupliquer les variables
+      const { data: originalVariables } = await supabase
+        .from("variables")
+        .select("*")
+        .eq("prompt_id", promptId);
+
+      if (originalVariables && originalVariables.length > 0) {
+        const variablesToInsert = originalVariables.map(v => ({
+          prompt_id: newPrompt.id,
+          name: v.name,
+          type: v.type,
+          required: v.required,
+          default_value: v.default_value,
+          help: v.help,
+          pattern: v.pattern,
+          options: v.options,
+          order_index: v.order_index,
+        }));
+
+        await supabase.from("variables").insert(variablesToInsert);
+      }
+
+      return newPrompt;
+    },
+    onSuccess: (newPrompt) => {
+      queryClient.invalidateQueries({ queryKey: ["prompts"] });
+      successToast("Prompt dupliqué avec succès");
+      return newPrompt;
+    },
+    onError: (error) => {
+      errorToast("Erreur de duplication", getSafeErrorMessage(error));
+    },
+  });
+}
