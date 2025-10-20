@@ -100,36 +100,36 @@ export default function Settings() {
           </div>
 
           <Tabs defaultValue="appearance" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 gap-2">
-              <TabsTrigger value="appearance" className="flex items-center gap-2">
-                <Sun className="h-4 w-4" />
-                <span className="hidden sm:inline">Apparence</span>
+            <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 gap-1 h-auto p-1">
+              <TabsTrigger value="appearance" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
+                <Sun className="h-4 w-4 flex-shrink-0" />
+                <span className="hidden md:inline text-sm">Apparence</span>
               </TabsTrigger>
-              <TabsTrigger value="language" className="flex items-center gap-2">
-                <Globe className="h-4 w-4" />
-                <span className="hidden sm:inline">Langue</span>
+              <TabsTrigger value="language" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
+                <Globe className="h-4 w-4 flex-shrink-0" />
+                <span className="hidden md:inline text-sm">Langue</span>
               </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center gap-2">
-                <Bell className="h-4 w-4" />
-                <span className="hidden sm:inline">Notifications</span>
+              <TabsTrigger value="notifications" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
+                <Bell className="h-4 w-4 flex-shrink-0" />
+                <span className="hidden md:inline text-sm">Notifications</span>
               </TabsTrigger>
-              <TabsTrigger value="data" className="flex items-center gap-2">
-                <Database className="h-4 w-4" />
-                <span className="hidden sm:inline">Données</span>
+              <TabsTrigger value="data" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
+                <Database className="h-4 w-4 flex-shrink-0" />
+                <span className="hidden md:inline text-sm">Données</span>
               </TabsTrigger>
-              <TabsTrigger value="security" className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                <span className="hidden sm:inline">Sécurité</span>
+              <TabsTrigger value="security" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
+                <Shield className="h-4 w-4 flex-shrink-0" />
+                <span className="hidden md:inline text-sm">Sécurité</span>
               </TabsTrigger>
-              <TabsTrigger value="about" className="flex items-center gap-2">
-                <Info className="h-4 w-4" />
-                <span className="hidden sm:inline">À propos</span>
+              <TabsTrigger value="about" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
+                <Info className="h-4 w-4 flex-shrink-0" />
+                <span className="hidden md:inline text-sm">À propos</span>
               </TabsTrigger>
             </TabsList>
 
             {/* Appearance Section */}
             <TabsContent value="appearance">
-              <Card>
+              <Card className="max-w-3xl">
                 <CardHeader>
                   <CardTitle>Apparence & Thème</CardTitle>
                   <CardDescription>
@@ -137,8 +137,8 @@ export default function Settings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1 flex-1">
                       <Label htmlFor="dark-mode">Mode sombre</Label>
                       <p className="text-sm text-muted-foreground">
                         Activez le mode sombre pour réduire la fatigue oculaire
@@ -157,8 +157,8 @@ export default function Settings() {
                   
                   <Separator />
                   
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1 flex-1">
                       <Label htmlFor="system-theme">Respecter les préférences système</Label>
                       <p className="text-sm text-muted-foreground">
                         Utiliser le thème de votre système d'exploitation
@@ -198,7 +198,7 @@ export default function Settings() {
 
             {/* Language Section */}
             <TabsContent value="language">
-              <Card>
+              <Card className="max-w-3xl">
                 <CardHeader>
                   <CardTitle>Langue & Région</CardTitle>
                   <CardDescription>
@@ -206,8 +206,8 @@ export default function Settings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1 flex-1">
                       <Label htmlFor="auto-language">Détection automatique de langue</Label>
                       <p className="text-sm text-muted-foreground">
                         Détecter automatiquement la langue du navigateur
@@ -255,7 +255,7 @@ export default function Settings() {
 
             {/* Notifications Section */}
             <TabsContent value="notifications">
-              <Card>
+              <Card className="max-w-3xl">
                 <CardHeader>
                   <CardTitle>Notifications</CardTitle>
                   <CardDescription>
@@ -263,8 +263,8 @@ export default function Settings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1 flex-1">
                       <Label htmlFor="notifications">Activer les notifications</Label>
                       <p className="text-sm text-muted-foreground">
                         Recevoir des notifications sur l'activité de votre compte
@@ -282,8 +282,8 @@ export default function Settings() {
                   
                   <Separator />
                   
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1 flex-1">
                       <Label htmlFor="email-notifications">Notifications par email</Label>
                       <p className="text-sm text-muted-foreground">
                         Vous recevrez un e-mail lors de mises à jour importantes
@@ -302,8 +302,8 @@ export default function Settings() {
                   
                   <Separator />
                   
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1 flex-1">
                       <Label htmlFor="app-notifications">Notifications dans l'application</Label>
                       <p className="text-sm text-muted-foreground">
                         Afficher les notifications directement dans l'interface
@@ -325,7 +325,7 @@ export default function Settings() {
 
             {/* Data Section */}
             <TabsContent value="data">
-              <Card>
+              <Card className="max-w-3xl">
                 <CardHeader>
                   <CardTitle>Données & Historique</CardTitle>
                   <CardDescription>
@@ -333,8 +333,8 @@ export default function Settings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1 flex-1">
                       <Label htmlFor="auto-save">Sauvegarde automatique des versions</Label>
                       <p className="text-sm text-muted-foreground">
                         Enregistrer automatiquement les versions de vos prompts
@@ -372,14 +372,14 @@ export default function Settings() {
                   
                   <Separator />
                   
-                  <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <Button
                       variant="outline"
                       className="w-full justify-start"
                       onClick={handleExportData}
                     >
-                      <Download className="mr-2 h-4 w-4" />
-                      Exporter mes données (CSV/JSON)
+                      <Download className="mr-2 h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">Exporter mes données</span>
                     </Button>
                     
                     <Button
@@ -387,8 +387,8 @@ export default function Settings() {
                       className="w-full justify-start text-destructive hover:text-destructive"
                       onClick={handleClearHistory}
                     >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Effacer l'historique des prompts
+                      <Trash2 className="mr-2 h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">Effacer l'historique</span>
                     </Button>
                   </div>
                 </CardContent>
@@ -397,7 +397,7 @@ export default function Settings() {
 
             {/* Security Section */}
             <TabsContent value="security">
-              <Card>
+              <Card className="max-w-3xl">
                 <CardHeader>
                   <CardTitle>Sécurité & Compte</CardTitle>
                   <CardDescription>
@@ -414,14 +414,14 @@ export default function Settings() {
                   
                   <Separator />
                   
-                  <div className="space-y-4">
+                  <div className="flex flex-col gap-3">
                     <Button
                       variant="outline"
                       className="w-full justify-start"
                       onClick={() => toast({ title: "Fonctionnalité à venir" })}
                     >
-                      <Shield className="mr-2 h-4 w-4" />
-                      Changer le mot de passe
+                      <Shield className="mr-2 h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">Changer le mot de passe</span>
                     </Button>
                     
                     <Button
@@ -429,8 +429,8 @@ export default function Settings() {
                       className="w-full justify-start"
                       onClick={() => toast({ title: "Fonctionnalité à venir" })}
                     >
-                      <Shield className="mr-2 h-4 w-4" />
-                      Activer l'authentification à deux facteurs (2FA)
+                      <Shield className="mr-2 h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">Activer 2FA</span>
                     </Button>
                     
                     <Button
@@ -438,8 +438,8 @@ export default function Settings() {
                       className="w-full justify-start"
                       onClick={handleSignOut}
                     >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Déconnexion de tous les appareils
+                      <LogOut className="mr-2 h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">Déconnexion</span>
                     </Button>
                   </div>
                   
@@ -468,7 +468,7 @@ export default function Settings() {
 
             {/* About Section */}
             <TabsContent value="about">
-              <Card>
+              <Card className="max-w-3xl">
                 <CardHeader>
                   <CardTitle>À propos</CardTitle>
                   <CardDescription>
