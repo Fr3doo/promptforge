@@ -839,11 +839,12 @@ getTTFB(console.log);
 ### Documentation du projet
 
 - [ESLint Supabase Rule](./docs/ESLINT_SUPABASE_RULE.md) - ⚠️ Import direct de Supabase interdit
-- [Architecture v2 Summary](./docs/ARCHITECTURE_V2_SUMMARY.md) - Récapitulatif des nouveautés v2
 - [Testing Guide](./TESTING.md) - Guide des tests unitaires et d'intégration
 - [Variable Upsert Security](./docs/VARIABLE_UPSERT_SECURITY.md) - Sécurité de l'upsert des variables
 - [Error Boundary](./docs/ERROR_BOUNDARY.md) - Gestion globale des erreurs runtime
 - [Codecov Setup](./docs/CODECOV_SETUP.md) - Configuration de la couverture de tests
+- [Repository Guide](./docs/REPOSITORY_GUIDE.md) - Guide d'utilisation des repositories
+- [Refactoring Prompt Repository](./docs/REFACTORING_PROMPT_REPOSITORY.md) - Découplage de l'authentification
 
 ---
 
