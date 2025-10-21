@@ -23,6 +23,13 @@ PromptForge v2 suit une architecture **feature-based** avec séparation des pré
 │  └──────────────────────────────────────────────────┘  │
 │         │                                               │
 │  ┌──────────────────────────────────────────────────┐  │
+│  │            Repository Layer (DIP)                 │  │
+│  │  - PromptRepository                               │  │
+│  │  - VariableRepository                             │  │
+│  │  ⚠️  Seule couche autorisée à importer Supabase  │  │
+│  └──────────────────────────────────────────────────┘  │
+│         │                                               │
+│  ┌──────────────────────────────────────────────────┐  │
 │  │            Supabase Client                        │  │
 │  │  - Authentication                                 │  │
 │  │  - Database Queries                               │  │
@@ -114,6 +121,9 @@ Custom Hook (Business Logic)
 React Query Mutation
       │
       ▼
+Repository (PromptRepository, VariableRepository)
+      │
+      ▼
 Supabase Client
       │
       ▼
@@ -130,6 +140,48 @@ Component Re-render (Automatic)
       │
       ▼
 UI Update
+```
+
+### 4. Repository Pattern (DIP)
+
+PromptForge v2 suit le **principe d'inversion de dépendance** (SOLID) via une couche de repositories.
+
+```
+┌────────────────────────────────────────────┐
+│         Components & Hooks                 │
+│  (Dépendent des abstractions)              │
+└──────────────┬─────────────────────────────┘
+               │
+               ▼
+┌────────────────────────────────────────────┐
+│         Repository Interfaces              │
+│  - PromptRepository                        │
+│  - VariableRepository                      │
+└──────────────┬─────────────────────────────┘
+               │
+               ▼
+┌────────────────────────────────────────────┐
+│    Concrete Implementations                │
+│  - SupabasePromptRepository                │
+│  - SupabaseVariableRepository              │
+│  ⚠️ Seule couche autorisée à importer      │
+│     le client Supabase                     │
+└──────────────┬─────────────────────────────┘
+               │
+               ▼
+┌────────────────────────────────────────────┐
+│         Supabase Client                    │
+│  (Implémentation bas niveau)               │
+└────────────────────────────────────────────┘
+```
+
+**Règle ESLint stricte:** L'import direct de `@/integrations/supabase/client` est **interdit** en dehors de :
+- `src/repositories/**/*.ts`
+- `src/contexts/**/*RepositoryContext.tsx`
+- `supabase/functions/**/*.ts`
+- `src/hooks/useAuth.tsx`
+
+📖 Voir [docs/ESLINT_SUPABASE_RULE.md](./docs/ESLINT_SUPABASE_RULE.md) pour plus de détails.
 ```
 
 ## 🔧 Modules principaux
@@ -155,39 +207,29 @@ features/prompts/
 ```
 
 #### Hooks de données
+
+⚠️ **Important:** Les hooks de données utilisent désormais les **repositories** au lieu d'accéder directement à Supabase. Voir [docs/ESLINT_SUPABASE_RULE.md](./docs/ESLINT_SUPABASE_RULE.md).
+
 ```typescript
 // src/hooks/usePrompts.ts
+import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
+
 export function usePrompts() {
+  const repository = usePromptRepository();
+  
   return useQuery({
     queryKey: ["prompts"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("prompts")
-        .select("*")
-        .order("updated_at", { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => repository.fetchAll(),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 
 export function useUpdatePrompt() {
   const queryClient = useQueryClient();
+  const repository = usePromptRepository();
   
   return useMutation({
-    mutationFn: async ({ id, updates }) => {
-      const { data, error } = await supabase
-        .from("prompts")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: ({ id, updates }) => repository.update(id, updates),
     onMutate: async ({ id, updates }) => {
       // Optimistic update
       await queryClient.cancelQueries({ queryKey: ["prompts", id] });
@@ -548,6 +590,9 @@ getTTFB(console.log);
 
 - [React Query Documentation](https://tanstack.com/query/latest)
 - [Supabase Documentation](https://supabase.com/docs)
+- [Repository Pattern](https://martinfowler.com/eaaCatalog/repository.html)
+- [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)
+- [ESLint Supabase Rule](./docs/ESLINT_SUPABASE_RULE.md) - ⚠️ Import direct de Supabase interdit
 - [Tailwind CSS](https://tailwindcss.com/docs)
 - [Framer Motion](https://www.framer.com/motion/)
 - [Vitest](https://vitest.dev/)
