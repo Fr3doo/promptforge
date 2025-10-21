@@ -1,3 +1,5 @@
+import { messages } from "@/constants/messages";
+
 /**
  * Maps database and application errors to user-friendly messages
  * Prevents exposure of internal database structure and implementation details
@@ -18,34 +20,34 @@ export function getSafeErrorMessage(error: any): string {
   const errorMessage = error?.message?.toLowerCase() || '';
 
   // PostgreSQL error codes
-  if (errorCode === '23505') return 'Cette entrée existe déjà';
-  if (errorCode === '23503') return 'Référence invalide';
-  if (errorCode === '23514') return 'Les données ne respectent pas les contraintes';
-  if (errorCode === '42501') return 'Action non autorisée';
+  if (errorCode === '23505') return messages.errors.database.duplicate;
+  if (errorCode === '23503') return messages.errors.database.invalidReference;
+  if (errorCode === '23514') return messages.errors.database.constraintViolation;
+  if (errorCode === '42501') return messages.errors.database.unauthorized;
   
   // Supabase/Auth specific errors
   if (errorMessage.includes('row-level security')) {
-    return 'Vous n\'avez pas la permission d\'effectuer cette action';
+    return messages.errors.database.rlsViolation;
   }
   if (errorMessage.includes('jwt') || errorMessage.includes('token')) {
-    return 'Session expirée, veuillez vous reconnecter';
+    return messages.errors.database.sessionExpired;
   }
   if (errorMessage.includes('unique')) {
-    return 'Cette valeur est déjà utilisée';
+    return messages.errors.database.uniqueViolation;
   }
   if (errorMessage.includes('invalid email') || errorMessage.includes('invalid_grant')) {
-    return 'Email ou mot de passe invalide';
+    return messages.errors.database.invalidEmail;
   }
   if (errorMessage.includes('user already registered')) {
-    return 'Cet email est déjà utilisé';
+    return messages.errors.database.userExists;
   }
   if (errorMessage.includes('email not confirmed')) {
-    return 'Veuillez confirmer votre email avant de vous connecter';
+    return messages.errors.database.emailNotConfirmed;
   }
   if (errorMessage.includes('invalid password')) {
-    return 'Mot de passe invalide';
+    return messages.errors.database.invalidPassword;
   }
 
   // Generic fallback
-  return 'Une erreur est survenue. Veuillez réessayer.';
+  return messages.errors.generic;
 }

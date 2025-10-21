@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToastNotifier } from "@/hooks/useToastNotifier";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
+import { messages } from "@/constants/messages";
 import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
 import type { VariableInsert } from "@/repositories/VariableRepository";
 
@@ -48,10 +49,10 @@ export function useBulkUpsertVariables() {
     }) => repository.upsertMany(promptId, variables),
     onSuccess: (_, { promptId }) => {
       queryClient.invalidateQueries({ queryKey: ["variables", promptId] });
-      notifySuccess("Variables enregistrées");
+      notifySuccess(messages.success.variablesSaved);
     },
     onError: (error) => {
-      notifyError("Erreur d'enregistrement des variables", getSafeErrorMessage(error));
+      notifyError(messages.errors.variables.saveFailed, getSafeErrorMessage(error));
     },
   });
 }

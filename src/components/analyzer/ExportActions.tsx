@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Copy, Download } from "lucide-react";
 import { successToast } from "@/lib/toastUtils";
+import { messages } from "@/constants/messages";
 
 interface ExportActionsProps {
   jsonData: any;
@@ -11,7 +12,7 @@ interface ExportActionsProps {
 export function ExportActions({ jsonData, markdownData, filename }: ExportActionsProps) {
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    successToast("Copié", `${label} copié`);
+    successToast(messages.success.copied, messages.copy.export(label));
   };
 
   const downloadFile = (content: string, name: string, type: string) => {
@@ -22,7 +23,7 @@ export function ExportActions({ jsonData, markdownData, filename }: ExportAction
     a.download = name;
     a.click();
     URL.revokeObjectURL(url);
-    successToast("Téléchargé", `${name} téléchargé`);
+    successToast(messages.success.downloaded, messages.copy.download(name));
   };
 
   return (

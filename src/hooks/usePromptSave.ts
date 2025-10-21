@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useToastNotifier } from "@/hooks/useToastNotifier";
 import { promptSchema, variableSchema } from "@/lib/validation";
+import { messages } from "@/constants/messages";
 import { useCreatePrompt, useUpdatePrompt } from "@/hooks/usePrompts";
 import { useBulkUpsertVariables } from "@/hooks/useVariables";
 import type { PromptFormData, Variable } from "@/features/prompts/types";
@@ -103,9 +104,9 @@ export function usePromptSave({ isEditMode, onSuccess }: UsePromptSaveOptions = 
       }
     } catch (error: any) {
       if (error?.errors?.[0]?.message) {
-        notifyError("Validation échouée", error.errors[0].message);
+        notifyError(messages.errors.validation.failed, error.errors[0].message);
       } else {
-        notifyError("Erreur de sauvegarde", "Une erreur inattendue s'est produite");
+        notifyError(messages.errors.save.failed, messages.errors.save.unexpected);
       }
     }
   };

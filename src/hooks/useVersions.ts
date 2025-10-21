@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { successToast, errorToast } from "@/lib/toastUtils";
+import { messages } from "@/constants/messages";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Version = Tables<"versions">;
@@ -53,10 +54,10 @@ export function useCreateVersion() {
       queryClient.invalidateQueries({ queryKey: ["versions", variables.prompt_id] });
       queryClient.invalidateQueries({ queryKey: ["prompts", variables.prompt_id] });
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
-      successToast("Version créée");
+      successToast(messages.success.versionCreated);
     },
     onError: () => {
-      errorToast("Erreur lors de la création de la version");
+      errorToast(messages.errors.version.createFailed);
     },
   });
 }
@@ -91,10 +92,10 @@ export function useDeleteVersions() {
       queryClient.invalidateQueries({ queryKey: ["versions", promptId] });
       queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
-      successToast("Version(s) supprimée(s)");
+      successToast(messages.success.versionDeleted);
     },
     onError: () => {
-      errorToast("Erreur lors de la suppression");
+      errorToast(messages.errors.version.deleteFailed);
     },
   });
 }
@@ -184,11 +185,11 @@ export function useRestoreVersion() {
       queryClient.invalidateQueries({ queryKey: ["variables", promptId] });
       queryClient.invalidateQueries({ queryKey: ["versions", promptId] });
       
-      successToast(`Version ${version.semver} restaurée`);
+      successToast(messages.success.versionRestored(version.semver));
     },
     onError: (error) => {
       console.error("❌ Erreur lors de la restauration:", error);
-      errorToast("Erreur lors de la restauration");
+      errorToast(messages.errors.version.restoreFailed);
     },
   });
 }

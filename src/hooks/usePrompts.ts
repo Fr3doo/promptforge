@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { successToast, errorToast } from "@/lib/toastUtils";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
+import { messages } from "@/constants/messages";
 import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
 import type { Prompt } from "@/repositories/PromptRepository";
 
@@ -39,7 +40,7 @@ export function useCreatePrompt() {
       repository.create(promptData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
-      successToast("Prompt créé");
+      successToast(messages.success.promptCreated);
     },
     onError: (error) => {
       errorToast("Erreur", getSafeErrorMessage(error));
@@ -68,12 +69,12 @@ export function useUpdatePrompt() {
     },
     onError: (err, { id }, context) => {
       queryClient.setQueryData(["prompts", id], context?.previous);
-      errorToast("Erreur de mise à jour", getSafeErrorMessage(err));
+      errorToast(messages.errors.update.failed, getSafeErrorMessage(err));
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
       queryClient.invalidateQueries({ queryKey: ["prompts", id] });
-      successToast("Prompt mis à jour");
+      successToast(messages.success.promptUpdated);
     },
   });
 }
@@ -87,10 +88,10 @@ export function useDeletePrompt() {
     mutationFn: (id: string) => repository.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
-      successToast("Prompt supprimé");
+      successToast(messages.success.promptDeleted);
     },
     onError: (error) => {
-      errorToast("Erreur de suppression", getSafeErrorMessage(error));
+      errorToast(messages.errors.delete.failed, getSafeErrorMessage(error));
     },
   });
 }
@@ -132,11 +133,11 @@ export function useDuplicatePrompt() {
     mutationFn: (promptId: string) => repository.duplicate(promptId),
     onSuccess: (newPrompt) => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
-      successToast("Prompt dupliqué avec succès");
+      successToast(messages.success.promptDuplicated);
       return newPrompt;
     },
     onError: (error) => {
-      errorToast("Erreur de duplication", getSafeErrorMessage(error));
+      errorToast(messages.errors.duplicate.failed, getSafeErrorMessage(error));
     },
   });
 }
@@ -163,9 +164,9 @@ export function useToggleVisibility() {
     onSuccess: (newVisibility) => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
       if (newVisibility === "SHARED") {
-        successToast("Prompt partagé avec la communauté");
+        successToast(messages.success.promptShared);
       } else {
-        successToast("Prompt redevenu privé");
+        successToast(messages.success.promptPrivate);
       }
     },
     onError: (err, variables, context) => {

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { errorToast, loadingToast, successToast } from "@/lib/toastUtils";
+import { messages } from "@/constants/messages";
 
 interface AnalysisResult {
   sections: Record<string, string>;
@@ -31,12 +32,12 @@ export function usePromptAnalysis() {
 
   const analyze = async (promptContent: string) => {
     if (!promptContent.trim()) {
-      errorToast("Erreur", "Veuillez saisir un prompt");
+      errorToast("Erreur", messages.errors.validation.emptyPrompt);
       return;
     }
 
     setIsAnalyzing(true);
-    loadingToast("Analyse en cours...");
+    loadingToast(messages.loading.analyzing);
 
     try {
       const { data, error } = await supabase.functions.invoke('analyze-prompt', {
@@ -47,10 +48,10 @@ export function usePromptAnalysis() {
       if (data.error) throw new Error(data.error);
 
       setResult(data);
-      successToast("Analyse terminée");
+      successToast(messages.success.analysisComplete);
     } catch (error: any) {
       console.error('Erreur:', error);
-      errorToast("Erreur", error.message || "Impossible d'analyser");
+      errorToast("Erreur", error.message || messages.errors.analysis.failed);
       setResult(null);
     } finally {
       setIsAnalyzing(false);

@@ -10,6 +10,7 @@ import { MetadataView } from "./analyzer/MetadataView";
 import { ExportActions } from "./analyzer/ExportActions";
 import { Badge } from "@/components/ui/badge";
 import { successToast } from "@/lib/toastUtils";
+import { messages } from "@/constants/messages";
 
 interface PromptAnalyzerProps {
   onClose?: () => void;
@@ -23,7 +24,7 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
   const copyTemplate = () => {
     if (result) {
       navigator.clipboard.writeText(result.prompt_template);
-      successToast("Copié", "Template copié");
+      successToast(messages.success.copied, messages.copy.template);
     }
   };
 
@@ -68,7 +69,7 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
       },
       {
         onSuccess: () => {
-          successToast("Prompt sauvegardé");
+          successToast(messages.success.promptSaved);
           onClose?.();
         },
       }

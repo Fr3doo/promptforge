@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useToastNotifier } from "@/hooks/useToastNotifier";
 import { useVariableDetection } from "@/hooks/useVariableDetection";
+import { messages } from "@/constants/messages";
 import type { Variable } from "@/features/prompts/types";
 
 interface UseVariableManagerOptions {
@@ -46,9 +47,9 @@ export function useVariableManager({ content, initialVariables = [] }: UseVariab
 
     if (newVariables.length > 0) {
       setVariables([...variables, ...newVariables] as Variable[]);
-      notifySuccess(`${newVariables.length} variable(s) détectée(s)`);
+      notifySuccess(messages.success.variablesDetected(newVariables.length));
     } else {
-      notifyInfo("Aucune nouvelle variable détectée");
+      notifyInfo(messages.info.noNewVariables);
     }
   };
 

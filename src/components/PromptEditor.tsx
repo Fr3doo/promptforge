@@ -7,6 +7,7 @@ import { VariableInputPanel } from "@/features/variables/components/VariableInpu
 import { Wand2, Copy, Check } from "lucide-react";
 import { useToastNotifier } from "@/hooks/useToastNotifier";
 import { useVariableSubstitution } from "@/hooks/useVariableDetection";
+import { messages } from "@/constants/messages";
 
 interface PromptEditorProps {
   content: string;
@@ -32,7 +33,7 @@ export const PromptEditor = ({
   const handleCopy = async () => {
     await navigator.clipboard.writeText(preview);
     setCopied(true);
-    notifySuccess("Copié dans le presse-papiers !");
+    notifySuccess(messages.success.copiedToClipboard);
     setTimeout(() => setCopied(false), 2000);
   };
 
