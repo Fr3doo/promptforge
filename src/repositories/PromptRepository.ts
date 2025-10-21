@@ -1,6 +1,7 @@
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { handleSupabaseError } from "@/lib/errorHandler";
+import type { VariableRepository } from "./VariableRepository";
 
 export type Prompt = Tables<"prompts">;
 
@@ -10,7 +11,7 @@ export interface PromptRepository {
   create(promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt>;
   update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
   delete(id: string): Promise<void>;
-  duplicate(promptId: string): Promise<Prompt>;
+  duplicate(promptId: string, variableRepository: VariableRepository): Promise<Prompt>;
   toggleFavorite(id: string, currentState: boolean): Promise<void>;
   toggleVisibility(id: string, currentVisibility: "PRIVATE" | "SHARED"): Promise<"PRIVATE" | "SHARED">;
 }
@@ -77,11 +78,19 @@ export class SupabasePromptRepository implements PromptRepository {
     handleSupabaseError(result);
   }
 
-  async duplicate(promptId: string): Promise<Prompt> {
+  /**
+   * Duplicates a prompt and its variables
+   * Uses VariableRepository for clean separation of concerns
+   * 
+   * @param promptId - ID of the prompt to duplicate
+   * @param variableRepository - Repository for managing variables
+   * @returns The newly created duplicate prompt
+   */
+  async duplicate(promptId: string, variableRepository: VariableRepository): Promise<Prompt> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Non authentifié");
 
-    // Récupérer le prompt original
+    // Step 1: Fetch the original prompt
     const fetchResult = await supabase
       .from("prompts")
       .select("*")
@@ -90,7 +99,10 @@ export class SupabasePromptRepository implements PromptRepository {
     
     handleSupabaseError(fetchResult);
 
-    // Créer une copie
+    // Step 2: Fetch original variables using VariableRepository
+    const originalVariables = await variableRepository.fetch(promptId);
+
+    // Step 3: Create the duplicate prompt
     const insertResult = await supabase
       .from("prompts")
       .insert({
@@ -109,15 +121,9 @@ export class SupabasePromptRepository implements PromptRepository {
     
     handleSupabaseError(insertResult);
 
-    // Récupérer et dupliquer les variables
-    const { data: originalVariables } = await supabase
-      .from("variables")
-      .select("*")
-      .eq("prompt_id", promptId);
-
-    if (originalVariables && originalVariables.length > 0) {
-      const variablesToInsert = originalVariables.map(v => ({
-        prompt_id: insertResult.data.id,
+    // Step 4: Duplicate variables using VariableRepository.upsertMany
+    if (originalVariables.length > 0) {
+      const variablesToDuplicate = originalVariables.map(v => ({
         name: v.name,
         type: v.type,
         required: v.required,
@@ -128,7 +134,7 @@ export class SupabasePromptRepository implements PromptRepository {
         order_index: v.order_index,
       }));
 
-      await supabase.from("variables").insert(variablesToInsert);
+      await variableRepository.upsertMany(insertResult.data.id, variablesToDuplicate);
     }
 
     return insertResult.data;

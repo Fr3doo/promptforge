@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SupabasePromptRepository } from "../PromptRepository";
 import type { Prompt } from "../PromptRepository";
+import type { VariableRepository } from "../VariableRepository";
 
 // Mock du client Supabase
 const mockSupabase = {
@@ -391,7 +392,19 @@ describe("SupabasePromptRepository", () => {
   });
 
   describe("duplicate", () => {
-    it("duplique un prompt avec ses variables", async () => {
+    let mockVariableRepository: VariableRepository;
+
+    beforeEach(() => {
+      mockVariableRepository = {
+        fetch: vi.fn(),
+        create: vi.fn(),
+        update: vi.fn(),
+        deleteMany: vi.fn(),
+        upsertMany: vi.fn(),
+      };
+    });
+
+    it("duplique un prompt avec ses variables en utilisant VariableRepository", async () => {
       const originalPrompt = {
         id: "prompt-original",
         title: "Prompt Original",
@@ -427,15 +440,28 @@ describe("SupabasePromptRepository", () => {
           id: "var-1",
           prompt_id: "prompt-original",
           name: "var1",
-          type: "STRING",
+          type: "STRING" as const,
           required: true,
           default_value: "",
-          help: "",
+          help: "Help text",
           pattern: "",
-          options: [],
+          options: null,
           order_index: 0,
+          created_at: "2024-01-01T00:00:00Z",
         },
       ];
+
+      // Mock VariableRepository.fetch to return original variables
+      vi.mocked(mockVariableRepository.fetch).mockResolvedValue(originalVariables as any);
+
+      // Mock VariableRepository.upsertMany
+      vi.mocked(mockVariableRepository.upsertMany).mockResolvedValue([
+        {
+          ...originalVariables[0],
+          id: "var-new",
+          prompt_id: "prompt-duplicate",
+        },
+      ] as any);
 
       // Mock pour récupérer le prompt original
       const mockSingleFetch = vi.fn().mockResolvedValue({
@@ -465,31 +491,20 @@ describe("SupabasePromptRepository", () => {
         select: mockSelectInsert,
       });
 
-      // Mock pour récupérer les variables
-      const mockSelectVariables = vi.fn().mockResolvedValue({
-        data: originalVariables,
-        error: null,
-      });
-
-      const mockEqVariables = vi.fn().mockReturnValue({
-        select: mockSelectVariables,
-      });
-
-      // Mock pour insérer les nouvelles variables
-      const mockInsertVariables = vi.fn().mockResolvedValue({
-        data: null,
-        error: null,
-      });
 
       mockSupabase.from
         .mockReturnValueOnce({ select: mockSelectFetch }) // Fetch original prompt
-        .mockReturnValueOnce({ insert: mockInsert }) // Insert new prompt
-        .mockReturnValueOnce({ select: mockEqVariables }) // Fetch variables
-        .mockReturnValueOnce({ insert: mockInsertVariables }); // Insert variables
+        .mockReturnValueOnce({ insert: mockInsert }); // Insert new prompt
 
-      const result = await repository.duplicate("prompt-original");
+      const result = await repository.duplicate("prompt-original", mockVariableRepository);
 
+      // Verify prompt was fetched
       expect(mockSupabase.from).toHaveBeenCalledWith("prompts");
+
+      // Verify variables were fetched using VariableRepository
+      expect(mockVariableRepository.fetch).toHaveBeenCalledWith("prompt-original");
+
+      // Verify prompt was created with correct data
       expect(mockInsert).toHaveBeenCalledWith({
         title: "Prompt Original (Copie)",
         content: originalPrompt.content,
@@ -501,13 +516,24 @@ describe("SupabasePromptRepository", () => {
         is_favorite: false,
         owner_id: mockUser.id,
       });
-      expect(mockInsertVariables).toHaveBeenCalledWith([
-        expect.objectContaining({
-          prompt_id: duplicatedPrompt.id,
-          name: "var1",
-          type: "STRING",
-        }),
-      ]);
+
+      // Verify variables were duplicated using VariableRepository.upsertMany
+      expect(mockVariableRepository.upsertMany).toHaveBeenCalledWith(
+        "prompt-duplicate",
+        [
+          {
+            name: "var1",
+            type: "STRING",
+            required: true,
+            default_value: "",
+            help: "Help text",
+            pattern: "",
+            options: null,
+            order_index: 0,
+          },
+        ]
+      );
+
       expect(result).toEqual(duplicatedPrompt);
     });
 
@@ -542,6 +568,9 @@ describe("SupabasePromptRepository", () => {
         updated_at: "2024-01-02T00:00:00Z",
       };
 
+      // Mock VariableRepository to return no variables
+      vi.mocked(mockVariableRepository.fetch).mockResolvedValue([]);
+
       const mockSingleFetch = vi.fn().mockResolvedValue({
         data: originalPrompt,
         error: null,
@@ -568,22 +597,14 @@ describe("SupabasePromptRepository", () => {
         select: mockSelectInsert,
       });
 
-      const mockSelectVariables = vi.fn().mockResolvedValue({
-        data: [],
-        error: null,
-      });
-
-      const mockEqVariables = vi.fn().mockReturnValue({
-        select: mockSelectVariables,
-      });
-
       mockSupabase.from
         .mockReturnValueOnce({ select: mockSelectFetch })
-        .mockReturnValueOnce({ insert: mockInsert })
-        .mockReturnValueOnce({ select: mockEqVariables });
+        .mockReturnValueOnce({ insert: mockInsert });
 
-      const result = await repository.duplicate("prompt-original");
+      const result = await repository.duplicate("prompt-original", mockVariableRepository);
 
+      expect(mockVariableRepository.fetch).toHaveBeenCalledWith("prompt-original");
+      expect(mockVariableRepository.upsertMany).not.toHaveBeenCalled();
       expect(result).toEqual(duplicatedPrompt);
     });
 
@@ -605,7 +626,9 @@ describe("SupabasePromptRepository", () => {
 
       mockSupabase.from.mockReturnValue({ select: mockSelectFetch });
 
-      await expect(repository.duplicate("invalid-id")).rejects.toThrow(mockError);
+      await expect(
+        repository.duplicate("invalid-id", mockVariableRepository)
+      ).rejects.toThrow(mockError);
     });
   });
 

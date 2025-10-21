@@ -3,6 +3,7 @@ import { successToast, errorToast } from "@/lib/toastUtils";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { messages } from "@/constants/messages";
 import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
+import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
 import type { Prompt } from "@/repositories/PromptRepository";
 
 // Hook de lecture - liste complète
@@ -128,9 +129,10 @@ export function useToggleFavorite() {
 export function useDuplicatePrompt() {
   const queryClient = useQueryClient();
   const repository = usePromptRepository();
+  const variableRepository = useVariableRepository();
   
   return useMutation({
-    mutationFn: (promptId: string) => repository.duplicate(promptId),
+    mutationFn: (promptId: string) => repository.duplicate(promptId, variableRepository),
     onSuccess: (newPrompt) => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
       successToast(messages.success.promptDuplicated);
