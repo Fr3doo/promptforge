@@ -14,6 +14,8 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -56,6 +58,7 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.24",
+    "husky": "^9.1.7",
     "input-otp": "^1.4.2",
     "jsdom": "^27.0.1",
     "lucide-react": "^0.462.0",
