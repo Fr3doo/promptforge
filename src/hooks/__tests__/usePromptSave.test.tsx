@@ -195,8 +195,79 @@ describe('usePromptSave', () => {
               name: 'variable1',
               type: 'STRING',
               required: true,
+              order_index: 0,
             }),
           ]),
+        });
+      });
+    });
+
+    it('should preserve variable order with correct order_index', async () => {
+      const { result } = renderHook(() => usePromptSave({ isEditMode: false }));
+
+      const variables: Variable[] = [
+        {
+          id: 'var-1',
+          name: 'first',
+          type: 'STRING',
+          required: true,
+          default_value: '',
+          help: '',
+          pattern: '',
+          options: null,
+          order_index: 0,
+          prompt_id: '',
+          created_at: '',
+        },
+        {
+          id: 'var-2',
+          name: 'second',
+          type: 'NUMBER',
+          required: false,
+          default_value: '',
+          help: '',
+          pattern: '',
+          options: null,
+          order_index: 1,
+          prompt_id: '',
+          created_at: '',
+        },
+        {
+          id: 'var-3',
+          name: 'third',
+          type: 'ENUM',
+          required: true,
+          default_value: '',
+          help: '',
+          pattern: '',
+          options: ['a', 'b'],
+          order_index: 2,
+          prompt_id: '',
+          created_at: '',
+        },
+      ];
+
+      const dataWithVariables = { ...validPromptData, variables };
+
+      await result.current.savePrompt(dataWithVariables);
+
+      await waitFor(() => {
+        expect(mockSaveVariables).toHaveBeenCalledWith({
+          promptId: 'new-prompt-id',
+          variables: [
+            expect.objectContaining({
+              name: 'first',
+              order_index: 0,
+            }),
+            expect.objectContaining({
+              name: 'second',
+              order_index: 1,
+            }),
+            expect.objectContaining({
+              name: 'third',
+              order_index: 2,
+            }),
+          ],
         });
       });
     });

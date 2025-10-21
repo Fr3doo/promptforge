@@ -54,7 +54,7 @@ export function usePromptSave({ isEditMode, onSuccess }: UsePromptSaveOptions = 
         if (validatedVariables.length > 0) {
           saveVariables({ 
             promptId: id, 
-            variables: validatedVariables.map(v => ({
+            variables: validatedVariables.map((v, index) => ({
               name: v.name,
               type: v.type,
               required: v.required,
@@ -62,7 +62,7 @@ export function usePromptSave({ isEditMode, onSuccess }: UsePromptSaveOptions = 
               help: v.help || "",
               pattern: v.pattern || "",
               options: v.options || [],
-              order_index: 0,
+              order_index: index,
             }))
           });
         }
