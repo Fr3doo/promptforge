@@ -37,4 +37,4 @@ React 18 • TypeScript • Vite • Tailwind CSS • Framer Motion • React Qu
 
 ---
 
-**Développé avec ❤️ sur [Lovable](https://lovable.dev)**
+**Développé avec ❤️**
