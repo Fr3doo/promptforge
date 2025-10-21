@@ -104,6 +104,8 @@ Ouvrir une issue avec:
 
 - [Architecture](./ARCHITECTURE.md)
 - [Guide de tests](./TESTING.md)
+- [Guide des Repositories](./docs/REPOSITORY_GUIDE.md) - **Obligatoire** pour ajouter de nouvelles entités
+- [Règle ESLint Supabase](./docs/ESLINT_SUPABASE_RULE.md)
 - [Changelog](./CHANGELOG.md)
 
 ---

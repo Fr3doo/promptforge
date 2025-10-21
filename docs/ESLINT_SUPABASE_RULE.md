@@ -110,72 +110,24 @@ Toute la logique d'accès aux données est dans les repositories, évitant la du
 
 ## Créer un nouveau repository
 
-### 1. Définir l'interface
+**📖 Consultez le guide complet :** [REPOSITORY_GUIDE.md](./REPOSITORY_GUIDE.md)
 
-```typescript
-// src/repositories/MyRepository.ts
-export interface MyRepository {
-  fetchAll(): Promise<MyEntity[]>;
-  fetchById(id: string): Promise<MyEntity>;
-  create(data: MyEntityInsert): Promise<MyEntity>;
-  update(id: string, updates: Partial<MyEntity>): Promise<MyEntity>;
-  delete(id: string): Promise<void>;
-}
-```
+Le guide détaillé couvre :
+- Architecture et principes SOLID
+- Conventions de nommage complètes
+- Templates de code avec exemples réels
+- Stratégies de tests
+- Gestion des relations entre entités
+- Checklist de revue de code
 
-### 2. Implémenter avec Supabase
+### Résumé rapide
 
-```typescript
-import { supabase } from "@/integrations/supabase/client"; // ✅ Autorisé ici
-
-export class SupabaseMyRepository implements MyRepository {
-  async fetchAll(): Promise<MyEntity[]> {
-    const { data, error } = await supabase.from("my_table").select("*");
-    if (error) throw error;
-    return data;
-  }
-  // ...
-}
-```
-
-### 3. Créer un contexte
-
-```typescript
-// src/contexts/MyRepositoryContext.tsx
-import { createContext, useContext } from "react";
-import { SupabaseMyRepository, type MyRepository } from "@/repositories/MyRepository";
-
-const MyRepositoryContext = createContext<MyRepository | null>(null);
-
-export function MyRepositoryProvider({ children }: { children: React.ReactNode }) {
-  const repository = new SupabaseMyRepository();
-  return (
-    <MyRepositoryContext.Provider value={repository}>
-      {children}
-    </MyRepositoryContext.Provider>
-  );
-}
-
-export function useMyRepository() {
-  const context = useContext(MyRepositoryContext);
-  if (!context) throw new Error("useMyRepository must be used within MyRepositoryProvider");
-  return context;
-}
-```
-
-### 4. Utiliser dans les composants
-
-```typescript
-import { useMyRepository } from "@/contexts/MyRepositoryContext";
-
-function MyComponent() {
-  const repository = useMyRepository();
-  const { data } = useQuery({
-    queryKey: ["my-entities"],
-    queryFn: () => repository.fetchAll(),
-  });
-}
-```
+1. **Définir l'interface** dans `src/repositories/{Entity}Repository.ts`
+2. **Implémenter avec Supabase** dans le même fichier
+3. **Créer le contexte** dans `src/contexts/{Entity}RepositoryContext.tsx`
+4. **Ajouter le provider** à `src/main.tsx`
+5. **Utiliser dans les composants** via `use{Entity}Repository()`
+6. **Écrire les tests** dans `src/repositories/__tests__/`
 
 ## Désactiver temporairement la règle
 
