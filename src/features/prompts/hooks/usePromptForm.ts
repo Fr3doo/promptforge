@@ -4,8 +4,8 @@ import { toast } from "@/hooks/use-toast";
 import { promptSchema, variableSchema } from "@/lib/validation";
 import { useCreatePrompt, useUpdatePrompt } from "@/hooks/usePrompts";
 import { useBulkUpsertVariables } from "@/hooks/useVariables";
-import { useVariableDetection } from "@/hooks/useVariableDetection";
 import { useTagManager } from "@/hooks/useTagManager";
+import { useVariableManager } from "@/hooks/useVariableManager";
 import type { Prompt, Variable, PromptFormData } from "../types";
 
 interface UsePromptFormOptions {
@@ -27,13 +27,16 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode }: Us
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
   const [visibility, setVisibility] = useState<"PRIVATE" | "SHARED">("PRIVATE");
-  const [variables, setVariables] = useState<Variable[]>([]);
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
   
   // Tag management
   const { tags, setTags, tagInput, setTagInput, addTag, removeTag } = useTagManager();
-
-  const { detectedNames } = useVariableDetection(content);
+  
+  // Variable management
+  const { variables, addVariablesFromContent, updateVariable, deleteVariable } = useVariableManager({
+    content,
+    initialVariables: existingVariables,
+  });
 
   // Initialize form with existing data
   useEffect(() => {
@@ -46,39 +49,6 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode }: Us
     }
   }, [prompt]);
 
-  useEffect(() => {
-    if (existingVariables.length > 0) {
-      setVariables(existingVariables);
-    }
-  }, [existingVariables]);
-
-  // Synchroniser les variables avec le contenu
-  useEffect(() => {
-    // Nettoyer les variables qui ne sont plus dans le contenu
-    const validVariables = variables.filter(v => detectedNames.includes(v.name));
-    
-    if (validVariables.length !== variables.length) {
-      setVariables(validVariables);
-    }
-  }, [detectedNames]);
-
-  const detectVariables = () => {
-    const newVariables = detectedNames
-      .filter(name => !variables.some(v => v.name === name))
-      .map((name, index) => ({
-        name,
-        type: "STRING" as const,
-        required: false,
-        order_index: variables.length + index,
-        default_value: "",
-        help: "",
-        pattern: "",
-        options: [],
-      } as Partial<Variable>));
-
-    setVariables([...variables, ...newVariables] as Variable[]);
-    toast({ title: `✨ ${newVariables.length} variable(s) détectée(s)` });
-  };
 
   const handleSave = async (promptId?: string) => {
     try {
@@ -174,15 +144,6 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode }: Us
   };
 
 
-  const updateVariable = (index: number, variable: Variable) => {
-    const newVars = [...variables];
-    newVars[index] = variable;
-    setVariables(newVars);
-  };
-
-  const deleteVariable = (index: number) => {
-    setVariables(variables.filter((_, i) => i !== index));
-  };
 
   return {
     // Form state
@@ -205,7 +166,7 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode }: Us
     handleSave,
     addTag,
     removeTag,
-    detectVariables,
+    detectVariables: addVariablesFromContent,
     updateVariable,
     deleteVariable,
     
