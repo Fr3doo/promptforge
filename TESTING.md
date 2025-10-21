@@ -19,6 +19,8 @@ src/
   hooks/
     __tests__/
       usePrompts.test.ts
+      useVariableManager.test.tsx
+      useVariableDetection.test.tsx
   features/
     prompts/
       components/
@@ -69,11 +71,24 @@ it("renders component", () => {
 
 ### Test hook
 ```typescript
-import { renderHook } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 
 it("returns expected value", () => {
   const { result } = renderHook(() => useMyHook());
   expect(result.current.value).toBe(expected);
+});
+
+// Avec modification d'état
+it("updates state correctly", async () => {
+  const { result } = renderHook(() => useMyHook());
+  
+  act(() => {
+    result.current.updateValue("new value");
+  });
+  
+  await waitFor(() => {
+    expect(result.current.value).toBe("new value");
+  });
 });
 ```
 
@@ -85,6 +100,30 @@ vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     from: vi.fn(),
     auth: { getUser: vi.fn() },
+  },
+}));
+```
+
+### Hooks personnalisés
+```typescript
+vi.mock("../useToastNotifier", () => ({
+  useToastNotifier: () => ({
+    notifySuccess: vi.fn(),
+    notifyInfo: vi.fn(),
+    notifyError: vi.fn(),
+    notifyWarning: vi.fn(),
+  }),
+}));
+
+vi.mock("../useVariableDetection", () => ({
+  useVariableDetection: (content: string) => {
+    const regex = /\{\{(\w+)\}\}/g;
+    const matches = new Set<string>();
+    let match;
+    while ((match = regex.exec(content)) !== null) {
+      matches.add(match[1]);
+    }
+    return { detectedNames: Array.from(matches) };
   },
 }));
 ```
@@ -115,9 +154,79 @@ Puis ouvrir l'interface web pour inspecter les tests individuellement.
 
 1. **AAA Pattern**: Arrange, Act, Assert
 2. **Isolation**: Chaque test doit être indépendant
-3. **Descriptif**: Noms de tests clairs et explicites
+3. **Descriptif**: Noms de tests clairs et explicites (utiliser "devrait" en français)
 4. **Minimal Mocking**: Mock uniquement ce qui est nécessaire
 5. **Fast**: Les tests doivent s'exécuter rapidement
+6. **Couverture complète**: Tester les cas nominaux ET les cas d'erreur
+7. **Tests asynchrones**: Toujours utiliser `waitFor` pour les opérations async
+
+## Exemples de tests complets
+
+### Hook avec détection de pattern (useVariableDetection)
+```typescript
+describe("useVariableDetection", () => {
+  it("devrait détecter une variable simple", () => {
+    const content = "Hello {{name}}!";
+    const { result } = renderHook(() => useVariableDetection(content));
+    expect(result.current.detectedNames).toEqual(["name"]);
+  });
+
+  it("devrait détecter plusieurs variables", () => {
+    const content = "Hello {{firstName}} {{lastName}}!";
+    const { result } = renderHook(() => useVariableDetection(content));
+    expect(result.current.detectedNames).toHaveLength(2);
+    expect(result.current.detectedNames).toContain("firstName");
+    expect(result.current.detectedNames).toContain("lastName");
+  });
+
+  it("ne devrait détecter qu'une seule fois les variables dupliquées", () => {
+    const content = "{{name}} is {{name}} and {{name}}!";
+    const { result } = renderHook(() => useVariableDetection(content));
+    expect(result.current.detectedNames).toEqual(["name"]);
+  });
+});
+```
+
+### Hook avec état et notifications (useVariableManager)
+```typescript
+describe("useVariableManager", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("devrait ajouter de nouvelles variables détectées", async () => {
+    const { result } = renderHook(() =>
+      useVariableManager({
+        content: "Hello {{name}}!",
+        initialVariables: [],
+      })
+    );
+
+    act(() => {
+      result.current.addVariablesFromContent();
+    });
+
+    await waitFor(() => {
+      expect(result.current.variables).toHaveLength(1);
+      expect(result.current.variables[0].name).toBe("name");
+    });
+  });
+
+  it("devrait supprimer les variables qui ne sont plus dans le contenu", async () => {
+    const { result, rerender } = renderHook(
+      ({ content }) => useVariableManager({ content, initialVariables: mockVars }),
+      { initialProps: { content: "{{var1}} {{var2}}" } }
+    );
+
+    rerender({ content: "{{var1}}" }); // Supprimer var2
+
+    await waitFor(() => {
+      expect(result.current.variables).toHaveLength(1);
+      expect(result.current.variables[0].name).toBe("var1");
+    });
+  });
+});
+```
 
 ## Ressources
 
