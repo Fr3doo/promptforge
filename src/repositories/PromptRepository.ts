@@ -1,5 +1,6 @@
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
+import { handleSupabaseError } from "@/lib/errorHandler";
 
 export type Prompt = Tables<"prompts">;
 
@@ -16,33 +17,33 @@ export interface PromptRepository {
 
 export class SupabasePromptRepository implements PromptRepository {
   async fetchAll(): Promise<Prompt[]> {
-    const { data, error } = await supabase
+    const result = await supabase
       .from("prompts")
       .select("*")
       .order("updated_at", { ascending: false });
     
-    if (error) throw error;
-    return data as Prompt[];
+    handleSupabaseError(result);
+    return result.data as Prompt[];
   }
 
   async fetchById(id: string): Promise<Prompt> {
     if (!id) throw new Error("ID requis");
     
-    const { data, error } = await supabase
+    const result = await supabase
       .from("prompts")
       .select("*")
       .eq("id", id)
       .single();
     
-    if (error) throw error;
-    return data as Prompt;
+    handleSupabaseError(result);
+    return result.data as Prompt;
   }
 
   async create(promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Non authentifié");
 
-    const { data, error } = await supabase
+    const result = await supabase
       .from("prompts")
       .insert({
         ...promptData,
@@ -51,29 +52,29 @@ export class SupabasePromptRepository implements PromptRepository {
       .select()
       .single();
     
-    if (error) throw error;
-    return data;
+    handleSupabaseError(result);
+    return result.data;
   }
 
   async update(id: string, updates: Partial<Prompt>): Promise<Prompt> {
-    const { data, error } = await supabase
+    const result = await supabase
       .from("prompts")
       .update(updates)
       .eq("id", id)
       .select()
       .single();
     
-    if (error) throw error;
-    return data;
+    handleSupabaseError(result);
+    return result.data;
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
+    const result = await supabase
       .from("prompts")
       .delete()
       .eq("id", id);
     
-    if (error) throw error;
+    handleSupabaseError(result);
   }
 
   async duplicate(promptId: string): Promise<Prompt> {
@@ -81,22 +82,22 @@ export class SupabasePromptRepository implements PromptRepository {
     if (!user) throw new Error("Non authentifié");
 
     // Récupérer le prompt original
-    const { data: originalPrompt, error: fetchError } = await supabase
+    const fetchResult = await supabase
       .from("prompts")
       .select("*")
       .eq("id", promptId)
       .single();
     
-    if (fetchError) throw fetchError;
+    handleSupabaseError(fetchResult);
 
     // Créer une copie
-    const { data: newPrompt, error: insertError } = await supabase
+    const insertResult = await supabase
       .from("prompts")
       .insert({
-        title: `${originalPrompt.title} (Copie)`,
-        content: originalPrompt.content,
-        description: originalPrompt.description,
-        tags: originalPrompt.tags,
+        title: `${fetchResult.data.title} (Copie)`,
+        content: fetchResult.data.content,
+        description: fetchResult.data.description,
+        tags: fetchResult.data.tags,
         visibility: "PRIVATE",
         version: "1.0.0",
         status: "DRAFT",
@@ -106,7 +107,7 @@ export class SupabasePromptRepository implements PromptRepository {
       .select()
       .single();
     
-    if (insertError) throw insertError;
+    handleSupabaseError(insertResult);
 
     // Récupérer et dupliquer les variables
     const { data: originalVariables } = await supabase
@@ -116,7 +117,7 @@ export class SupabasePromptRepository implements PromptRepository {
 
     if (originalVariables && originalVariables.length > 0) {
       const variablesToInsert = originalVariables.map(v => ({
-        prompt_id: newPrompt.id,
+        prompt_id: insertResult.data.id,
         name: v.name,
         type: v.type,
         required: v.required,
@@ -130,22 +131,22 @@ export class SupabasePromptRepository implements PromptRepository {
       await supabase.from("variables").insert(variablesToInsert);
     }
 
-    return newPrompt;
+    return insertResult.data;
   }
 
   async toggleFavorite(id: string, currentState: boolean): Promise<void> {
-    const { error } = await supabase
+    const result = await supabase
       .from("prompts")
       .update({ is_favorite: !currentState })
       .eq("id", id);
     
-    if (error) throw error;
+    handleSupabaseError(result);
   }
 
   async toggleVisibility(id: string, currentVisibility: "PRIVATE" | "SHARED"): Promise<"PRIVATE" | "SHARED"> {
     const newVisibility = currentVisibility === "PRIVATE" ? "SHARED" : "PRIVATE";
     
-    const { error } = await supabase
+    const result = await supabase
       .from("prompts")
       .update({ 
         visibility: newVisibility,
@@ -153,7 +154,7 @@ export class SupabasePromptRepository implements PromptRepository {
       })
       .eq("id", id);
     
-    if (error) throw error;
+    handleSupabaseError(result);
     return newVisibility;
   }
 }

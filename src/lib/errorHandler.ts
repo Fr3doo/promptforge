@@ -1,6 +1,26 @@
 import { messages } from "@/constants/messages";
 
 /**
+ * Handles Supabase query results by throwing errors if present
+ * Centralizes error handling to follow DRY principle
+ * 
+ * @param result - Supabase query result with data and error properties
+ * @throws Error from Supabase if present
+ * 
+ * @example
+ * ```typescript
+ * const result = await supabase.from('table').select();
+ * handleSupabaseError(result);
+ * return result.data;
+ * ```
+ */
+export function handleSupabaseError<T>(result: { data: T | null; error: any }): void {
+  if (result.error) {
+    throw result.error;
+  }
+}
+
+/**
  * Maps database and application errors to user-friendly messages
  * Prevents exposure of internal database structure and implementation details
  */

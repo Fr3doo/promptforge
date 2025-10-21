@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { handleSupabaseError } from "@/lib/errorHandler";
 
 /**
  * Result structure returned by prompt analysis
@@ -46,19 +47,17 @@ export interface AnalysisRepository {
  */
 export class SupabaseAnalysisRepository implements AnalysisRepository {
   async analyzePrompt(content: string): Promise<AnalysisResult> {
-    const { data, error } = await supabase.functions.invoke('analyze-prompt', {
+    const result = await supabase.functions.invoke('analyze-prompt', {
       body: { promptContent: content }
     });
 
-    if (error) {
-      throw error;
+    handleSupabaseError(result);
+
+    if (result.data.error) {
+      throw new Error(result.data.error);
     }
 
-    if (data.error) {
-      throw new Error(data.error);
-    }
-
-    return data as AnalysisResult;
+    return result.data as AnalysisResult;
   }
 }
 

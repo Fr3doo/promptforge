@@ -1,5 +1,6 @@
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
+import { handleSupabaseError } from "@/lib/errorHandler";
 
 export type Variable = Tables<"variables">;
 export type VariableInsert = TablesInsert<"variables">;
@@ -28,46 +29,46 @@ export class SupabaseVariableRepository implements VariableRepository {
   async fetch(promptId: string): Promise<Variable[]> {
     if (!promptId) return [];
     
-    const { data, error } = await supabase
+    const result = await supabase
       .from("variables")
       .select("*")
       .eq("prompt_id", promptId)
       .order("order_index", { ascending: true });
     
-    if (error) throw error;
-    return data as Variable[];
+    handleSupabaseError(result);
+    return result.data as Variable[];
   }
 
   async create(variable: VariableInsert): Promise<Variable> {
-    const { data, error } = await supabase
+    const result = await supabase
       .from("variables")
       .insert(variable)
       .select()
       .single();
     
-    if (error) throw error;
-    return data;
+    handleSupabaseError(result);
+    return result.data;
   }
 
   async update(id: string, updates: Partial<Variable>): Promise<Variable> {
-    const { data, error } = await supabase
+    const result = await supabase
       .from("variables")
       .update(updates)
       .eq("id", id)
       .select()
       .single();
     
-    if (error) throw error;
-    return data;
+    handleSupabaseError(result);
+    return result.data;
   }
 
   async deleteMany(promptId: string): Promise<void> {
-    const { error } = await supabase
+    const result = await supabase
       .from("variables")
       .delete()
       .eq("prompt_id", promptId);
     
-    if (error) throw error;
+    handleSupabaseError(result);
   }
 
   /**
@@ -126,21 +127,18 @@ export class SupabaseVariableRepository implements VariableRepository {
       
       // Step 5: Delete obsolete variables (if any)
       if (variablesToDelete.length > 0) {
-        const { error: deleteError } = await supabase
+        const deleteResult = await supabase
           .from("variables")
           .delete()
           .in("id", variablesToDelete.map(v => v.id));
         
-        if (deleteError) {
-          console.error("Error deleting obsolete variables:", deleteError);
-          throw deleteError;
-        }
+        handleSupabaseError(deleteResult);
       }
 
       // Step 6: Upsert all variables atomically
       // - If ID exists: UPDATE
       // - If ID missing: INSERT
-      const { data, error } = await supabase
+      const result = await supabase
         .from("variables")
         .upsert(variablesWithIds, { 
           onConflict: "id",
@@ -149,12 +147,9 @@ export class SupabaseVariableRepository implements VariableRepository {
         .select()
         .order("order_index", { ascending: true });
       
-      if (error) {
-        console.error("Error upserting variables:", error);
-        throw error;
-      }
+      handleSupabaseError(result);
       
-      return data as Variable[];
+      return result.data as Variable[];
     } catch (error) {
       console.error("Transaction failed in upsertMany:", error);
       throw error;
