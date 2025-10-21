@@ -44,7 +44,7 @@ export function useCreatePrompt() {
       successToast(messages.success.promptCreated);
     },
     onError: (error) => {
-      errorToast("Erreur", getSafeErrorMessage(error));
+      errorToast(messages.labels.error, getSafeErrorMessage(error));
     },
   });
 }
@@ -117,7 +117,7 @@ export function useToggleFavorite() {
     },
     onError: (err, variables, context) => {
       queryClient.setQueryData(["prompts"], context?.previous);
-      errorToast("Erreur", getSafeErrorMessage(err));
+      errorToast(messages.labels.error, getSafeErrorMessage(err));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
@@ -173,7 +173,7 @@ export function useToggleVisibility() {
     },
     onError: (err, variables, context) => {
       queryClient.setQueryData(["prompts"], context?.previous);
-      errorToast("Erreur", getSafeErrorMessage(err));
+      errorToast(messages.labels.error, getSafeErrorMessage(err));
     },
   });
 }

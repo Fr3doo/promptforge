@@ -29,7 +29,7 @@ export function useCreateVariable() {
       queryClient.invalidateQueries({ queryKey: ["variables", prompt_id] });
     },
     onError: (error) => {
-      notifyError("Erreur", getSafeErrorMessage(error));
+      notifyError(messages.labels.error, getSafeErrorMessage(error));
     },
   });
 }

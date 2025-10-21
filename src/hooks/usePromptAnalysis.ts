@@ -15,7 +15,7 @@ export function usePromptAnalysis() {
 
   const analyze = async (promptContent: string) => {
     if (!promptContent.trim()) {
-      errorToast("Erreur", messages.errors.validation.emptyPrompt);
+      errorToast(messages.labels.error, messages.errors.validation.emptyPrompt);
       return;
     }
 
@@ -28,7 +28,7 @@ export function usePromptAnalysis() {
       successToast(messages.success.analysisComplete);
     } catch (error: any) {
       console.error('Erreur:', error);
-      errorToast("Erreur", error.message || messages.errors.analysis.failed);
+      errorToast(messages.labels.error, error.message || messages.errors.analysis.failed);
       setResult(null);
     } finally {
       setIsAnalyzing(false);

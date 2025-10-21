@@ -4,6 +4,11 @@
  */
 
 export const messages = {
+  // Generic labels
+  labels: {
+    error: "Erreur",
+  },
+
   // Error messages
   errors: {
     generic: "Une erreur est survenue. Veuillez réessayer.",
@@ -34,6 +39,9 @@ export const messages = {
       createFailed: "Erreur lors de la création de la version",
       deleteFailed: "Erreur lors de la suppression",
       restoreFailed: "Erreur lors de la restauration",
+    },
+    auth: {
+      signOutFailed: "Impossible de se déconnecter",
     },
     // Database errors (for getSafeErrorMessage)
     database: {
@@ -70,16 +78,31 @@ export const messages = {
     versionRestored: (version: string) => `Version ${version} restaurée`,
     downloaded: "Téléchargé",
     templateCopied: "Template copié",
+    signedOut: "Déconnexion réussie",
+    settingSaved: (setting: string) => `${setting} a été mis à jour avec succès`,
   },
 
   // Info messages
   info: {
     noNewVariables: "Aucune nouvelle variable détectée",
+    goodbye: "À bientôt !",
+    dataExportStarted: "Vos données seront téléchargées sous peu",
+    historyCleared: "L'historique de vos prompts a été supprimé",
+    featureComingSoon: "Fonctionnalité à venir",
+    accountDeletionRequired: "Contactez le support pour supprimer votre compte",
   },
 
   // Loading messages
   loading: {
     analyzing: "Analyse en cours...",
+    exportingData: "Export en cours",
+  },
+
+  // Action messages
+  actions: {
+    historyClearedTitle: "Historique effacé",
+    settingSavedTitle: "Paramètre sauvegardé",
+    actionRequiredTitle: "Action requise",
   },
 
   // Copy action descriptions

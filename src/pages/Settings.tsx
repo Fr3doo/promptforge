@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
+import { messages } from "@/constants/messages";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -42,14 +43,14 @@ export default function Settings() {
     try {
       await supabase.auth.signOut();
       toast({
-        title: "Déconnexion réussie",
-        description: "À bientôt !",
+        title: messages.success.signedOut,
+        description: messages.info.goodbye,
       });
       navigate("/");
     } catch (error) {
       toast({
-        title: "Erreur",
-        description: "Impossible de se déconnecter",
+        title: messages.labels.error,
+        description: messages.errors.auth.signOutFailed,
         variant: "destructive",
       });
     }
@@ -57,22 +58,22 @@ export default function Settings() {
 
   const handleExportData = () => {
     toast({
-      title: "Export en cours",
-      description: "Vos données seront téléchargées sous peu",
+      title: messages.loading.exportingData,
+      description: messages.info.dataExportStarted,
     });
   };
 
   const handleClearHistory = () => {
     toast({
-      title: "Historique effacé",
-      description: "L'historique de vos prompts a été supprimé",
+      title: messages.actions.historyClearedTitle,
+      description: messages.info.historyCleared,
     });
   };
 
   const handleSaveSetting = (setting: string) => {
     toast({
-      title: "Paramètre sauvegardé",
-      description: `${setting} a été mis à jour avec succès`,
+      title: messages.actions.settingSavedTitle,
+      description: messages.success.settingSaved(setting),
     });
   };
 
@@ -418,7 +419,7 @@ export default function Settings() {
                     <Button
                       variant="outline"
                       className="w-full justify-start"
-                      onClick={() => toast({ title: "Fonctionnalité à venir" })}
+                      onClick={() => toast({ title: messages.info.featureComingSoon })}
                     >
                       <Shield className="mr-2 h-4 w-4 flex-shrink-0" />
                       <span className="truncate">Changer le mot de passe</span>
@@ -427,7 +428,7 @@ export default function Settings() {
                     <Button
                       variant="outline"
                       className="w-full justify-start"
-                      onClick={() => toast({ title: "Fonctionnalité à venir" })}
+                      onClick={() => toast({ title: messages.info.featureComingSoon })}
                     >
                       <Shield className="mr-2 h-4 w-4 flex-shrink-0" />
                       <span className="truncate">Activer 2FA</span>
@@ -450,8 +451,8 @@ export default function Settings() {
                       variant="destructive"
                       className="w-full"
                       onClick={() => toast({ 
-                        title: "Action requise",
-                        description: "Contactez le support pour supprimer votre compte",
+                        title: messages.actions.actionRequiredTitle,
+                        description: messages.info.accountDeletionRequired,
                         variant: "destructive"
                       })}
                     >
@@ -496,7 +497,7 @@ export default function Settings() {
                     <Button
                       variant="outline"
                       className="w-full justify-start"
-                      onClick={() => toast({ title: "Fonctionnalité à venir" })}
+                      onClick={() => toast({ title: messages.info.featureComingSoon })}
                     >
                       <Info className="mr-2 h-4 w-4" />
                       Mentions légales
@@ -505,7 +506,7 @@ export default function Settings() {
                     <Button
                       variant="outline"
                       className="w-full justify-start"
-                      onClick={() => toast({ title: "Fonctionnalité à venir" })}
+                      onClick={() => toast({ title: messages.info.featureComingSoon })}
                     >
                       <Info className="mr-2 h-4 w-4" />
                       Politique de confidentialité
@@ -514,7 +515,7 @@ export default function Settings() {
                     <Button
                       variant="outline"
                       className="w-full justify-start"
-                      onClick={() => toast({ title: "Fonctionnalité à venir" })}
+                      onClick={() => toast({ title: messages.info.featureComingSoon })}
                     >
                       <Info className="mr-2 h-4 w-4" />
                       Journal des modifications
