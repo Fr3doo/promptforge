@@ -1,14 +1,6 @@
 import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,8 +11,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Star, Eye, Lock, MoreVertical, Trash2, Edit, Copy, FileText, Share2, Globe } from "lucide-react";
+import { FileText } from "lucide-react";
 import { useState } from "react";
+import { FavoriteButton } from "./FavoriteButton";
+import { VisibilityBadge } from "./VisibilityBadge";
+import { PromptActionsMenu } from "./PromptActionsMenu";
 import type { Prompt } from "../types";
 
 interface PromptCardProps {
@@ -80,80 +75,22 @@ export const PromptCard = ({
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <button
-                  onClick={(e) => {
+                <FavoriteButton
+                  isFavorite={prompt.is_favorite ?? false}
+                  onToggle={(e) => {
                     e.stopPropagation();
                     onToggleFavorite(prompt.id, prompt.is_favorite ?? false);
                   }}
-                  className="text-muted-foreground hover:text-accent transition-colors"
-                >
-                  <Star
-                    className={`h-5 w-5 ${
-                      prompt.is_favorite ? "fill-accent text-accent" : ""
-                    }`}
-                  />
-                </button>
+                />
                 
                 {isOwner && onDelete && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation();
-                        onClick();
-                      }}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Modifier
-                      </DropdownMenuItem>
-                      {onDuplicate && (
-                        <DropdownMenuItem onClick={(e) => {
-                          e.stopPropagation();
-                          onDuplicate(prompt.id);
-                        }}>
-                          <Copy className="h-4 w-4 mr-2" />
-                          Dupliquer
-                        </DropdownMenuItem>
-                      )}
-                      {isOwner && onToggleVisibility && (
-                        <DropdownMenuItem onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleVisibility(prompt.id, prompt.visibility);
-                        }}>
-                          {isShared ? (
-                            <>
-                              <Lock className="h-4 w-4 mr-2" />
-                              Rendre privé
-                            </>
-                          ) : (
-                            <>
-                              <Share2 className="h-4 w-4 mr-2" />
-                              Partager
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowDeleteDialog(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Supprimer
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <PromptActionsMenu
+                    isShared={isShared}
+                    onEdit={onClick}
+                    onDuplicate={onDuplicate ? () => onDuplicate(prompt.id) : undefined}
+                    onToggleVisibility={onToggleVisibility ? () => onToggleVisibility(prompt.id, prompt.visibility) : undefined}
+                    onDelete={() => setShowDeleteDialog(true)}
+                  />
                 )}
               </div>
             </div>
@@ -175,14 +112,7 @@ export const PromptCard = ({
               )}
             </div>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                {prompt.visibility === "SHARED" ? (
-                  <Eye className="h-3 w-3" />
-                ) : (
-                  <Lock className="h-3 w-3" />
-                )}
-                <span>{prompt.visibility === "SHARED" ? "Partagé" : "Privé"}</span>
-              </div>
+              <VisibilityBadge visibility={prompt.visibility} />
               <span>v{prompt.version}</span>
               {!isOwner && (
                 <Badge variant="outline" className="text-xs">
