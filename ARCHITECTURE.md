@@ -1,4 +1,4 @@
-# Architecture de PromptForge v2
+# Architecture de PromptForge
 
 ## 📐 Vue d'ensemble
 
