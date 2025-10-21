@@ -3,7 +3,7 @@ import { useToastNotifier } from "@/hooks/useToastNotifier";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { messages } from "@/constants/messages";
 import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
-import type { VariableInsert } from "@/repositories/VariableRepository";
+import type { VariableInsert, VariableUpsertInput } from "@/repositories/VariableRepository";
 
 export function useVariables(promptId: string | undefined) {
   const repository = useVariableRepository();
@@ -45,7 +45,7 @@ export function useBulkUpsertVariables() {
       variables 
     }: { 
       promptId: string; 
-      variables: Omit<VariableInsert, "prompt_id">[];
+      variables: VariableUpsertInput[];
     }) => repository.upsertMany(promptId, variables),
     onSuccess: (_, { promptId }) => {
       queryClient.invalidateQueries({ queryKey: ["variables", promptId] });

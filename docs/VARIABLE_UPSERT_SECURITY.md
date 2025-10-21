@@ -33,35 +33,47 @@ async upsertMany(promptId: string, variables: Variable[]): Promise<Variable[]>
    - Permet de mapper les IDs existants
    - Évite la création de doublons
 
-2. **Mapping par nom**
+2. **Mapping par nom et par ID**
    ```typescript
-   const existingMap = new Map(existingVariables.map(v => [v.name, v]));
+   const existingByName = new Map(existingVariables.map(v => [v.name, v]));
+   const existingById = new Map(existingVariables.map(v => [v.id, v]));
    ```
-   - Utilise le nom comme clé d'identification
+   - Utilise le nom comme clé d'identification pour les mises à jour
+   - Utilise l'ID comme clé pour les renommages
    - Préserve les IDs des variables existantes
 
 3. **Préparation des variables**
    ```typescript
    const variablesWithIds = variables.map((v, index) => {
-     const existing = existingMap.get(v.name);
+     // Si l'ID est fourni, on l'utilise (renommage)
+     if (v.id && existingById.has(v.id)) {
+       return { ...v, id: v.id, prompt_id: promptId, order_index: index };
+     }
+     // Sinon, on cherche par nom (mise à jour)
+     const existingByNameMatch = existingByName.get(v.name);
      return {
        ...v,
        prompt_id: promptId,
        order_index: index,
-       ...(existing ? { id: existing.id } : {})
+       ...(existingByNameMatch ? { id: existingByNameMatch.id } : {})
      };
    });
    ```
    - Assigne les IDs existants quand ils existent
+   - Supporte le renommage via l'ID explicite
    - Maintient l'ordre via `order_index`
 
 4. **Suppression sélective**
    ```typescript
+   const newVariableIds = new Set(variables.filter(v => v.id).map(v => v.id));
+   const newVariableNames = new Set(variables.map(v => v.name));
+   
    const variablesToDelete = existingVariables.filter(
-     ev => !newVariableNames.has(ev.name)
+     ev => !newVariableIds.has(ev.id) && !newVariableNames.has(ev.name)
    );
    ```
    - Supprime uniquement les variables retirées
+   - Ne supprime pas les variables renommées (ID préservé)
    - Préserve toutes les variables toujours présentes
 
 5. **Upsert avec gestion de conflits**
@@ -123,7 +135,7 @@ async upsertMany(promptId: string, variables: Variable[]): Promise<Variable[]>
 
 ### Cas 4 : Renommage d'une variable
 
-**Entrée :**
+**Entrée (sans préservation d'ID) :**
 ```typescript
 // Variable existante : { id: '1', name: 'oldName', type: 'STRING' }
 // Nouvelle variable : { name: 'newName', type: 'STRING' }
@@ -133,7 +145,17 @@ async upsertMany(promptId: string, variables: Variable[]): Promise<Variable[]>
 - ⚠️ Variable `oldName` est supprimée (ID `'1'` perdu)
 - ✅ Variable `newName` est créée avec un nouvel ID
 
-> **Note :** Le renommage est traité comme une suppression + création car nous utilisons `name` comme clé d'identification.
+**Entrée (avec préservation d'ID) :**
+```typescript
+// Variable existante : { id: '1', name: 'oldName', type: 'STRING' }
+// Nouvelle variable : { id: '1', name: 'newName', type: 'STRING' }
+```
+
+**Résultat :**
+- ✅ Variable conserve son ID `'1'`
+- ✅ Le nom est mis à jour vers `newName`
+
+> **Note :** Pour préserver l'ID lors d'un renommage, incluez explicitement le champ `id` dans la variable. Sinon, le renommage est traité comme une suppression + création.
 
 ## Gestion des erreurs
 
@@ -214,7 +236,16 @@ Voir `src/repositories/__tests__/VariableRepository.test.ts`
 
 ## Évolutions futures
 
-- [ ] Support du renommage avec préservation d'ID
+- [x] Support du renommage avec préservation d'ID ✅ **Implémenté**
 - [ ] Batch operations pour très grands volumes
 - [ ] Audit trail des modifications de variables
 - [ ] Optimistic locking pour éviter les conflits concurrents
+
+## Historique des changements
+
+### Version 2.0 - Support du renommage avec préservation d'ID
+- Ajout du type `VariableUpsertInput` avec champ `id` optionnel
+- Modification de `prepareVariablesForUpsert` pour supporter le mapping par ID
+- Mise à jour de `deleteObsoleteVariables` pour éviter la suppression des variables renommées
+- Ajout de tests pour le renommage avec préservation d'ID
+- Documentation mise à jour avec exemples de renommage

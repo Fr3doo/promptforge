@@ -660,5 +660,241 @@ describe("SupabaseVariableRepository", () => {
         repository.upsertMany("prompt-123", newVariables)
       ).rejects.toThrow(mockError);
     });
+
+    it("renomme une variable en préservant son ID", async () => {
+      const existingVariables: Variable[] = [
+        {
+          id: "var-1",
+          prompt_id: "prompt-123",
+          name: "oldName",
+          type: "STRING",
+          required: true,
+          default_value: "",
+          help: "",
+          pattern: "",
+          options: [],
+          order_index: 0,
+          created_at: "2024-01-01T00:00:00Z",
+        },
+      ];
+
+      const renamedVariables: Omit<VariableInsert, "prompt_id">[] = [
+        {
+          id: "var-1", // ID explicite pour préserver l'ID
+          name: "newName", // Nouveau nom
+          type: "STRING",
+          required: true,
+          default_value: "",
+          help: "",
+          pattern: "",
+          options: [],
+          order_index: 0,
+        },
+      ];
+
+      // Mock fetch
+      const mockOrderFetch = vi.fn().mockResolvedValue({
+        data: existingVariables,
+        error: null,
+      });
+
+      const mockEqFetch = vi.fn().mockReturnValue({
+        order: mockOrderFetch,
+      });
+
+      const mockSelectFetch = vi.fn().mockReturnValue({
+        eq: mockEqFetch,
+      });
+
+      // Mock upsert
+      const resultVariables: Variable[] = [
+        {
+          ...existingVariables[0],
+          name: "newName", // Nom mis à jour
+        },
+      ];
+
+      const mockSelect = vi.fn().mockResolvedValue({
+        data: resultVariables,
+        error: null,
+      });
+
+      const mockUpsert = vi.fn().mockReturnValue({
+        select: mockSelect,
+      });
+
+      mockSupabase.from
+        .mockReturnValueOnce({ select: mockSelectFetch })
+        .mockReturnValueOnce({ upsert: mockUpsert });
+
+      const result = await repository.upsertMany("prompt-123", renamedVariables);
+
+      expect(result).toEqual(resultVariables);
+      expect(mockUpsert).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: "var-1", // ID préservé
+            name: "newName", // Nom mis à jour
+          }),
+        ]),
+        { onConflict: "id" }
+      );
+    });
+
+    it("traite correctement un mix de création, mise à jour et renommage", async () => {
+      const existingVariables: Variable[] = [
+        {
+          id: "var-1",
+          prompt_id: "prompt-123",
+          name: "keep",
+          type: "STRING",
+          required: true,
+          default_value: "",
+          help: "",
+          pattern: "",
+          options: [],
+          order_index: 0,
+          created_at: "2024-01-01T00:00:00Z",
+        },
+        {
+          id: "var-2",
+          prompt_id: "prompt-123",
+          name: "rename",
+          type: "NUMBER",
+          required: false,
+          default_value: "",
+          help: "",
+          pattern: "",
+          options: [],
+          order_index: 1,
+          created_at: "2024-01-01T00:00:00Z",
+        },
+        {
+          id: "var-3",
+          prompt_id: "prompt-123",
+          name: "delete",
+          type: "BOOLEAN",
+          required: false,
+          default_value: "",
+          help: "",
+          pattern: "",
+          options: [],
+          order_index: 2,
+          created_at: "2024-01-01T00:00:00Z",
+        },
+      ];
+
+      const mixedVariables: Omit<VariableInsert, "prompt_id">[] = [
+        {
+          name: "keep", // Mise à jour (même nom)
+          type: "STRING",
+          required: false, // Modifié
+          default_value: "updated",
+          help: "",
+          pattern: "",
+          options: [],
+          order_index: 0,
+        },
+        {
+          id: "var-2", // Renommage (ID explicite)
+          name: "renamed",
+          type: "NUMBER",
+          required: false,
+          default_value: "",
+          help: "",
+          pattern: "",
+          options: [],
+          order_index: 1,
+        },
+        {
+          name: "new", // Nouvelle variable
+          type: "STRING",
+          required: true,
+          default_value: "",
+          help: "",
+          pattern: "",
+          options: [],
+          order_index: 2,
+        },
+      ];
+
+      // Mock fetch
+      const mockOrderFetch = vi.fn().mockResolvedValue({
+        data: existingVariables,
+        error: null,
+      });
+
+      const mockEqFetch = vi.fn().mockReturnValue({
+        order: mockOrderFetch,
+      });
+
+      const mockSelectFetch = vi.fn().mockReturnValue({
+        eq: mockEqFetch,
+      });
+
+      // Mock delete (var-3 doit être supprimée)
+      const mockIn = vi.fn().mockResolvedValue({
+        data: null,
+        error: null,
+      });
+
+      const mockDelete = vi.fn().mockReturnValue({
+        in: mockIn,
+      });
+
+      // Mock upsert
+      const resultVariables: Variable[] = [
+        {
+          ...existingVariables[0],
+          required: false,
+          default_value: "updated",
+        },
+        {
+          ...existingVariables[1],
+          name: "renamed",
+        },
+        {
+          id: "var-4",
+          prompt_id: "prompt-123",
+          name: "new",
+          type: "STRING",
+          required: true,
+          default_value: "",
+          help: "",
+          pattern: "",
+          options: [],
+          order_index: 2,
+          created_at: "2024-01-01T00:00:00Z",
+        },
+      ];
+
+      const mockSelect = vi.fn().mockResolvedValue({
+        data: resultVariables,
+        error: null,
+      });
+
+      const mockUpsert = vi.fn().mockReturnValue({
+        select: mockSelect,
+      });
+
+      mockSupabase.from
+        .mockReturnValueOnce({ select: mockSelectFetch })
+        .mockReturnValueOnce({ delete: mockDelete })
+        .mockReturnValueOnce({ upsert: mockUpsert });
+
+      const result = await repository.upsertMany("prompt-123", mixedVariables);
+
+      expect(result).toEqual(resultVariables);
+      expect(mockDelete).toHaveBeenCalled();
+      expect(mockIn).toHaveBeenCalledWith("id", ["var-3"]); // Seule var-3 supprimée
+      expect(mockUpsert).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ id: "var-1", name: "keep" }), // Mise à jour
+          expect.objectContaining({ id: "var-2", name: "renamed" }), // Renommage
+          expect.objectContaining({ name: "new" }), // Création
+        ]),
+        { onConflict: "id" }
+      );
+    });
   });
 });

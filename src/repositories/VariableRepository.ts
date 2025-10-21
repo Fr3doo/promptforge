@@ -5,12 +5,14 @@ import { handleSupabaseError } from "@/lib/errorHandler";
 export type Variable = Tables<"variables">;
 export type VariableInsert = TablesInsert<"variables">;
 
+export type VariableUpsertInput = Omit<VariableInsert, "prompt_id"> & { id?: string };
+
 export interface VariableRepository {
   fetch(promptId: string): Promise<Variable[]>;
   create(variable: VariableInsert): Promise<Variable>;
   update(id: string, updates: Partial<Variable>): Promise<Variable>;
   deleteMany(promptId: string): Promise<void>;
-  upsertMany(promptId: string, variables: Omit<VariableInsert, "prompt_id">[]): Promise<Variable[]>;
+  upsertMany(promptId: string, variables: VariableUpsertInput[]): Promise<Variable[]>;
 }
 
 /**
@@ -81,37 +83,53 @@ export class SupabaseVariableRepository implements VariableRepository {
 
   /**
    * Prepares variables for upsert by mapping them to existing IDs
-   * Preserves existing variable IDs to avoid unnecessary deletions
+   * Supports both name-based matching (updates) and ID-based matching (renames)
    * @private
    */
   private prepareVariablesForUpsert(
-    variables: Omit<VariableInsert, "prompt_id">[],
+    variables: VariableUpsertInput[],
     promptId: string,
     existingVariables: Variable[]
   ): VariableInsert[] {
-    const existingMap = new Map(existingVariables.map(v => [v.name, v]));
+    const existingByName = new Map(existingVariables.map(v => [v.name, v]));
+    const existingById = new Map(existingVariables.map(v => [v.id, v]));
 
     return variables.map((v, index) => {
-      const existing = existingMap.get(v.name);
+      // If the variable has an ID, use it (supports renaming)
+      if (v.id && existingById.has(v.id)) {
+        return {
+          ...v,
+          id: v.id,
+          prompt_id: promptId,
+          order_index: index,
+        } as VariableInsert;
+      }
+      
+      // Otherwise, try to match by name (normal update)
+      const existingByNameMatch = existingByName.get(v.name);
       return {
         ...v,
         prompt_id: promptId,
         order_index: index,
-        ...(existing ? { id: existing.id } : {}),
-      };
+        ...(existingByNameMatch ? { id: existingByNameMatch.id } : {}),
+      } as VariableInsert;
     });
   }
 
   /**
    * Identifies and deletes variables that are no longer present
+   * Takes into account both ID and name to avoid deleting renamed variables
    * @private
    */
   private async deleteObsoleteVariables(
-    newVariableNames: Set<string>,
+    newVariables: VariableUpsertInput[],
     existingVariables: Variable[]
   ): Promise<void> {
+    const newVariableIds = new Set(newVariables.filter(v => v.id).map(v => v.id));
+    const newVariableNames = new Set(newVariables.map(v => v.name));
+    
     const variablesToDelete = existingVariables.filter(
-      ev => !newVariableNames.has(ev.name)
+      ev => !newVariableIds.has(ev.id) && !newVariableNames.has(ev.name)
     );
 
     if (variablesToDelete.length > 0) {
@@ -148,13 +166,15 @@ export class SupabaseVariableRepository implements VariableRepository {
    * Atomic upsert of variables for a prompt
    * 
    * This method ensures data integrity by:
-   * - Matching variables by name to preserve IDs
+   * - Matching variables by name to preserve IDs (updates)
+   * - Matching variables by ID to support renaming
    * - Only deleting variables that are truly removed
    * - Using Supabase upsert with ID conflict resolution
    * - Maintaining order_index for all variables
    * 
    * @param promptId - The ID of the prompt
    * @param variables - Array of variables to upsert (without prompt_id)
+   *                    Can include optional `id` field to preserve ID during rename
    * @returns Array of upserted variables
    * 
    * @example
@@ -164,9 +184,14 @@ export class SupabaseVariableRepository implements VariableRepository {
    *   { name: 'existing', type: 'STRING', required: true }, // Will update
    *   { name: 'new', type: 'NUMBER', required: false }      // Will insert
    * ]);
+   * 
+   * // Rename variable while preserving ID
+   * await repository.upsertMany('prompt-123', [
+   *   { id: 'var-1', name: 'newName', type: 'STRING', required: true } // Rename
+   * ]);
    * ```
    */
-  async upsertMany(promptId: string, variables: Omit<VariableInsert, "prompt_id">[]): Promise<Variable[]> {
+  async upsertMany(promptId: string, variables: VariableUpsertInput[]): Promise<Variable[]> {
     // Edge case: No variables means remove all
     if (variables.length === 0) {
       await this.deleteMany(promptId);
@@ -185,8 +210,7 @@ export class SupabaseVariableRepository implements VariableRepository {
       );
 
       // Step 3: Delete obsolete variables
-      const newVariableNames = new Set(variables.map(v => v.name));
-      await this.deleteObsoleteVariables(newVariableNames, existingVariables);
+      await this.deleteObsoleteVariables(variables, existingVariables);
 
       // Step 4: Perform atomic upsert
       return await this.performVariableUpsert(variablesWithIds);
