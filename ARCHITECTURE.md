@@ -2,7 +2,7 @@
 
 ## 📐 Vue d'ensemble
 
-PromptForge v2 suit une architecture **feature-based** avec séparation des préoccupations claire entre les composants UI, la logique métier et l'accès aux données.
+PromptForge suit une architecture **feature-based** avec séparation des préoccupations claire entre les composants UI, la logique métier et l'accès aux données.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -65,16 +65,19 @@ PromptForge v2 suit une architecture **feature-based** avec séparation des pré
 ### 1. Séparation des responsabilités
 
 **Pages** (`src/pages/`)
+
 - Orchestration des fonctionnalités
 - Routing et navigation
 - Layout général de la page
 
 **Features** (`src/features/`)
+
 - Logique métier spécifique
 - Composants dédiés à une fonctionnalité
 - Hooks personnalisés locaux
 
 **Components** (`src/components/`)
+
 - Composants UI réutilisables
 - Pas de logique métier
 - Purement présentationnels
@@ -176,13 +179,13 @@ PromptForge v2 suit le **principe d'inversion de dépendance** (SOLID) via une c
 ```
 
 **Règle ESLint stricte:** L'import direct de `@/integrations/supabase/client` est **interdit** en dehors de :
+
 - `src/repositories/**/*.ts`
 - `src/contexts/**/*RepositoryContext.tsx`
 - `supabase/functions/**/*.ts`
 - `src/hooks/useAuth.tsx`
 
 📖 Voir [docs/ESLINT_SUPABASE_RULE.md](./docs/ESLINT_SUPABASE_RULE.md) pour plus de détails.
-
 
 ## 🔧 Modules principaux
 
@@ -220,6 +223,7 @@ export interface PromptRepository {
 ```
 
 **Avantages:**
+
 - ✅ **Testabilité**: Facile à mocker dans les tests
 - ✅ **Flexibilité**: Changement de backend sans impact sur les composants
 - ✅ **Centralisation**: Logique d'accès aux données au même endroit
@@ -241,6 +245,7 @@ export interface VariableRepository {
 ```
 
 La méthode `upsertMany` gère intelligemment :
+
 - Insertion de nouvelles variables
 - Mise à jour de variables existantes (basé sur le nom)
 - Suppression de variables obsolètes
@@ -249,6 +254,7 @@ La méthode `upsertMany` gère intelligemment :
 ### 1. Système de prompts
 
 #### Composants
+
 ```
 features/prompts/
 ├── components/
@@ -276,7 +282,7 @@ import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
 
 export function usePrompts() {
   const repository = usePromptRepository();
-  
+
   return useQuery({
     queryKey: ["prompts"],
     queryFn: () => repository.fetchAll(),
@@ -287,18 +293,18 @@ export function usePrompts() {
 export function useUpdatePrompt() {
   const queryClient = useQueryClient();
   const repository = usePromptRepository();
-  
+
   return useMutation({
     mutationFn: ({ id, updates }) => repository.update(id, updates),
     onMutate: async ({ id, updates }) => {
       // Optimistic update
       await queryClient.cancelQueries({ queryKey: ["prompts", id] });
       const previous = queryClient.getQueryData(["prompts", id]);
-      
-      queryClient.setQueryData(["prompts", id], (old) => 
+
+      queryClient.setQueryData(["prompts", id], (old) =>
         old ? { ...old, ...updates } : old
       );
-      
+
       return { previous };
     },
     onError: (err, { id }, context) => {
@@ -332,12 +338,12 @@ export function usePromptForm({ prompt, existingVariables, isEditMode }: UseProm
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [visibility, setVisibility] = useState<"PRIVATE" | "SHARED">("PRIVATE");
-  
+
   // Gestion des tags (hook dédié)
   const { tags, addTag, removeTag } = useTagManager();
-  
+
   // Gestion des variables (hook dédié)
-  const { variables, addVariablesFromContent, updateVariable, deleteVariable } 
+  const { variables, addVariablesFromContent, updateVariable, deleteVariable }
     = useVariableManager({ content, initialVariables: existingVariables });
 
   const handleSave = async (promptId?: string) => {
@@ -354,7 +360,7 @@ export function usePromptForm({ prompt, existingVariables, isEditMode }: UseProm
 function PromptEditor({ promptId }: { promptId?: string }) {
   const { data: prompt } = usePrompt(promptId);
   const { data: existingVariables } = useVariables(promptId);
-  
+
   const { title, setTitle, handleSave, isSaving } = usePromptForm({
     prompt,
     existingVariables,
@@ -387,7 +393,7 @@ export function usePromptSave({ isEditMode, onSuccess }: UsePromptSaveOptions) {
       } else {
         createPrompt(validated);
       }
-      
+
       // Sauvegarde des variables
       saveVariables({ promptId, variables: data.variables });
     } catch (error) {
@@ -400,6 +406,7 @@ export function usePromptSave({ isEditMode, onSuccess }: UsePromptSaveOptions) {
 ```
 
 **Responsabilités:**
+
 - ✅ Validation des données (Zod)
 - ✅ Création/mise à jour du prompt
 - ✅ Sauvegarde des variables associées
@@ -432,6 +439,7 @@ export function useTagManager(initialTags: string[] = []) {
 ```
 
 **Responsabilités:**
+
 - ✅ État des tags
 - ✅ Ajout avec dédoublonnage
 - ✅ Suppression de tags
@@ -476,6 +484,7 @@ export function useVariableManager({ content, initialVariables }: UseVariableMan
 ```
 
 **Responsabilités:**
+
 - ✅ Détection automatique des `{{variables}}` dans le contenu
 - ✅ Synchronisation avec les variables existantes
 - ✅ Suppression automatique des variables obsolètes
@@ -484,6 +493,7 @@ export function useVariableManager({ content, initialVariables }: UseVariableMan
 ### 2. Système de variables
 
 #### Détection automatique
+
 ```typescript
 // src/hooks/useVariableDetection.ts
 export function useVariableDetection(content: string) {
@@ -496,6 +506,7 @@ export function useVariableDetection(content: string) {
 ```
 
 #### Composants modulaires
+
 ```
 features/variables/
 ├── components/
@@ -509,6 +520,7 @@ features/variables/
 ### 3. Système de versioning
 
 #### Architecture SemVer
+
 ```typescript
 // src/lib/semver.ts
 export type VersionBump = "major" | "minor" | "patch";
@@ -528,6 +540,7 @@ export function bumpVersion(current: string, type: VersionBump): string {
 ```
 
 #### Stockage des versions
+
 ```sql
 -- Structure de la table versions
 CREATE TABLE versions (
@@ -557,7 +570,7 @@ CREATE POLICY "Users can view own prompts and shared prompts"
 ON prompts FOR SELECT
 TO authenticated
 USING (
-  auth.uid() = owner_id 
+  auth.uid() = owner_id
   OR visibility = 'SHARED'
 );
 
@@ -605,7 +618,7 @@ onMutate: async (newData) => {
   await queryClient.cancelQueries(['prompts']);
   const previous = queryClient.getQueryData(['prompts']);
   queryClient.setQueryData(['prompts'], (old) => {
-    return old.map(item => 
+    return old.map(item =>
       item.id === newData.id ? { ...item, ...newData } : item
     );
   });
@@ -638,9 +651,9 @@ const Prompts = lazy(() => import('./pages/Prompts'));
 ```typescript
 // Éviter les recalculs inutiles
 const filteredPrompts = useMemo(() => {
-  return prompts.filter(p => 
+  return prompts.filter(p =>
     p.title.includes(searchTerm) &&
-    (selectedTags.length === 0 || 
+    (selectedTags.length === 0 ||
      p.tags.some(t => selectedTags.includes(t)))
   );
 }, [prompts, searchTerm, selectedTags]);
@@ -700,17 +713,17 @@ src/
   /* Couleurs principales */
   --primary: 220 90% 56%;
   --primary-foreground: 0 0% 100%;
-  
+
   /* Couleurs UI */
   --background: 0 0% 100%;
   --foreground: 222 47% 11%;
   --card: 0 0% 100%;
   --muted: 210 40% 96%;
-  
+
   /* États */
   --destructive: 0 84% 60%;
   --success: 142 71% 45%;
-  
+
   /* Animations */
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -827,6 +840,7 @@ getTTFB(console.log);
 
 **Dernière mise à jour**: v2.0.0 - 2025-01  
 **Architecture**: Feature-based avec Repository Pattern (DIP)
+
 - [Tailwind CSS](https://tailwindcss.com/docs)
 - [Framer Motion](https://www.framer.com/motion/)
 - [Vitest](https://vitest.dev/)
