@@ -8,10 +8,10 @@ export type Prompt = Tables<"prompts">;
 export interface PromptRepository {
   fetchAll(): Promise<Prompt[]>;
   fetchById(id: string): Promise<Prompt>;
-  create(promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt>;
+  create(userId: string, promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt>;
   update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
   delete(id: string): Promise<void>;
-  duplicate(promptId: string, variableRepository: VariableRepository): Promise<Prompt>;
+  duplicate(userId: string, promptId: string, variableRepository: VariableRepository): Promise<Prompt>;
   toggleFavorite(id: string, currentState: boolean): Promise<void>;
   toggleVisibility(id: string, currentVisibility: "PRIVATE" | "SHARED"): Promise<"PRIVATE" | "SHARED">;
 }
@@ -40,15 +40,14 @@ export class SupabasePromptRepository implements PromptRepository {
     return result.data as Prompt;
   }
 
-  async create(promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Non authentifié");
+  async create(userId: string, promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt> {
+    if (!userId) throw new Error("ID utilisateur requis");
 
     const result = await supabase
       .from("prompts")
       .insert({
         ...promptData,
-        owner_id: user.id,
+        owner_id: userId,
       })
       .select()
       .single();
@@ -82,13 +81,13 @@ export class SupabasePromptRepository implements PromptRepository {
    * Duplicates a prompt and its variables
    * Uses VariableRepository for clean separation of concerns
    * 
+   * @param userId - ID of the authenticated user creating the duplicate
    * @param promptId - ID of the prompt to duplicate
    * @param variableRepository - Repository for managing variables
    * @returns The newly created duplicate prompt
    */
-  async duplicate(promptId: string, variableRepository: VariableRepository): Promise<Prompt> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Non authentifié");
+  async duplicate(userId: string, promptId: string, variableRepository: VariableRepository): Promise<Prompt> {
+    if (!userId) throw new Error("ID utilisateur requis");
 
     // Step 1: Fetch the original prompt
     const fetchResult = await supabase
@@ -114,7 +113,7 @@ export class SupabasePromptRepository implements PromptRepository {
         version: "1.0.0",
         status: "DRAFT",
         is_favorite: false,
-        owner_id: user.id,
+        owner_id: userId,
       })
       .select()
       .single();

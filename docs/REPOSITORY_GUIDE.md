@@ -156,6 +156,11 @@ upsertMany(items: {Entity}UpsertInput[]): Promise<{Entity}[]>;
 // Pour les opérations spécifiques métier
 toggleStatus(id: string, currentStatus: boolean): Promise<void>;
 search(query: string): Promise<{Entity}[]>;
+
+// IMPORTANT: Ne jamais inclure de dépendances d'authentification
+// Les méthodes nécessitant un userId doivent le recevoir en paramètre
+create(userId: string, data: {Entity}Insert): Promise<{Entity}>;
+duplicate(userId: string, sourceId: string): Promise<{Entity}>;
 ```
 
 ### Étape 2 : Implémenter avec Supabase
@@ -205,10 +210,17 @@ export class Supabase{Entity}Repository implements {Entity}Repository {
     return result.data;
   }
 
-  async create(data: {Entity}Insert): Promise<{Entity}> {
+  async create(userId: string, data: {Entity}Insert): Promise<{Entity}> {
+    // IMPORTANT: Accepter userId en paramètre au lieu d'appeler supabase.auth
+    // Cela respecte le principe de responsabilité unique (SRP)
+    if (!userId) throw new Error("ID utilisateur requis");
+
     const result = await supabase
       .from("{table_name}")
-      .insert(data)
+      .insert({
+        ...data,
+        owner_id: userId, // ou user_id selon votre schéma
+      })
       .select()
       .single();
 
@@ -264,6 +276,8 @@ export const create{Entity}Repository = (): {Entity}Repository => {
 - ✅ Lancer des erreurs explicites avec des messages clairs
 - ✅ Utiliser `.select()` après `.insert()` et `.update()` pour récupérer les données
 - ✅ Utiliser `.single()` quand on attend un seul résultat
+- ✅ **JAMAIS appeler `supabase.auth` dans un repository** - passer `userId` en paramètre
+- ✅ Respecter le principe de responsabilité unique (SRP) - le repository gère les données, pas l'authentification
 
 ### Étape 3 : Créer le contexte React
 
@@ -568,7 +582,8 @@ export const createVariableRepository = (): VariableRepository => {
 
 ### Exemple 3 : Repository avec méthodes métier (PromptRepository)
 
-**Cas d'usage :** CRUD + opérations métier spécifiques (toggle favorite, duplicate).
+**Cas d'usage :** CRUD + opérations métier spécifiques (toggle favorite, duplicate).  
+**Principe clé :** Découplage de l'authentification via injection de `userId`.
 
 ```typescript
 // src/repositories/PromptRepository.ts (extrait)
@@ -576,12 +591,15 @@ export interface PromptRepository {
   // CRUD standard
   fetchAll(): Promise<Prompt[]>;
   fetchById(id: string): Promise<Prompt>;
-  create(promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt>;
+  
+  // IMPORTANT: userId passé en paramètre, pas récupéré via auth
+  create(userId: string, promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt>;
+  
   update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
   delete(id: string): Promise<void>;
   
-  // Opérations métier
-  duplicate(promptId: string, variableRepository: VariableRepository): Promise<Prompt>;
+  // Opérations métier - userId en paramètre
+  duplicate(userId: string, promptId: string, variableRepository: VariableRepository): Promise<Prompt>;
   toggleFavorite(id: string, currentState: boolean): Promise<void>;
   toggleVisibility(id: string, currentVisibility: "PRIVATE" | "SHARED"): Promise<"PRIVATE" | "SHARED">;
 }
@@ -589,29 +607,57 @@ export interface PromptRepository {
 export class SupabasePromptRepository implements PromptRepository {
   // ... méthodes CRUD ...
 
+  async create(userId: string, promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt> {
+    // Valider userId SANS appeler supabase.auth
+    if (!userId) throw new Error("ID utilisateur requis");
+
+    const result = await supabase
+      .from("prompts")
+      .insert({
+        ...promptData,
+        owner_id: userId, // Utiliser le userId fourni
+      })
+      .select()
+      .single();
+    
+    handleSupabaseError(result);
+    return result.data;
+  }
+
   async duplicate(
+    userId: string,
     promptId: string,
     variableRepository: VariableRepository
   ): Promise<Prompt> {
+    // Valider userId SANS appeler supabase.auth
+    if (!userId) throw new Error("ID utilisateur requis");
+
     // 1. Récupérer le prompt original
     const original = await this.fetchById(promptId);
 
-    // 2. Créer une copie
-    const copy = await this.create({
-      title: `${original.title} (copie)`,
-      description: original.description,
-      content: original.content,
-      tags: original.tags,
-      status: "DRAFT",
-      visibility: "PRIVATE",
-    });
+    // 2. Créer une copie avec le userId fourni
+    const copy = await supabase
+      .from("prompts")
+      .insert({
+        title: `${original.title} (Copie)`,
+        content: original.content,
+        description: original.description,
+        tags: original.tags,
+        status: "DRAFT",
+        visibility: "PRIVATE",
+        owner_id: userId, // Utiliser le userId fourni
+      })
+      .select()
+      .single();
+
+    handleSupabaseError(copy);
 
     // 3. Dupliquer les variables associées
     const variables = await variableRepository.fetch(promptId);
     
     if (variables.length > 0) {
       const variablesCopy = variables.map(v => ({
-        prompt_id: copy.id,
+        prompt_id: copy.data.id,
         name: v.name,
         type: v.type,
         default_value: v.default_value,
@@ -621,12 +667,10 @@ export class SupabasePromptRepository implements PromptRepository {
         order_index: v.order_index,
       }));
 
-      await Promise.all(
-        variablesCopy.map(v => variableRepository.create(v))
-      );
+      await variableRepository.upsertMany(copy.data.id, variablesCopy);
     }
 
-    return copy;
+    return copy.data;
   }
 
   async toggleFavorite(id: string, currentState: boolean): Promise<void> {
@@ -643,6 +687,54 @@ export class SupabasePromptRepository implements PromptRepository {
   }
 }
 ```
+
+**Utilisation dans les hooks :**
+
+```typescript
+// src/hooks/usePrompts.ts
+import { useAuth } from "@/hooks/useAuth";
+import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
+
+export function useCreatePrompt() {
+  const repository = usePromptRepository();
+  const { user } = useAuth(); // Récupérer l'utilisateur via useAuth
+  
+  return useMutation({
+    mutationFn: (promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">) => {
+      if (!user) throw new Error("Non authentifié");
+      // Passer l'ID de l'utilisateur au repository
+      return repository.create(user.id, promptData);
+    },
+    onSuccess: () => {
+      // ...
+    },
+  });
+}
+
+export function useDuplicatePrompt() {
+  const repository = usePromptRepository();
+  const variableRepository = useVariableRepository();
+  const { user } = useAuth(); // Récupérer l'utilisateur via useAuth
+  
+  return useMutation({
+    mutationFn: (promptId: string) => {
+      if (!user) throw new Error("Non authentifié");
+      // Passer l'ID de l'utilisateur au repository
+      return repository.duplicate(user.id, promptId, variableRepository);
+    },
+    onSuccess: () => {
+      // ...
+    },
+  });
+}
+```
+
+**Pourquoi cette approche ?**
+
+✅ **Séparation des responsabilités (SRP)** : Le repository gère les données, `useAuth` gère l'authentification  
+✅ **Testabilité améliorée** : Pas besoin de mocker `supabase.auth` dans les tests du repository  
+✅ **Flexibilité** : Possibilité de passer un userId différent (admin, impersonation, etc.)  
+✅ **Principe d'inversion de dépendance (DIP)** : Le repository ne dépend pas directement de l'authentification
 
 ## Tests
 
@@ -809,6 +901,9 @@ Lors de la revue d'un PR ajoutant un nouveau repository, vérifier :
 - [ ] Un contexte `{Entity}RepositoryContext` est créé avec provider et hook
 - [ ] Le provider est ajouté à l'application (main.tsx ou App.tsx)
 - [ ] Aucun import direct de Supabase en dehors du repository (ESLint ne doit pas alerter)
+- [ ] **CRITIQUE:** Le repository n'appelle JAMAIS `supabase.auth.*`
+- [ ] Les méthodes nécessitant un `userId` le reçoivent en paramètre
+- [ ] L'authentification est gérée par `useAuth` dans les hooks/composants
 
 ### Qualité du code
 
@@ -817,6 +912,7 @@ Lors de la revue d'un PR ajoutant un nouveau repository, vérifier :
 - [ ] Les méthodes vérifient que `result.data` existe avant de le retourner
 - [ ] Les messages d'erreur sont explicites
 - [ ] Les conventions de nommage sont respectées
+- [ ] Validation des paramètres (`if (!userId) throw new Error(...)`)
 
 ### Opérations Supabase
 
@@ -830,6 +926,7 @@ Lors de la revue d'un PR ajoutant un nouveau repository, vérifier :
 - [ ] Tests unitaires du repository créés (`__tests__/{Entity}Repository.test.ts`)
 - [ ] Tous les cas nominaux sont testés (fetchAll, create, update, delete)
 - [ ] Les cas d'erreur sont testés
+- [ ] **Test que `supabase.auth.getUser` n'est PAS appelé**
 - [ ] Les méthodes spécifiques métier sont testées
 - [ ] Couverture de code ≥ 70%
 
@@ -861,9 +958,54 @@ Lors de la revue d'un PR ajoutant un nouveau repository, vérifier :
 - `MockPromptRepository` (tests)
 - `LocalStoragePromptRepository` (mode offline)
 
-### Q: Comment gérer les relations entre entités ?
+### Q: Comment gérer l'authentification dans un repository ?
 
-**R:** Deux approches :
+**R:** **JAMAIS appeler `supabase.auth` dans un repository !**
+
+❌ **Mauvaise pratique :**
+```typescript
+async create(data: PromptInsert): Promise<Prompt> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+  
+  return supabase.from("prompts").insert({
+    ...data,
+    owner_id: user.id,
+  });
+}
+```
+
+✅ **Bonne pratique :**
+```typescript
+// Repository - Accepter userId en paramètre
+async create(userId: string, data: PromptInsert): Promise<Prompt> {
+  if (!userId) throw new Error("ID utilisateur requis");
+  
+  return supabase.from("prompts").insert({
+    ...data,
+    owner_id: userId,
+  });
+}
+
+// Hook - Gérer l'authentification
+export function useCreatePrompt() {
+  const repository = usePromptRepository();
+  const { user } = useAuth(); // Authentification ici
+  
+  return useMutation({
+    mutationFn: (data: PromptInsert) => {
+      if (!user) throw new Error("Non authentifié");
+      return repository.create(user.id, data); // Passer userId
+    },
+  });
+}
+```
+
+**Avantages :**
+- ✅ Respect du SRP (Single Responsibility Principle)
+- ✅ Testabilité : pas besoin de mocker `supabase.auth`
+- ✅ Flexibilité : possibilité de passer différents userIds
+- ✅ Respect du DIP (Dependency Inversion Principle)
 
 1. **Méthode fetch séparée** :
 ```typescript

@@ -4,6 +4,7 @@ import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { messages } from "@/constants/messages";
 import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
 import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
+import { useAuth } from "@/hooks/useAuth";
 import type { Prompt } from "@/repositories/PromptRepository";
 
 // Hook de lecture - liste complète
@@ -35,10 +36,13 @@ export function usePrompt(id: string | undefined) {
 export function useCreatePrompt() {
   const queryClient = useQueryClient();
   const repository = usePromptRepository();
+  const { user } = useAuth();
   
   return useMutation({
-    mutationFn: (promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">) => 
-      repository.create(promptData),
+    mutationFn: (promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">) => {
+      if (!user) throw new Error("Non authentifié");
+      return repository.create(user.id, promptData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
       successToast(messages.success.promptCreated);
@@ -130,9 +134,13 @@ export function useDuplicatePrompt() {
   const queryClient = useQueryClient();
   const repository = usePromptRepository();
   const variableRepository = useVariableRepository();
+  const { user } = useAuth();
   
   return useMutation({
-    mutationFn: (promptId: string) => repository.duplicate(promptId, variableRepository),
+    mutationFn: (promptId: string) => {
+      if (!user) throw new Error("Non authentifié");
+      return repository.duplicate(user.id, promptId, variableRepository);
+    },
     onSuccess: (newPrompt) => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
       successToast(messages.success.promptDuplicated);

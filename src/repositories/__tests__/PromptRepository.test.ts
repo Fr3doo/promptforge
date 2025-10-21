@@ -207,9 +207,8 @@ describe("SupabasePromptRepository", () => {
         insert: mockInsert,
       });
 
-      const result = await repository.create(newPromptData);
+      const result = await repository.create(mockUser.id, newPromptData);
 
-      expect(mockSupabase.auth.getUser).toHaveBeenCalled();
       expect(mockSupabase.from).toHaveBeenCalledWith("prompts");
       expect(mockInsert).toHaveBeenCalledWith({
         ...newPromptData,
@@ -218,9 +217,7 @@ describe("SupabasePromptRepository", () => {
       expect(result).toEqual(createdPrompt);
     });
 
-    it("lève une erreur si l'utilisateur n'est pas authentifié", async () => {
-      mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
-
+    it("lève une erreur si l'ID utilisateur n'est pas fourni", async () => {
       const newPromptData = {
         title: "Nouveau Prompt",
         content: "Contenu",
@@ -232,7 +229,50 @@ describe("SupabasePromptRepository", () => {
         is_favorite: false,
       };
 
-      await expect(repository.create(newPromptData)).rejects.toThrow("Non authentifié");
+      await expect(repository.create("", newPromptData)).rejects.toThrow("ID utilisateur requis");
+    });
+
+    it("n'appelle pas supabase.auth.getUser", async () => {
+      const newPromptData = {
+        title: "Test",
+        content: "Contenu",
+        description: null,
+        tags: [],
+        visibility: "PRIVATE" as const,
+        version: "1.0.0",
+        status: "PUBLISHED" as const,
+        is_favorite: false,
+      };
+
+      const createdPrompt: Prompt = {
+        ...newPromptData,
+        id: "new-id",
+        owner_id: mockUser.id,
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z",
+      };
+
+      const mockSingle = vi.fn().mockResolvedValue({
+        data: createdPrompt,
+        error: null,
+      });
+
+      const mockSelect = vi.fn().mockReturnValue({
+        single: mockSingle,
+      });
+
+      const mockInsert = vi.fn().mockReturnValue({
+        select: mockSelect,
+      });
+
+      mockSupabase.from.mockReturnValue({
+        insert: mockInsert,
+      });
+
+      await repository.create(mockUser.id, newPromptData);
+
+      // Vérifier que auth.getUser n'a PAS été appelé
+      expect(mockSupabase.auth.getUser).not.toHaveBeenCalled();
     });
 
     it("gère les erreurs de création", async () => {
@@ -266,7 +306,7 @@ describe("SupabasePromptRepository", () => {
         is_favorite: false,
       };
 
-      await expect(repository.create(newPromptData)).rejects.toThrow(mockError);
+      await expect(repository.create(mockUser.id, newPromptData)).rejects.toThrow(mockError);
     });
   });
 
@@ -496,7 +536,7 @@ describe("SupabasePromptRepository", () => {
         .mockReturnValueOnce({ select: mockSelectFetch }) // Fetch original prompt
         .mockReturnValueOnce({ insert: mockInsert }); // Insert new prompt
 
-      const result = await repository.duplicate("prompt-original", mockVariableRepository);
+      const result = await repository.duplicate(mockUser.id, "prompt-original", mockVariableRepository);
 
       // Verify prompt was fetched
       expect(mockSupabase.from).toHaveBeenCalledWith("prompts");
@@ -601,11 +641,72 @@ describe("SupabasePromptRepository", () => {
         .mockReturnValueOnce({ select: mockSelectFetch })
         .mockReturnValueOnce({ insert: mockInsert });
 
-      const result = await repository.duplicate("prompt-original", mockVariableRepository);
+      const result = await repository.duplicate(mockUser.id, "prompt-original", mockVariableRepository);
 
       expect(mockVariableRepository.fetch).toHaveBeenCalledWith("prompt-original");
       expect(mockVariableRepository.upsertMany).not.toHaveBeenCalled();
       expect(result).toEqual(duplicatedPrompt);
+    });
+
+    it("n'appelle pas supabase.auth.getUser lors de la duplication", async () => {
+      const originalPrompt: Prompt = {
+        id: "prompt-original",
+        title: "Test",
+        content: "Contenu",
+        description: null,
+        tags: [],
+        visibility: "PRIVATE",
+        version: "1.0.0",
+        status: "PUBLISHED",
+        is_favorite: false,
+        owner_id: "user-123",
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z",
+      };
+
+      const duplicatedPrompt: Prompt = {
+        ...originalPrompt,
+        id: "prompt-duplicate",
+        title: "Test (Copie)",
+        owner_id: mockUser.id,
+      };
+
+      vi.mocked(mockVariableRepository.fetch).mockResolvedValue([]);
+
+      const mockSingleFetch = vi.fn().mockResolvedValue({
+        data: originalPrompt,
+        error: null,
+      });
+
+      const mockEqFetch = vi.fn().mockReturnValue({
+        single: mockSingleFetch,
+      });
+
+      const mockSelectFetch = vi.fn().mockReturnValue({
+        eq: mockEqFetch,
+      });
+
+      const mockSingleInsert = vi.fn().mockResolvedValue({
+        data: duplicatedPrompt,
+        error: null,
+      });
+
+      const mockSelectInsert = vi.fn().mockReturnValue({
+        single: mockSingleInsert,
+      });
+
+      const mockInsert = vi.fn().mockReturnValue({
+        select: mockSelectInsert,
+      });
+
+      mockSupabase.from
+        .mockReturnValueOnce({ select: mockSelectFetch })
+        .mockReturnValueOnce({ insert: mockInsert });
+
+      await repository.duplicate(mockUser.id, "prompt-original", mockVariableRepository);
+
+      // Vérifier que auth.getUser n'a PAS été appelé
+      expect(mockSupabase.auth.getUser).not.toHaveBeenCalled();
     });
 
     it("gère les erreurs lors de la duplication", async () => {
@@ -627,7 +728,7 @@ describe("SupabasePromptRepository", () => {
       mockSupabase.from.mockReturnValue({ select: mockSelectFetch });
 
       await expect(
-        repository.duplicate("invalid-id", mockVariableRepository)
+        repository.duplicate(mockUser.id, "invalid-id", mockVariableRepository)
       ).rejects.toThrow(mockError);
     });
   });
