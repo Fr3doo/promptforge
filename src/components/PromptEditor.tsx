@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { VariableInputPanel } from "@/features/variables/components/VariableInputPanel";
 import { Wand2, Copy, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useVariableSubstitution } from "@/hooks/useVariableDetection";
 
 interface PromptEditorProps {
   content: string;
@@ -24,19 +25,8 @@ export const PromptEditor = ({
   variableValues,
   onVariableValueChange,
 }: PromptEditorProps) => {
-  const [preview, setPreview] = useState("");
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    // Render preview with variable values
-    let rendered = content;
-    variables.forEach((variable) => {
-      const value = variableValues[variable.name] || variable.default_value || `{{${variable.name}}}`;
-      const regex = new RegExp(`{{${variable.name}}}`, "g");
-      rendered = rendered.replace(regex, value);
-    });
-    setPreview(rendered);
-  }, [content, variables, variableValues]);
+  const { preview } = useVariableSubstitution(content, variables, variableValues);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(preview);
