@@ -1,4 +1,4 @@
-# PromptForge v2 🚀
+# PromptForge 🚀
 
 **Gestionnaire de prompts IA avancé avec versioning, variables et collaboration**
 
