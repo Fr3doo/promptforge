@@ -1,26 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
-import type { Tables, TablesInsert } from "@/integrations/supabase/types";
-
-type Variable = Tables<"variables">;
-type VariableInsert = TablesInsert<"variables">;
+import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
+import type { VariableInsert } from "@/repositories/VariableRepository";
 
 export function useVariables(promptId: string | undefined) {
+  const repository = useVariableRepository();
+  
   return useQuery({
     queryKey: ["variables", promptId],
-    queryFn: async () => {
+    queryFn: () => {
       if (!promptId) return [];
-      
-      const { data, error } = await supabase
-        .from("variables")
-        .select("*")
-        .eq("prompt_id", promptId)
-        .order("order_index", { ascending: true });
-      
-      if (error) throw error;
-      return data as Variable[];
+      return repository.fetch(promptId);
     },
     enabled: !!promptId,
   });
@@ -28,18 +19,10 @@ export function useVariables(promptId: string | undefined) {
 
 export function useCreateVariable() {
   const queryClient = useQueryClient();
+  const repository = useVariableRepository();
   
   return useMutation({
-    mutationFn: async (variable: VariableInsert) => {
-      const { data, error } = await supabase
-        .from("variables")
-        .insert(variable)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: (variable: VariableInsert) => repository.create(variable),
     onSuccess: (_, { prompt_id }) => {
       queryClient.invalidateQueries({ queryKey: ["variables", prompt_id] });
     },
@@ -55,29 +38,16 @@ export function useCreateVariable() {
 
 export function useBulkUpsertVariables() {
   const queryClient = useQueryClient();
+  const repository = useVariableRepository();
   
   return useMutation({
-    mutationFn: async ({ 
+    mutationFn: ({ 
       promptId, 
       variables 
     }: { 
       promptId: string; 
       variables: Omit<VariableInsert, "prompt_id">[];
-    }) => {
-      // Supprimer anciennes variables
-      await supabase.from("variables").delete().eq("prompt_id", promptId);
-      
-      // Insérer nouvelles
-      if (variables.length === 0) return [];
-      
-      const { data, error } = await supabase
-        .from("variables")
-        .insert(variables.map(v => ({ ...v, prompt_id: promptId })))
-        .select();
-      
-      if (error) throw error;
-      return data;
-    },
+    }) => repository.upsertMany(promptId, variables),
     onSuccess: (_, { promptId }) => {
       queryClient.invalidateQueries({ queryKey: ["variables", promptId] });
       toast({ title: "✅ Variables enregistrées" });
