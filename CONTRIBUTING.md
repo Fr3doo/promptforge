@@ -54,6 +54,7 @@ npm run test:coverage     # Couverture de code
 - **Functional components** avec hooks
 - **Props destructuring** en signature
 - **Named exports** (sauf pages)
+- **Pas d'imports circulaires** - ESLint empêche automatiquement les cycles
 
 ### Commits
 Format: `type(scope): message`
@@ -108,6 +109,7 @@ Ouvrir une issue avec:
 - [Guide de tests](./TESTING.md)
 - [Guide des Repositories](./docs/REPOSITORY_GUIDE.md) - **Obligatoire** pour ajouter de nouvelles entités
 - [Règle ESLint Supabase](./docs/ESLINT_SUPABASE_RULE.md)
+- [Détection des dépendances circulaires](./docs/CIRCULAR_DEPENDENCIES.md) - **Prévention des imports circulaires**
 - [Guide Codecov pour PR](./docs/CODECOV_PR_GUIDE.md) - **Comprendre les commentaires de couverture**
 - [Configuration Codecov](./docs/CODECOV_SETUP.md)
 - [Changelog](./CHANGELOG.md)

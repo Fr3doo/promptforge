@@ -44,6 +44,7 @@ npm run dev
 - [Codecov PR Guide](./docs/CODECOV_PR_GUIDE.md) - **Pour les contributeurs** : Comprendre les commentaires Codecov
 - [Repository Pattern](./docs/REPOSITORY_GUIDE.md) - Créer de nouveaux repositories
 - [ESLint Rules](./docs/ESLINT_SUPABASE_RULE.md) - Règles d'architecture
+- [Circular Dependencies](./docs/CIRCULAR_DEPENDENCIES.md) - Prévention des imports circulaires
 - [Prettier Setup](./PRETTIER_SETUP.md) - Configuration du formatter
 - [Husky Hooks](./HUSKY.md) - Git hooks pour qualité de code
 

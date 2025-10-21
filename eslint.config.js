@@ -5,6 +5,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 import prettierConfig from "eslint-config-prettier";
 import prettierPlugin from "eslint-plugin-prettier";
+import importPlugin from "eslint-plugin-import-x";
 
 export default tseslint.config(
   { ignores: ["dist"] },
@@ -19,6 +20,7 @@ export default tseslint.config(
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
       prettier: prettierPlugin,
+      import: importPlugin,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -37,6 +39,8 @@ export default tseslint.config(
           ],
         },
       ],
+      "import/no-cycle": ["error", { maxDepth: Infinity, ignoreExternal: true }],
+      "import/no-self-import": "error",
       ...prettierConfig.rules,
     },
   },
