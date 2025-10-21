@@ -1,4 +1,4 @@
-# Nouvelle Architecture PromptForge v2
+# Architecture PromptForge
 
 ## 📋 Table des matières
 
