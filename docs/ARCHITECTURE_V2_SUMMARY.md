@@ -20,12 +20,14 @@
 ### 🎯 Nouveaux services
 
 #### PromptRepository
+
 - Interface abstraite pour l'accès aux données des prompts
 - Implémentation Supabase
 - Méthodes: `fetchAll`, `fetchById`, `create`, `update`, `delete`, `duplicate`, `toggleFavorite`, `toggleVisibility`
 - Localisation: `src/repositories/PromptRepository.ts`
 
 #### VariableRepository
+
 - Interface abstraite pour l'accès aux données des variables
 - Implémentation Supabase avec upsert intelligent
 - Méthodes: `fetch`, `create`, `update`, `deleteMany`, `upsertMany`
@@ -34,21 +36,25 @@
 ### 🪝 Nouveaux hooks
 
 #### usePromptForm
+
 - Hook de composition principal pour le formulaire de prompt
 - Orchestre: tags, variables, sauvegarde
 - Localisation: `src/features/prompts/hooks/usePromptForm.ts`
 
 #### usePromptSave
+
 - Hook dédié à la sauvegarde (création/mise à jour)
 - Validation Zod, gestion des erreurs, notifications
 - Localisation: `src/hooks/usePromptSave.ts`
 
 #### useTagManager
+
 - Gestion de l'état et de la logique des tags
 - Dédoublonnage automatique
 - Localisation: `src/hooks/useTagManager.ts`
 
 #### useVariableManager
+
 - Synchronisation des variables détectées dans le contenu
 - Suppression automatique des variables obsolètes
 - Localisation: `src/hooks/useVariableManager.ts`
@@ -56,6 +62,7 @@
 ### 🧪 Tests
 
 #### Tests unitaires
+
 - `src/repositories/__tests__/PromptRepository.test.ts`
   - Couverture complète des méthodes CRUD
   - Tests de duplication avec variables
@@ -67,6 +74,7 @@
   - Tests de gestion des erreurs
 
 #### Tests d'intégration
+
 - `src/features/prompts/hooks/__tests__/usePromptForm.test.tsx`
   - Tests du cycle complet de création
   - Tests du mode édition
@@ -75,15 +83,17 @@
 ### ⚙️ Règles ESLint
 
 #### no-restricted-imports
+
 - Interdit l'import direct de `@/integrations/supabase/client`
 - Exceptions: repositories, contexts, edge functions, useAuth
 - Documentation: `docs/ESLINT_SUPABASE_RULE.md`
 
 **Message d'erreur:**
+
 ```
-❌ Import direct de Supabase interdit ! 
-Utilisez les repositories (PromptRepository, VariableRepository) 
-pour respecter le principe d'inversion de dépendance (DIP). 
+❌ Import direct de Supabase interdit !
+Utilisez les repositories (PromptRepository, VariableRepository)
+pour respecter le principe d'inversion de dépendance (DIP).
 Voir ARCHITECTURE.md pour plus de détails.
 ```
 
@@ -168,12 +178,12 @@ import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
 
 function MyComponent() {
   const repository = usePromptRepository();
-  
+
   const { data: prompts } = useQuery({
     queryKey: ["prompts"],
     queryFn: () => repository.fetchAll(),
   });
-  
+
   return <div>{prompts.map(p => <PromptCard key={p.id} prompt={p} />)}</div>;
 }
 ```
@@ -186,7 +196,7 @@ import { usePromptForm } from "@/features/prompts/hooks/usePromptForm";
 function PromptEditor({ promptId }: { promptId?: string }) {
   const { data: prompt } = usePrompt(promptId);
   const { data: variables } = useVariables(promptId);
-  
+
   const {
     title, setTitle,
     content, setContent,
@@ -204,11 +214,11 @@ function PromptEditor({ promptId }: { promptId?: string }) {
     <form onSubmit={(e) => { e.preventDefault(); handleSave(promptId); }}>
       <Input value={title} onChange={(e) => setTitle(e.target.value)} />
       <Textarea value={content} onChange={(e) => setContent(e.target.value)} />
-      
+
       <Button type="button" onClick={detectVariables}>
         Détecter variables
       </Button>
-      
+
       <Button type="submit" disabled={isSaving}>
         {isSaving ? "Sauvegarde..." : "Sauvegarder"}
       </Button>
@@ -238,7 +248,7 @@ it("fetches prompts", async () => {
   mockRepository.fetchAll.mockResolvedValue([
     { id: "1", title: "Test" },
   ]);
-  
+
   const result = await mockRepository.fetchAll();
   expect(result).toHaveLength(1);
 });
@@ -249,20 +259,24 @@ it("fetches prompts", async () => {
 ## 🎯 Principes SOLID appliqués
 
 ### Single Responsibility Principle (SRP)
+
 - ✅ `usePromptSave`: Uniquement la sauvegarde
 - ✅ `useTagManager`: Uniquement les tags
 - ✅ `useVariableManager`: Uniquement les variables
 - ✅ `usePromptForm`: Orchestration uniquement
 
 ### Open/Closed Principle (OCP)
+
 - ✅ Repositories: Extension via nouvelles implémentations sans modification des interfaces
 
 ### Dependency Inversion Principle (DIP)
+
 - ✅ Composants dépendent de `PromptRepository` (abstraction)
 - ✅ Pas de dépendance directe à `supabase` (implémentation)
 - ✅ Règle ESLint pour forcer le respect
 
 ### Don't Repeat Yourself (DRY)
+
 - ✅ Logique d'upsert centralisée dans `VariableRepository.upsertMany`
 - ✅ Validation Zod dans `usePromptSave` uniquement
 - ✅ Détection de variables dans `useVariableDetection`
