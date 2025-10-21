@@ -24,6 +24,109 @@ function validateInput(promptContent: unknown): string {
   return trimmed;
 }
 
+// Validate AI-generated response structure
+function validateAIResponse(structured: any): void {
+  // Validate variables array
+  if (structured.variables) {
+    if (!Array.isArray(structured.variables)) {
+      throw new Error('Variables doit être un tableau');
+    }
+    
+    if (structured.variables.length > 50) {
+      throw new Error('Nombre maximum de variables dépassé (50)');
+    }
+    
+    // Validate each variable
+    structured.variables.forEach((v: any, index: number) => {
+      if (!v.name || typeof v.name !== 'string') {
+        throw new Error(`Variable ${index}: nom requis`);
+      }
+      
+      if (v.name.length > 100) {
+        throw new Error(`Variable ${v.name}: nom trop long (max 100 caractères)`);
+      }
+      
+      // Variable names must be alphanumeric with underscores/hyphens
+      if (!/^[a-zA-Z0-9_-]+$/.test(v.name)) {
+        throw new Error(`Variable ${v.name}: caractères invalides (seulement a-z, A-Z, 0-9, _, -)`);
+      }
+      
+      if (v.description && v.description.length > 500) {
+        throw new Error(`Variable ${v.name}: description trop longue (max 500 caractères)`);
+      }
+      
+      if (v.default_value && v.default_value.length > 1000) {
+        throw new Error(`Variable ${v.name}: valeur par défaut trop longue (max 1000 caractères)`);
+      }
+      
+      if (v.options && Array.isArray(v.options)) {
+        if (v.options.length > 50) {
+          throw new Error(`Variable ${v.name}: trop d'options (max 50)`);
+        }
+        v.options.forEach((opt: any) => {
+          if (typeof opt === 'string' && opt.length > 100) {
+            throw new Error(`Variable ${v.name}: option trop longue (max 100 caractères)`);
+          }
+        });
+      }
+    });
+  }
+  
+  // Validate metadata
+  if (structured.metadata) {
+    if (structured.metadata.role && structured.metadata.role.length > 500) {
+      throw new Error('Rôle trop long (max 500 caractères)');
+    }
+    
+    if (structured.metadata.objectifs && Array.isArray(structured.metadata.objectifs)) {
+      if (structured.metadata.objectifs.length > 20) {
+        throw new Error('Trop d\'objectifs (max 20)');
+      }
+      structured.metadata.objectifs.forEach((obj: any) => {
+        if (typeof obj === 'string' && obj.length > 200) {
+          throw new Error('Objectif trop long (max 200 caractères)');
+        }
+      });
+    }
+    
+    if (structured.metadata.etapes && Array.isArray(structured.metadata.etapes)) {
+      if (structured.metadata.etapes.length > 50) {
+        throw new Error('Trop d\'étapes (max 50)');
+      }
+      structured.metadata.etapes.forEach((etape: any) => {
+        if (typeof etape === 'string' && etape.length > 500) {
+          throw new Error('Étape trop longue (max 500 caractères)');
+        }
+      });
+    }
+    
+    if (structured.metadata.categories && Array.isArray(structured.metadata.categories)) {
+      if (structured.metadata.categories.length > 20) {
+        throw new Error('Trop de catégories (max 20)');
+      }
+      structured.metadata.categories.forEach((cat: any) => {
+        if (typeof cat === 'string' && cat.length > 50) {
+          throw new Error('Catégorie trop longue (max 50 caractères)');
+        }
+      });
+    }
+  }
+  
+  // Validate sections
+  if (structured.sections) {
+    Object.values(structured.sections).forEach((section: any) => {
+      if (typeof section === 'string' && section.length > 10000) {
+        throw new Error('Section trop longue (max 10000 caractères)');
+      }
+    });
+  }
+  
+  // Validate prompt template
+  if (structured.prompt_template && structured.prompt_template.length > 100000) {
+    throw new Error('Template trop long (max 100000 caractères)');
+  }
+}
+
 // === MARKDOWN GENERATION (DRY) ===
 function buildMarkdownSection(title: string, content: string | string[]): string {
   if (!content || (Array.isArray(content) && content.length === 0)) return '';
@@ -201,6 +304,9 @@ serve(async (req) => {
     }
 
     const structured = JSON.parse(toolCall.function.arguments);
+    
+    // Validate AI response structure
+    validateAIResponse(structured);
 
     // 6. Generate exports (DRY - une seule structure)
     const result = {
