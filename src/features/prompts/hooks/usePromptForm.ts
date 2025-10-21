@@ -5,6 +5,7 @@ import { promptSchema, variableSchema } from "@/lib/validation";
 import { useCreatePrompt, useUpdatePrompt } from "@/hooks/usePrompts";
 import { useBulkUpsertVariables } from "@/hooks/useVariables";
 import { useVariableDetection } from "@/hooks/useVariableDetection";
+import { useTagManager } from "@/hooks/useTagManager";
 import type { Prompt, Variable, PromptFormData } from "../types";
 
 interface UsePromptFormOptions {
@@ -26,10 +27,11 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode }: Us
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
   const [visibility, setVisibility] = useState<"PRIVATE" | "SHARED">("PRIVATE");
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
   const [variables, setVariables] = useState<Variable[]>([]);
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
+  
+  // Tag management
+  const { tags, setTags, tagInput, setTagInput, addTag, removeTag } = useTagManager();
 
   const { detectedNames } = useVariableDetection(content);
 
@@ -171,16 +173,6 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode }: Us
     }
   };
 
-  const addTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-      setTags([...tags, tagInput.trim()]);
-      setTagInput("");
-    }
-  };
-
-  const removeTag = (tag: string) => {
-    setTags(tags.filter(t => t !== tag));
-  };
 
   const updateVariable = (index: number, variable: Variable) => {
     const newVars = [...variables];
