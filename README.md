@@ -23,6 +23,11 @@ PromptForge est une application web moderne permettant de créer, gérer et vers
 git clone <repo>
 cd promptforge
 npm install
+
+# Ajouter les scripts Prettier dans package.json (voir PRETTIER_SETUP.md)
+# "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+# "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
+
 npm run dev
 ```
 
@@ -32,6 +37,7 @@ npm run dev
 - [Changelog](./CHANGELOG.md) - Historique des versions
 - [Tests](./TESTING.md) - Guide de tests
 - [Contributing](./CONTRIBUTING.md) - Guide de contribution
+- [Prettier Setup](./PRETTIER_SETUP.md) - Configuration du formatter
 
 ## 🛠️ Stack
 

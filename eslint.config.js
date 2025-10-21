@@ -3,6 +3,8 @@ import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
+import prettierConfig from "eslint-config-prettier";
+import prettierPlugin from "eslint-plugin-prettier";
 
 export default tseslint.config(
   { ignores: ["dist"] },
@@ -16,11 +18,13 @@ export default tseslint.config(
     plugins: {
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
+      prettier: prettierPlugin,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
+      "prettier/prettier": "error",
       "no-restricted-imports": [
         "error",
         {
@@ -33,6 +37,7 @@ export default tseslint.config(
           ],
         },
       ],
+      ...prettierConfig.rules,
     },
   },
   // Configuration spéciale pour les fichiers autorisés à utiliser Supabase
