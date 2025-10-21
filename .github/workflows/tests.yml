@@ -41,6 +41,9 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: false
           verbose: true
+          # Enable PR comments and annotations
+          disable_search: false
+          disable_file_fixes: false
           
       - name: Upload coverage reports as artifact
         uses: actions/upload-artifact@v4

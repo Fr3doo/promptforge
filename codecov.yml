@@ -1,0 +1,79 @@
+codecov:
+  require_ci_to_pass: yes
+  notify:
+    wait_for_ci: yes
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+  
+  status:
+    # Configuration pour le projet global
+    project:
+      default:
+        target: 70%
+        threshold: 2%
+        base: auto
+        if_ci_failed: error
+        informational: false
+    
+    # Configuration pour les nouveaux changements (patch)
+    patch:
+      default:
+        target: 70%
+        threshold: 5%
+        base: auto
+        if_ci_failed: error
+
+# Configuration des commentaires sur les PR
+comment:
+  layout: "header, diff, flags, components, files, footer"
+  behavior: default
+  require_changes: false
+  require_base: no
+  require_head: yes
+  
+  # Toujours commenter même si la couverture n'a pas changé
+  after_n_builds: 1
+
+# Configuration pour GitHub
+github_checks:
+  annotations: true
+
+# Fichiers à ignorer dans les rapports de couverture
+ignore:
+  - "src/test/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+  - "**/*.config.ts"
+  - "**/*.config.js"
+  - "src/integrations/supabase/types.ts"
+  - "src/vite-env.d.ts"
+  - "src/main.tsx"
+  - "**/__mocks__/**"
+
+# Configuration des flags (pour identifier différents types de tests)
+flags:
+  unittests:
+    paths:
+      - src/
+    carryforward: true
+
+# Configuration du comportement des composants
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: 70%
+      - type: patch
+        target: 70%
+
+# Annotations GitHub pour marquer les lignes non couvertes
+annotations:
+  enabled: true
+  range: "50..100"
+  coverage_target: "70%"
+  threshold: "2%"

@@ -34,6 +34,8 @@ npm run test
 - [ ] Types TypeScript valides
 - [ ] Documentation mise à jour si nécessaire
 - [ ] Changelog mis à jour pour changements significatifs
+- [ ] Couverture de code ≥ 70% (vérifier commentaire Codecov)
+- [ ] Patch coverage ≥ 70% pour nouveaux changements
 
 ## 🧪 Tests
 
@@ -106,6 +108,8 @@ Ouvrir une issue avec:
 - [Guide de tests](./TESTING.md)
 - [Guide des Repositories](./docs/REPOSITORY_GUIDE.md) - **Obligatoire** pour ajouter de nouvelles entités
 - [Règle ESLint Supabase](./docs/ESLINT_SUPABASE_RULE.md)
+- [Guide Codecov pour PR](./docs/CODECOV_PR_GUIDE.md) - **Comprendre les commentaires de couverture**
+- [Configuration Codecov](./docs/CODECOV_SETUP.md)
 - [Changelog](./CHANGELOG.md)
 
 ---

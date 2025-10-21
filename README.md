@@ -33,11 +33,19 @@ npm run dev
 
 ## 📖 Documentation
 
+### Guides principaux
 - [Architecture](./ARCHITECTURE.md) - Structure interne détaillée
 - [Changelog](./CHANGELOG.md) - Historique des versions
-- [Tests](./TESTING.md) - Guide de tests
 - [Contributing](./CONTRIBUTING.md) - Guide de contribution
+
+### Guides techniques
+- [Tests](./TESTING.md) - Guide de tests avec Vitest
+- [Codecov Setup](./docs/CODECOV_SETUP.md) - Configuration de la couverture de code
+- [Codecov PR Guide](./docs/CODECOV_PR_GUIDE.md) - **Pour les contributeurs** : Comprendre les commentaires Codecov
+- [Repository Pattern](./docs/REPOSITORY_GUIDE.md) - Créer de nouveaux repositories
+- [ESLint Rules](./docs/ESLINT_SUPABASE_RULE.md) - Règles d'architecture
 - [Prettier Setup](./PRETTIER_SETUP.md) - Configuration du formatter
+- [Husky Hooks](./HUSKY.md) - Git hooks pour qualité de code
 
 ## 🛠️ Stack
 

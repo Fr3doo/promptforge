@@ -166,12 +166,16 @@ coverage: {
 5. Valeur: Coller le token Codecov
 6. Cliquer "Add secret"
 
-### Étape 4: Configurer codecov.yml (optionnel)
+### Étape 4: Configurer codecov.yml
 
-Créer un fichier `codecov.yml` à la racine du projet:
+Le fichier `codecov.yml` à la racine du projet configure le comportement de Codecov :
 
 ```yaml
 coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+  
   status:
     project:
       default:
@@ -180,18 +184,43 @@ coverage:
     patch:
       default:
         target: 70%
+        threshold: 5%
 
+# Configuration des commentaires sur les PR
 comment:
-  layout: "reach, diff, flags, files"
+  layout: "header, diff, flags, components, files, footer"
   behavior: default
   require_changes: false
+  after_n_builds: 1
+
+# Annotations GitHub pour marquer les lignes non couvertes
+github_checks:
+  annotations: true
+
+annotations:
+  enabled: true
+  range: "50..100"
+  coverage_target: "70%"
+  threshold: "2%"
 
 ignore:
   - "src/test/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
   - "**/*.config.ts"
-  - "**/*.config.js"
   - "src/integrations/supabase/types.ts"
 ```
+
+**Paramètres clés :**
+
+- **status.project.target** : Couverture minimale du projet (70%)
+- **status.project.threshold** : Tolérance de baisse (2%)
+- **status.patch.target** : Couverture minimale pour nouveaux changements (70%)
+- **comment.layout** : Sections du commentaire PR
+- **comment.require_changes** : Commenter même si couverture inchangée
+- **github_checks.annotations** : Annoter les lignes non couvertes dans PR
+- **annotations.range** : Seuils pour annotations (50-100%)
+
 
 ## Badge README
 
@@ -289,24 +318,125 @@ npm run test:ui
 
 ## Commentaires Automatiques sur PR
 
-Codecov ajoute automatiquement des commentaires sur les Pull Requests avec:
+Codecov ajoute automatiquement des commentaires détaillés sur chaque Pull Request.
 
-**Informations incluses:**
-- Changement de couverture global (+/-X%)
-- Couverture du patch (nouveaux changements)
-- Fichiers affectés avec leurs métriques
-- Sunburst chart de la couverture
+### Configuration
 
-**Exemple de commentaire:**
+Le fichier `codecov.yml` contrôle le comportement des commentaires :
+
+```yaml
+comment:
+  layout: "header, diff, flags, components, files, footer"
+  behavior: default
+  require_changes: false  # Commenter même si couverture inchangée
+  after_n_builds: 1      # Commenter après le premier build
 ```
-## Codecov Report
-Coverage: 75.23% (+0.43%) compared to base
 
-Detailed Changes:
-| File | Coverage Δ | Complexity Δ |
-|------|-----------|--------------|
-| src/components/ErrorBoundary.tsx | 92.30% | +3 |
-| src/hooks/useVariables.ts | 88.88% | +1 |
+### Contenu des commentaires PR
+
+**1. En-tête (Header)**
+- Couverture globale actuelle
+- Changement par rapport à la base (+/-X%)
+- Statut (✅ passing / ❌ failing)
+
+**2. Différences (Diff)**
+- Couverture du patch (nouveaux changements)
+- Pourcentage du code ajouté qui est testé
+- Impact sur la couverture globale
+
+**3. Flags**
+- Statut des différents types de tests (unittests, integration, etc.)
+- Couverture par type de test
+
+**4. Composants**
+- Analyse par composant ou module
+- Tendances de couverture
+
+**5. Fichiers (Files)**
+- Liste des fichiers modifiés
+- Couverture actuelle vs. précédente pour chaque fichier
+- Indicateur visuel (✅ améliorée, ⚠️ réduite, ➖ inchangée)
+
+**6. Pied de page (Footer)**
+- Liens vers dashboard Codecov
+- Instructions pour visualiser en détail
+
+### Exemple de commentaire complet
+
+```markdown
+## [Codecov](https://codecov.io/gh/user/promptforge) Report
+> Merging #42 (abc123) into main (def456) will **increase** coverage by `0.43%`.
+> The diff coverage is `85.71%`.
+
+[![Impacted file tree graph](https://codecov.io/gh/user/promptforge/pull/42/graphs/tree.svg?token=TOKEN)](https://codecov.io/gh/user/promptforge/pull/42)
+
+## Coverage Δ
+| [Files](https://app.codecov.io/gh/user/promptforge/pull/42?src=pr&el=tree) | Coverage Δ | Complexity Δ |
+|------------|-----------|--------------|
+| [src/hooks/useVariableManager.ts](https://app.codecov.io/gh/user/promptforge/pull/42?src=pr&el=tree#diff-c3JjL2hvb2tzL3VzZVZhcmlhYmxlTWFuYWdlci50cw==) | `92.30% <85.71%> (+2.30%)` | `12 <0> (+1)` |
+| [src/hooks/useVariableDetection.ts](https://app.codecov.io/gh/user/promptforge/pull/42?src=pr&el=tree#diff-c3JjL2hvb2tzL3VzZVZhcmlhYmxlRGV0ZWN0aW9uLnRz) | `88.88% <ø> (ø)` | `8 <0> (ø)` |
+
+## Flags Coverage Δ
+| [Flags](https://app.codecov.io/gh/user/promptforge/pull/42/flags?src=pr&el=flags) | Coverage Δ |
+|--------|-----------|
+| unittests | `75.66% <85.71%> (+0.43%)` ⬆️ |
+
+**Continue to review full report at [Codecov](https://codecov.io/gh/user/promptforge/pull/42?src=pr&el=continue).**
+```
+
+### Annotations GitHub
+
+Avec `github_checks.annotations: true`, Codecov ajoute également :
+
+**1. Checks GitHub**
+- Status check visible dans la PR
+- Passe ✅ si couverture ≥ target
+- Échoue ❌ si couverture < target
+
+**2. Annotations sur le code**
+- Lignes non couvertes marquées dans les fichiers modifiés
+- Visible directement dans l'onglet "Files changed"
+- Aide à identifier rapidement ce qui doit être testé
+
+**Exemple d'annotation :**
+```
+⚠️ Line 42 is not covered by tests
+Coverage: 0 hits, 1 branch
+```
+
+### Interprétation des commentaires
+
+**Symboles utilisés :**
+- ✅ : Couverture améliorée
+- ⚠️ : Couverture réduite
+- ➖ : Couverture inchangée
+- 🔴 : Couverture en dessous du seuil
+- 🟢 : Couverture au-dessus du seuil
+
+**Métriques du patch :**
+- `<85.71%>` : Couverture des lignes ajoutées dans cette PR
+- `(+2.30%)` : Changement de couverture globale du fichier
+- `12 <0> (+1)` : Complexité (actuelle <changement patch> changement total)
+
+### Personnalisation avancée
+
+**Masquer certaines sections :**
+```yaml
+comment:
+  layout: "header, diff, files"  # Enlever flags, components, footer
+```
+
+**Ne commenter que si changements :**
+```yaml
+comment:
+  require_changes: true  # Pas de commentaire si couverture identique
+```
+
+**Commentaire minimal :**
+```yaml
+comment:
+  layout: "diff"  # Seulement le diff
+  behavior: once  # Un seul commentaire, mise à jour ensuite
 ```
 
 ## Bonnes Pratiques
@@ -420,12 +550,74 @@ npm run test:coverage
 
 ## Améliorations Futures
 
-- [ ] Intégration Codecov avec code review
-- [ ] Alertes si couverture < 70%
-- [ ] Dashboard personnalisé avec métriques
-- [ ] Couverture différentielle sur PR
+- [x] Commentaires automatiques sur PR
+- [x] Annotations GitHub dans les fichiers modifiés
+- [x] Dashboard personnalisé avec métriques
+- [x] Couverture différentielle sur PR
+- [ ] Intégration Codecov avec code review obligatoire
+- [ ] Alertes Slack si couverture < 70%
 - [ ] Tests de mutation (Stryker)
 - [ ] Couverture e2e séparée
+
+## Workflow typique avec Codecov
+
+### Pour les contributeurs
+
+1. **Créer une branche et faire des modifications**
+   ```bash
+   git checkout -b feat/new-feature
+   # Faire des modifications
+   ```
+
+2. **Tester localement avec couverture**
+   ```bash
+   npm run test:coverage
+   # Vérifier que la couverture est ≥ 70%
+   ```
+
+3. **Créer une Pull Request**
+   - GitHub Actions s'exécute automatiquement
+   - Codecov analyse la couverture
+   - Un commentaire détaillé est ajouté en quelques minutes
+
+4. **Consulter le commentaire Codecov**
+   - Vérifier que la couverture globale n'a pas baissé
+   - Identifier les fichiers modifiés sous-testés
+   - Corriger si nécessaire
+
+5. **Ajouter des tests si requis**
+   ```bash
+   # Ajouter des tests pour les lignes non couvertes
+   git add .
+   git commit -m "test: add coverage for edge cases"
+   git push
+   # Codecov met à jour le commentaire
+   ```
+
+### Pour les reviewers
+
+1. **Consulter le commentaire Codecov dans la PR**
+   - Vérifier que le patch coverage ≥ 70%
+   - Identifier les fichiers critiques sans tests
+
+2. **Utiliser les annotations GitHub**
+   - Cliquer sur "Files changed"
+   - Les lignes non couvertes sont annotées
+   - Demander des tests pour les chemins critiques
+
+3. **Vérifier les tendances**
+   - Cliquer sur le lien Codecov dans le commentaire
+   - Consulter le dashboard pour voir les tendances
+   - S'assurer que la qualité s'améliore progressivement
+
+### Checklist avant merge
+
+- [ ] Couverture globale ≥ 70%
+- [ ] Patch coverage ≥ 70%
+- [ ] Pas de baisse > 2% de couverture
+- [ ] Fichiers critiques (repositories, hooks) bien testés
+- [ ] Annotations GitHub résolues ou justifiées
+- [ ] Tests passent en CI
 
 ## Références
 
