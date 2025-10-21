@@ -72,6 +72,79 @@ export class SupabaseVariableRepository implements VariableRepository {
   }
 
   /**
+   * Fetches existing variables for a prompt
+   * @private
+   */
+  private async fetchExistingVariables(promptId: string): Promise<Variable[]> {
+    return await this.fetch(promptId);
+  }
+
+  /**
+   * Prepares variables for upsert by mapping them to existing IDs
+   * Preserves existing variable IDs to avoid unnecessary deletions
+   * @private
+   */
+  private prepareVariablesForUpsert(
+    variables: Omit<VariableInsert, "prompt_id">[],
+    promptId: string,
+    existingVariables: Variable[]
+  ): VariableInsert[] {
+    const existingMap = new Map(existingVariables.map(v => [v.name, v]));
+
+    return variables.map((v, index) => {
+      const existing = existingMap.get(v.name);
+      return {
+        ...v,
+        prompt_id: promptId,
+        order_index: index,
+        ...(existing ? { id: existing.id } : {}),
+      };
+    });
+  }
+
+  /**
+   * Identifies and deletes variables that are no longer present
+   * @private
+   */
+  private async deleteObsoleteVariables(
+    newVariableNames: Set<string>,
+    existingVariables: Variable[]
+  ): Promise<void> {
+    const variablesToDelete = existingVariables.filter(
+      ev => !newVariableNames.has(ev.name)
+    );
+
+    if (variablesToDelete.length > 0) {
+      const deleteResult = await supabase
+        .from("variables")
+        .delete()
+        .in("id", variablesToDelete.map(v => v.id));
+
+      handleSupabaseError(deleteResult);
+    }
+  }
+
+  /**
+   * Performs the actual upsert operation on variables
+   * @private
+   */
+  private async performVariableUpsert(
+    variablesWithIds: VariableInsert[]
+  ): Promise<Variable[]> {
+    const result = await supabase
+      .from("variables")
+      .upsert(variablesWithIds, {
+        onConflict: "id",
+        ignoreDuplicates: false,
+      })
+      .select()
+      .order("order_index", { ascending: true });
+
+    handleSupabaseError(result);
+    return result.data as Variable[];
+  }
+
+  /**
    * Atomic upsert of variables for a prompt
    * 
    * This method ensures data integrity by:
@@ -94,62 +167,29 @@ export class SupabaseVariableRepository implements VariableRepository {
    * ```
    */
   async upsertMany(promptId: string, variables: Omit<VariableInsert, "prompt_id">[]): Promise<Variable[]> {
+    // Edge case: No variables means remove all
     if (variables.length === 0) {
-      // Edge case: If no variables provided, remove all existing ones
-      // This is intentional - it means the prompt has no variables
       await this.deleteMany(promptId);
       return [];
     }
 
     try {
-      // Step 1: Fetch existing variables to map IDs
-      const existingVariables = await this.fetch(promptId);
-      
-      // Step 2: Build variable map for efficient lookup
-      const existingMap = new Map(existingVariables.map(v => [v.name, v]));
-      
-      // Step 3: Prepare variables for upsert, preserving IDs where they exist
-      const variablesWithIds = variables.map((v, index) => {
-        const existing = existingMap.get(v.name);
-        return {
-          ...v,
-          prompt_id: promptId,
-          order_index: index, // Ensure consistent ordering
-          ...(existing ? { id: existing.id } : {}), // Preserve ID if exists
-        };
-      });
+      // Step 1: Fetch existing variables
+      const existingVariables = await this.fetchExistingVariables(promptId);
 
-      // Step 4: Identify variables to delete (exist in DB but not in new list)
-      const newVariableNames = new Set(variables.map(v => v.name));
-      const variablesToDelete = existingVariables.filter(
-        ev => !newVariableNames.has(ev.name)
+      // Step 2: Prepare variables with preserved IDs
+      const variablesWithIds = this.prepareVariablesForUpsert(
+        variables,
+        promptId,
+        existingVariables
       );
-      
-      // Step 5: Delete obsolete variables (if any)
-      if (variablesToDelete.length > 0) {
-        const deleteResult = await supabase
-          .from("variables")
-          .delete()
-          .in("id", variablesToDelete.map(v => v.id));
-        
-        handleSupabaseError(deleteResult);
-      }
 
-      // Step 6: Upsert all variables atomically
-      // - If ID exists: UPDATE
-      // - If ID missing: INSERT
-      const result = await supabase
-        .from("variables")
-        .upsert(variablesWithIds, { 
-          onConflict: "id",
-          ignoreDuplicates: false, // Always update on conflict
-        })
-        .select()
-        .order("order_index", { ascending: true });
-      
-      handleSupabaseError(result);
-      
-      return result.data as Variable[];
+      // Step 3: Delete obsolete variables
+      const newVariableNames = new Set(variables.map(v => v.name));
+      await this.deleteObsoleteVariables(newVariableNames, existingVariables);
+
+      // Step 4: Perform atomic upsert
+      return await this.performVariableUpsert(variablesWithIds);
     } catch (error) {
       console.error("Transaction failed in upsertMany:", error);
       throw error;
