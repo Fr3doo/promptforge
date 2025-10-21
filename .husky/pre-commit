@@ -1,6 +1,11 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-npm run format:check
+# Auto-format code with Prettier
+npm run format
+
+# Run ESLint checks
 npm run lint
+
+# Run unit tests
 npm run test
