@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
+import { useToastNotifier } from "@/hooks/useToastNotifier";
 import { promptSchema, variableSchema } from "@/lib/validation";
 import { useCreatePrompt, useUpdatePrompt } from "@/hooks/usePrompts";
 import { useBulkUpsertVariables } from "@/hooks/useVariables";
@@ -16,6 +16,7 @@ interface UsePromptFormOptions {
 
 export function usePromptForm({ prompt, existingVariables = [], isEditMode }: UsePromptFormOptions) {
   const navigate = useNavigate();
+  const { notifyError } = useToastNotifier();
   
   // Mutations
   const { mutate: createPrompt, isPending: creating } = useCreatePrompt();
@@ -134,11 +135,7 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode }: Us
       }
     } catch (error: any) {
       if (error?.errors?.[0]?.message) {
-        toast({ 
-          title: "❌ Validation échouée", 
-          description: error.errors[0].message,
-          variant: "destructive" 
-        });
+        notifyError("Validation échouée", error.errors[0].message);
       }
     }
   };

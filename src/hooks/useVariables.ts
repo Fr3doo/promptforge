@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "@/hooks/use-toast";
+import { useToastNotifier } from "@/hooks/useToastNotifier";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
 import type { VariableInsert } from "@/repositories/VariableRepository";
@@ -20,6 +20,7 @@ export function useVariables(promptId: string | undefined) {
 export function useCreateVariable() {
   const queryClient = useQueryClient();
   const repository = useVariableRepository();
+  const { notifyError } = useToastNotifier();
   
   return useMutation({
     mutationFn: (variable: VariableInsert) => repository.create(variable),
@@ -27,11 +28,7 @@ export function useCreateVariable() {
       queryClient.invalidateQueries({ queryKey: ["variables", prompt_id] });
     },
     onError: (error) => {
-      toast({ 
-        title: "❌ Erreur", 
-        description: getSafeErrorMessage(error),
-        variant: "destructive" 
-      });
+      notifyError("Erreur", getSafeErrorMessage(error));
     },
   });
 }
@@ -39,6 +36,7 @@ export function useCreateVariable() {
 export function useBulkUpsertVariables() {
   const queryClient = useQueryClient();
   const repository = useVariableRepository();
+  const { notifySuccess, notifyError } = useToastNotifier();
   
   return useMutation({
     mutationFn: ({ 
@@ -50,14 +48,10 @@ export function useBulkUpsertVariables() {
     }) => repository.upsertMany(promptId, variables),
     onSuccess: (_, { promptId }) => {
       queryClient.invalidateQueries({ queryKey: ["variables", promptId] });
-      toast({ title: "✅ Variables enregistrées" });
+      notifySuccess("Variables enregistrées");
     },
     onError: (error) => {
-      toast({ 
-        title: "❌ Erreur d'enregistrement des variables", 
-        description: getSafeErrorMessage(error),
-        variant: "destructive" 
-      });
+      notifyError("Erreur d'enregistrement des variables", getSafeErrorMessage(error));
     },
   });
 }
