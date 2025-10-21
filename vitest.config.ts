@@ -10,13 +10,23 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     coverage: {
       provider: "v8",
-      reporter: ["text", "json", "html"],
+      reporter: ["text", "json", "html", "lcov", "json-summary"],
+      reportsDirectory: "./coverage",
       exclude: [
         "node_modules/",
         "src/test/",
         "**/*.config.ts",
+        "**/*.config.js",
         "src/integrations/supabase/types.ts",
+        "src/main.tsx",
+        "src/vite-env.d.ts",
       ],
+      thresholds: {
+        lines: 70,
+        functions: 70,
+        branches: 70,
+        statements: 70,
+      },
     },
   },
   resolve: {

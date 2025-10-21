@@ -843,6 +843,7 @@ getTTFB(console.log);
 - [Testing Guide](./TESTING.md) - Guide des tests unitaires et d'intégration
 - [Variable Upsert Security](./docs/VARIABLE_UPSERT_SECURITY.md) - Sécurité de l'upsert des variables
 - [Error Boundary](./docs/ERROR_BOUNDARY.md) - Gestion globale des erreurs runtime
+- [Codecov Setup](./docs/CODECOV_SETUP.md) - Configuration de la couverture de tests
 
 ---
 

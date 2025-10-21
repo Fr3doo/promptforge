@@ -4,8 +4,10 @@
 
 PromptForge est une application web moderne permettant de créer, gérer et versionner vos prompts IA avec un système de variables dynamiques et un historique complet de versions sémantiques.
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/votre-username/promptforge/releases)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Tests](https://github.com/votre-username/promptforge/actions/workflows/tests.yml/badge.svg)](https://github.com/votre-username/promptforge/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/votre-username/promptforge/branch/main/graph/badge.svg)](https://codecov.io/gh/votre-username/promptforge)
 
 ## ✨ Fonctionnalités
 
