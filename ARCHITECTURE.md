@@ -832,19 +832,18 @@ getTTFB(console.log);
 - [Supabase Documentation](https://supabase.com/docs)
 - [Repository Pattern](https://martinfowler.com/eaaCatalog/repository.html)
 - [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [Framer Motion](https://www.framer.com/motion/)
+- [Vitest](https://vitest.dev/)
+
+### Documentation du projet
+
 - [ESLint Supabase Rule](./docs/ESLINT_SUPABASE_RULE.md) - ⚠️ Import direct de Supabase interdit
 - [Architecture v2 Summary](./docs/ARCHITECTURE_V2_SUMMARY.md) - Récapitulatif des nouveautés v2
 - [Testing Guide](./TESTING.md) - Guide des tests unitaires et d'intégration
+- [Variable Upsert Security](./docs/VARIABLE_UPSERT_SECURITY.md) - Sécurité de l'upsert des variables
 
 ---
 
 **Dernière mise à jour**: v2.0.0 - 2025-01  
 **Architecture**: Feature-based avec Repository Pattern (DIP)
-
-- [Tailwind CSS](https://tailwindcss.com/docs)
-- [Framer Motion](https://www.framer.com/motion/)
-- [Vitest](https://vitest.dev/)
-
----
-
-**Dernière mise à jour** : v2.0.0 - 2025
