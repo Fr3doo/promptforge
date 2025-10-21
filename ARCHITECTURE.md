@@ -842,6 +842,7 @@ getTTFB(console.log);
 - [Architecture v2 Summary](./docs/ARCHITECTURE_V2_SUMMARY.md) - Récapitulatif des nouveautés v2
 - [Testing Guide](./TESTING.md) - Guide des tests unitaires et d'intégration
 - [Variable Upsert Security](./docs/VARIABLE_UPSERT_SECURITY.md) - Sécurité de l'upsert des variables
+- [Error Boundary](./docs/ERROR_BOUNDARY.md) - Gestion globale des erreurs runtime
 
 ---
 
