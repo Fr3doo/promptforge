@@ -182,9 +182,69 @@ PromptForge v2 suit le **principe d'inversion de dépendance** (SOLID) via une c
 - `src/hooks/useAuth.tsx`
 
 📖 Voir [docs/ESLINT_SUPABASE_RULE.md](./docs/ESLINT_SUPABASE_RULE.md) pour plus de détails.
-```
+
 
 ## 🔧 Modules principaux
+
+### 0. Couche Repository (Nouveau ✨)
+
+#### Architecture
+
+Les repositories encapsulent toute la logique d'accès aux données et appliquent le **principe d'inversion de dépendance** (DIP).
+
+```
+src/repositories/
+├── PromptRepository.ts       # Interface + implémentation pour les prompts
+└── VariableRepository.ts     # Interface + implémentation pour les variables
+
+src/contexts/
+├── PromptRepositoryContext.tsx    # Provider pour PromptRepository
+└── VariableRepositoryContext.tsx  # Provider pour VariableRepository
+```
+
+#### PromptRepository
+
+Interface et implémentation pour la gestion des prompts.
+
+```typescript
+export interface PromptRepository {
+  fetchAll(): Promise<Prompt[]>;
+  fetchById(id: string): Promise<Prompt>;
+  create(promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt>;
+  update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
+  delete(id: string): Promise<void>;
+  duplicate(promptId: string): Promise<Prompt>;
+  toggleFavorite(id: string, currentState: boolean): Promise<void>;
+  toggleVisibility(id: string, currentVisibility: "PRIVATE" | "SHARED"): Promise<"PRIVATE" | "SHARED">;
+}
+```
+
+**Avantages:**
+- ✅ **Testabilité**: Facile à mocker dans les tests
+- ✅ **Flexibilité**: Changement de backend sans impact sur les composants
+- ✅ **Centralisation**: Logique d'accès aux données au même endroit
+- ✅ **Type Safety**: Interfaces TypeScript strictes
+- ✅ **DIP**: Composants dépendent d'abstractions, pas d'implémentations
+
+#### VariableRepository
+
+Interface et implémentation pour la gestion des variables.
+
+```typescript
+export interface VariableRepository {
+  fetch(promptId: string): Promise<Variable[]>;
+  create(variable: VariableInsert): Promise<Variable>;
+  update(id: string, updates: Partial<Variable>): Promise<Variable>;
+  deleteMany(promptId: string): Promise<void>;
+  upsertMany(promptId: string, variables: Omit<VariableInsert, "prompt_id">[]): Promise<Variable[]>;
+}
+```
+
+La méthode `upsertMany` gère intelligemment :
+- Insertion de nouvelles variables
+- Mise à jour de variables existantes (basé sur le nom)
+- Suppression de variables obsolètes
+- Réordonnancement automatique
 
 ### 1. Système de prompts
 
@@ -201,7 +261,7 @@ features/prompts/
 │   ├── VersionTimeline.tsx     # Timeline des versions
 │   └── DiffViewer.tsx          # Comparaison de versions
 ├── hooks/
-│   ├── usePromptForm.ts        # Logique du formulaire
+│   ├── usePromptForm.ts        # Hook de composition (orchestration)
 │   └── usePromptFilters.ts     # Logique de filtrage
 └── types.ts                     # Types TypeScript
 ```
@@ -253,6 +313,173 @@ export function useUpdatePrompt() {
   });
 }
 ```
+
+#### Hooks de composition (Nouveau ✨)
+
+Les hooks de composition orchestrent la logique métier complexe en combinant plusieurs hooks spécialisés, suivant le principe de **responsabilité unique** (SRP).
+
+##### usePromptForm
+
+Hook principal pour gérer l'état et la logique du formulaire de prompt.
+
+```typescript
+// src/features/prompts/hooks/usePromptForm.ts
+export function usePromptForm({ prompt, existingVariables, isEditMode }: UsePromptFormOptions) {
+  // Délégation de la sauvegarde
+  const { savePrompt, isSaving } = usePromptSave({ isEditMode });
+
+  // État du formulaire
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [visibility, setVisibility] = useState<"PRIVATE" | "SHARED">("PRIVATE");
+  
+  // Gestion des tags (hook dédié)
+  const { tags, addTag, removeTag } = useTagManager();
+  
+  // Gestion des variables (hook dédié)
+  const { variables, addVariablesFromContent, updateVariable, deleteVariable } 
+    = useVariableManager({ content, initialVariables: existingVariables });
+
+  const handleSave = async (promptId?: string) => {
+    await savePrompt({ title, content, tags, visibility, variables }, promptId);
+  };
+
+  return { title, setTitle, content, setContent, handleSave, isSaving, /* ... */ };
+}
+```
+
+**Utilisation:**
+
+```typescript
+function PromptEditor({ promptId }: { promptId?: string }) {
+  const { data: prompt } = usePrompt(promptId);
+  const { data: existingVariables } = useVariables(promptId);
+  
+  const { title, setTitle, handleSave, isSaving } = usePromptForm({
+    prompt,
+    existingVariables,
+    isEditMode: !!promptId,
+  });
+
+  return <form onSubmit={() => handleSave(promptId)}>...</form>;
+}
+```
+
+##### usePromptSave
+
+Hook dédié à la sauvegarde des prompts avec validation Zod et gestion des erreurs.
+
+```typescript
+// src/hooks/usePromptSave.ts
+export function usePromptSave({ isEditMode, onSuccess }: UsePromptSaveOptions) {
+  const { notifyError } = useToastNotifier();
+  const { mutate: createPrompt } = useCreatePrompt();
+  const { mutate: updatePrompt } = useUpdatePrompt();
+  const { mutate: saveVariables } = useBulkUpsertVariables();
+
+  const savePrompt = async (data: PromptSaveData, promptId?: string) => {
+    try {
+      // Validation Zod
+      const validated = promptSchema.parse(data);
+
+      if (isEditMode && promptId) {
+        updatePrompt({ id: promptId, updates: validated });
+      } else {
+        createPrompt(validated);
+      }
+      
+      // Sauvegarde des variables
+      saveVariables({ promptId, variables: data.variables });
+    } catch (error) {
+      notifyError("Erreur de sauvegarde");
+    }
+  };
+
+  return { savePrompt, isSaving };
+}
+```
+
+**Responsabilités:**
+- ✅ Validation des données (Zod)
+- ✅ Création/mise à jour du prompt
+- ✅ Sauvegarde des variables associées
+- ✅ Gestion des notifications
+- ✅ Navigation après succès
+
+##### useTagManager
+
+Hook simple pour gérer l'état et la logique des tags.
+
+```typescript
+// src/hooks/useTagManager.ts
+export function useTagManager(initialTags: string[] = []) {
+  const [tags, setTags] = useState<string[]>(initialTags);
+  const [tagInput, setTagInput] = useState("");
+
+  const addTag = () => {
+    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+      setTags([...tags, tagInput.trim()]);
+      setTagInput("");
+    }
+  };
+
+  const removeTag = (tag: string) => {
+    setTags(tags.filter(t => t !== tag));
+  };
+
+  return { tags, setTags, tagInput, setTagInput, addTag, removeTag };
+}
+```
+
+**Responsabilités:**
+- ✅ État des tags
+- ✅ Ajout avec dédoublonnage
+- ✅ Suppression de tags
+
+##### useVariableManager
+
+Hook pour synchroniser les variables détectées dans le contenu avec les variables configurées.
+
+```typescript
+// src/hooks/useVariableManager.ts
+export function useVariableManager({ content, initialVariables }: UseVariableManagerOptions) {
+  const [variables, setVariables] = useState<Variable[]>(initialVariables);
+  const { detectedNames } = useVariableDetection(content);
+  const { notifySuccess } = useToastNotifier();
+
+  // Synchronisation automatique avec le contenu
+  useEffect(() => {
+    const validVariables = variables.filter(v => detectedNames.includes(v.name));
+    if (validVariables.length !== variables.length) {
+      setVariables(validVariables); // Supprime les variables obsolètes
+    }
+  }, [detectedNames]);
+
+  const addVariablesFromContent = () => {
+    const newVariables = detectedNames
+      .filter(name => !variables.some(v => v.name === name))
+      .map((name, index) => ({
+        name,
+        type: "STRING",
+        required: false,
+        order_index: variables.length + index,
+      }));
+
+    if (newVariables.length > 0) {
+      setVariables([...variables, ...newVariables]);
+      notifySuccess(`${newVariables.length} variable(s) détectée(s)`);
+    }
+  };
+
+  return { variables, addVariablesFromContent, updateVariable, deleteVariable };
+}
+```
+
+**Responsabilités:**
+- ✅ Détection automatique des `{{variables}}` dans le contenu
+- ✅ Synchronisation avec les variables existantes
+- ✅ Suppression automatique des variables obsolètes
+- ✅ Notifications utilisateur
 
 ### 2. Système de variables
 
@@ -593,6 +820,13 @@ getTTFB(console.log);
 - [Repository Pattern](https://martinfowler.com/eaaCatalog/repository.html)
 - [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)
 - [ESLint Supabase Rule](./docs/ESLINT_SUPABASE_RULE.md) - ⚠️ Import direct de Supabase interdit
+- [Architecture v2 Summary](./docs/ARCHITECTURE_V2_SUMMARY.md) - Récapitulatif des nouveautés v2
+- [Testing Guide](./TESTING.md) - Guide des tests unitaires et d'intégration
+
+---
+
+**Dernière mise à jour**: v2.0.0 - 2025-01  
+**Architecture**: Feature-based avec Repository Pattern (DIP)
 - [Tailwind CSS](https://tailwindcss.com/docs)
 - [Framer Motion](https://www.framer.com/motion/)
 - [Vitest](https://vitest.dev/)
