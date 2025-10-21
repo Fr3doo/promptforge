@@ -3,24 +3,14 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { usePromptAnalysis } from '../usePromptAnalysis';
 import { AnalysisRepositoryProvider } from '@/contexts/AnalysisRepositoryContext';
 import type { AnalysisRepository, AnalysisResult } from '@/repositories/AnalysisRepository';
+import * as toastUtils from '@/lib/toastUtils';
+import { messages } from '@/constants/messages';
 
 // Mock toast utilities
 vi.mock('@/lib/toastUtils', () => ({
   errorToast: vi.fn(),
   loadingToast: vi.fn(),
   successToast: vi.fn(),
-}));
-
-// Mock messages
-vi.mock('@/constants/messages', () => ({
-  messages: {
-    errors: {
-      validation: { emptyPrompt: 'Empty prompt' },
-      analysis: { failed: 'Analysis failed' },
-    },
-    loading: { analyzing: 'Analyzing...' },
-    success: { analysisComplete: 'Analysis complete' },
-  },
 }));
 
 describe('usePromptAnalysis', () => {
@@ -30,15 +20,29 @@ describe('usePromptAnalysis', () => {
   beforeEach(() => {
     mockAnalysisResult = {
       sections: { intro: 'Test' },
-      variables: [],
-      prompt_template: 'Template',
-      metadata: { role: 'assistant', objectifs: [] },
-      exports: { json: {}, markdown: '# Test' },
+      variables: [{
+        name: 'testVar',
+        description: 'Test variable',
+        type: 'STRING',
+      }],
+      prompt_template: 'Template {{testVar}}',
+      metadata: { 
+        role: 'assistant', 
+        objectifs: ['Test objective'],
+        etapes: ['Step 1'],
+        criteres: ['Criterion 1'],
+      },
+      exports: { 
+        json: { test: 'data' }, 
+        markdown: '# Test\n\nContent here' 
+      },
     };
 
     mockRepository = {
       analyzePrompt: vi.fn().mockResolvedValue(mockAnalysisResult),
     };
+
+    vi.clearAllMocks();
   });
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -54,30 +58,78 @@ describe('usePromptAnalysis', () => {
     expect(result.current.isAnalyzing).toBe(false);
   });
 
-  it('should analyze a prompt successfully', async () => {
+  it('should analyze a prompt successfully and show success toast', async () => {
     const { result } = renderHook(() => usePromptAnalysis(), { wrapper });
 
-    result.current.analyze('Test prompt');
+    // Start analysis
+    result.current.analyze('Test prompt content');
 
+    // Should immediately set isAnalyzing to true
+    await waitFor(() => {
+      expect(result.current.isAnalyzing).toBe(true);
+    });
+
+    // Wait for analysis to complete
     await waitFor(() => {
       expect(result.current.isAnalyzing).toBe(false);
     });
 
-    expect(mockRepository.analyzePrompt).toHaveBeenCalledWith('Test prompt');
+    // Verify repository was called correctly
+    expect(mockRepository.analyzePrompt).toHaveBeenCalledWith('Test prompt content');
+    expect(mockRepository.analyzePrompt).toHaveBeenCalledTimes(1);
+
+    // Verify toasts were called
+    expect(toastUtils.loadingToast).toHaveBeenCalledWith(messages.loading.analyzing);
+    expect(toastUtils.successToast).toHaveBeenCalledWith(messages.success.analysisComplete);
+
+    // Verify result is set correctly
     expect(result.current.result).toEqual(mockAnalysisResult);
   });
 
-  it('should not analyze empty prompt', async () => {
+  it('should not analyze empty or whitespace-only prompt', async () => {
     const { result } = renderHook(() => usePromptAnalysis(), { wrapper });
 
-    await result.current.analyze('   ');
-
+    // Test with empty string
+    await result.current.analyze('');
     expect(mockRepository.analyzePrompt).not.toHaveBeenCalled();
+    expect(toastUtils.errorToast).toHaveBeenCalledWith('Erreur', messages.errors.validation.emptyPrompt);
+
+    vi.clearAllMocks();
+
+    // Test with whitespace
+    await result.current.analyze('   ');
+    expect(mockRepository.analyzePrompt).not.toHaveBeenCalled();
+    expect(toastUtils.errorToast).toHaveBeenCalledWith('Erreur', messages.errors.validation.emptyPrompt);
+
+    // Result should remain null
     expect(result.current.result).toBeNull();
   });
 
-  it('should handle analysis error', async () => {
-    const error = new Error('Analysis failed');
+  it('should handle analysis error and show error toast', async () => {
+    const error = new Error('Analysis service unavailable');
+    mockRepository.analyzePrompt = vi.fn().mockRejectedValue(error);
+
+    const { result } = renderHook(() => usePromptAnalysis(), { wrapper });
+
+    // Start analysis
+    result.current.analyze('Test prompt');
+
+    // Wait for error handling
+    await waitFor(() => {
+      expect(result.current.isAnalyzing).toBe(false);
+    });
+
+    // Verify error handling
+    expect(toastUtils.loadingToast).toHaveBeenCalled();
+    expect(toastUtils.errorToast).toHaveBeenCalledWith(
+      'Erreur', 
+      'Analysis service unavailable'
+    );
+    expect(result.current.result).toBeNull();
+  });
+
+  it('should handle error without message and use fallback', async () => {
+    const error = { code: 'UNKNOWN' }; // Error without message property
     mockRepository.analyzePrompt = vi.fn().mockRejectedValue(error);
 
     const { result } = renderHook(() => usePromptAnalysis(), { wrapper });
@@ -88,16 +140,73 @@ describe('usePromptAnalysis', () => {
       expect(result.current.isAnalyzing).toBe(false);
     });
 
-    expect(result.current.result).toBeNull();
+    expect(toastUtils.errorToast).toHaveBeenCalledWith(
+      'Erreur',
+      messages.errors.analysis.failed
+    );
   });
 
-  it('should reset result', () => {
+  it('should reset result to null', async () => {
     const { result } = renderHook(() => usePromptAnalysis(), { wrapper });
 
-    // Manually set result
-    result.current.analyze('Test');
+    // First, analyze to set a result
+    result.current.analyze('Test prompt');
+
+    await waitFor(() => {
+      expect(result.current.result).not.toBeNull();
+    });
+
+    // Then reset
     result.current.reset();
 
     expect(result.current.result).toBeNull();
   });
+
+  it('should maintain isAnalyzing state during the entire analysis', async () => {
+    let resolveAnalysis: (value: AnalysisResult) => void;
+    const analysisPromise = new Promise<AnalysisResult>((resolve) => {
+      resolveAnalysis = resolve;
+    });
+
+    mockRepository.analyzePrompt = vi.fn().mockReturnValue(analysisPromise);
+
+    const { result } = renderHook(() => usePromptAnalysis(), { wrapper });
+
+    // Start analysis
+    result.current.analyze('Test prompt');
+
+    // Should be analyzing
+    await waitFor(() => {
+      expect(result.current.isAnalyzing).toBe(true);
+    });
+
+    // Resolve the analysis
+    resolveAnalysis!(mockAnalysisResult);
+
+    // Should finish analyzing
+    await waitFor(() => {
+      expect(result.current.isAnalyzing).toBe(false);
+    });
+
+    expect(result.current.result).toEqual(mockAnalysisResult);
+  });
+
+  it('should set isAnalyzing to false even if analysis fails', async () => {
+    mockRepository.analyzePrompt = vi.fn().mockRejectedValue(new Error('Failed'));
+
+    const { result } = renderHook(() => usePromptAnalysis(), { wrapper });
+
+    result.current.analyze('Test prompt');
+
+    await waitFor(() => {
+      expect(result.current.isAnalyzing).toBe(true);
+    });
+
+    await waitFor(() => {
+      expect(result.current.isAnalyzing).toBe(false);
+    });
+
+    expect(result.current.result).toBeNull();
+  });
 });
+
