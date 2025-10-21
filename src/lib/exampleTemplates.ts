@@ -1,3 +1,5 @@
+import { logError } from "@/lib/logger";
+
 export const exampleTemplates = [
   {
     title: "Bug Triage Assistant",
@@ -124,7 +126,10 @@ export async function createExampleTemplates(userId: string, supabase: any) {
       .single();
 
     if (promptError) {
-      console.error("Error creating template:", promptError);
+      logError("Error creating template", { 
+        template: template.title,
+        error: promptError.message 
+      });
       continue;
     }
 

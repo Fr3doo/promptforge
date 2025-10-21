@@ -1,6 +1,7 @@
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { handleSupabaseError } from "@/lib/errorHandler";
+import { captureException } from "@/lib/logger";
 
 export type Variable = Tables<"variables">;
 export type VariableInsert = TablesInsert<"variables">;
@@ -215,7 +216,10 @@ export class SupabaseVariableRepository implements VariableRepository {
       // Step 4: Perform atomic upsert
       return await this.performVariableUpsert(variablesWithIds);
     } catch (error) {
-      console.error("Transaction failed in upsertMany:", error);
+      captureException(error, "Transaction failed in upsertMany", { 
+        promptId,
+        variablesCount: variables.length 
+      });
       throw error;
     }
   }

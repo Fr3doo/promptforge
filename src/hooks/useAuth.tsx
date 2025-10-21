@@ -3,6 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { createExampleTemplates } from "@/lib/exampleTemplates";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
+import { logError } from "@/lib/logger";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -30,7 +31,10 @@ export function useAuth() {
                 await createExampleTemplates(session.user.id, supabase);
               }
             } catch (error) {
-              console.error('Error creating example templates:', getSafeErrorMessage(error));
+              logError('Error creating example templates', { 
+                userId: session.user.id,
+                error: getSafeErrorMessage(error) 
+              });
             }
           }, 0);
         }

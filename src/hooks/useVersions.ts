@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { successToast, errorToast } from "@/lib/toastUtils";
 import { messages } from "@/constants/messages";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
+import { logDebug, logError, logInfo } from "@/lib/logger";
 
 type Version = Tables<"versions">;
 type VersionInsert = TablesInsert<"versions">;
@@ -73,7 +74,7 @@ export function useDeleteVersions() {
       versionIds: string[]; 
       promptId: string;
     }) => {
-      console.log("🗑️ Suppression de", versionIds.length, "version(s)");
+      logDebug("Suppression de versions", { count: versionIds.length, promptId });
       
       const { error } = await supabase
         .from("versions")
@@ -81,11 +82,15 @@ export function useDeleteVersions() {
         .in("id", versionIds);
 
       if (error) {
-        console.error("❌ Erreur suppression versions:", error);
+        logError("Erreur suppression versions", { 
+          versionIds, 
+          promptId,
+          error: error.message 
+        });
         throw error;
       }
 
-      console.log("✅ Versions supprimées");
+      logInfo("Versions supprimées", { count: versionIds.length, promptId });
       return { promptId };
     },
     onSuccess: (_, { promptId }) => {
@@ -111,7 +116,7 @@ export function useRestoreVersion() {
       versionId: string; 
       promptId: string;
     }) => {
-      console.log("🔄 Début restauration - versionId:", versionId, "promptId:", promptId);
+      logDebug("Début restauration", { versionId, promptId });
       
       // Récupérer la version
       const { data: version, error: versionError } = await supabase
@@ -121,11 +126,17 @@ export function useRestoreVersion() {
         .single();
 
       if (versionError) {
-        console.error("❌ Erreur récupération version:", versionError);
+        logError("Erreur récupération version", { 
+          versionId, 
+          error: versionError.message 
+        });
         throw versionError;
       }
 
-      console.log("✅ Version récupérée:", version.semver, "contenu length:", version.content.length);
+      logDebug("Version récupérée", { 
+        semver: version.semver, 
+        contentLength: version.content.length 
+      });
 
       // Restaurer dans le prompt
       const { error: updateError } = await supabase
@@ -137,15 +148,18 @@ export function useRestoreVersion() {
         .eq("id", promptId);
 
       if (updateError) {
-        console.error("❌ Erreur mise à jour prompt:", updateError);
+        logError("Erreur mise à jour prompt", { 
+          promptId, 
+          error: updateError.message 
+        });
         throw updateError;
       }
 
-      console.log("✅ Prompt mis à jour vers version:", version.semver);
+      logInfo("Prompt mis à jour vers version", { semver: version.semver });
 
       // Restaurer les variables si présentes
       if (version.variables) {
-        console.log("🔄 Restauration des variables...");
+        logDebug("Restauration des variables");
         
         // Supprimer anciennes variables
         const { error: deleteError } = await supabase
@@ -154,7 +168,10 @@ export function useRestoreVersion() {
           .eq("prompt_id", promptId);
 
         if (deleteError) {
-          console.error("❌ Erreur suppression variables:", deleteError);
+          logError("Erreur suppression variables", { 
+            promptId, 
+            error: deleteError.message 
+          });
         }
 
         // Insérer variables de la version
@@ -167,9 +184,13 @@ export function useRestoreVersion() {
             );
 
           if (insertError) {
-            console.error("❌ Erreur insertion variables:", insertError);
+            logError("Erreur insertion variables", { 
+              promptId, 
+              count: variablesArray.length,
+              error: insertError.message 
+            });
           } else {
-            console.log("✅ Variables restaurées:", variablesArray.length);
+            logInfo("Variables restaurées", { count: variablesArray.length });
           }
         }
       }
@@ -177,7 +198,7 @@ export function useRestoreVersion() {
       return version;
     },
     onSuccess: (version, { promptId }) => {
-      console.log("🎉 Restauration réussie vers version:", version.semver);
+      logInfo("Restauration réussie", { semver: version.semver, promptId });
       
       // Invalider toutes les queries pertinentes
       queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
@@ -188,7 +209,9 @@ export function useRestoreVersion() {
       successToast(messages.success.versionRestored(version.semver));
     },
     onError: (error) => {
-      console.error("❌ Erreur lors de la restauration:", error);
+      logError("Erreur lors de la restauration", { 
+        error: error instanceof Error ? error.message : String(error) 
+      });
       errorToast(messages.errors.version.restoreFailed);
     },
   });

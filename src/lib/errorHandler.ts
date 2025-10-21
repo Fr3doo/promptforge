@@ -1,4 +1,5 @@
 import { messages } from "@/constants/messages";
+import { logError } from "@/lib/logger";
 
 /**
  * Handles Supabase query results by throwing errors if present
@@ -25,10 +26,12 @@ export function handleSupabaseError<T>(result: { data: T | null; error: any }): 
  * Prevents exposure of internal database structure and implementation details
  */
 export function getSafeErrorMessage(error: any): string {
-  // Log full error for debugging (only in development)
-  if (import.meta.env.DEV) {
-    console.error('Error details:', error);
-  }
+  // Log full error for debugging
+  logError('Error details', { 
+    error: error instanceof Error ? error.message : String(error),
+    code: error?.code,
+    stack: error?.stack,
+  });
 
   // Handle Zod validation errors
   if (error?.name === 'ZodError') {

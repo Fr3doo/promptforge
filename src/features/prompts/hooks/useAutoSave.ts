@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useUpdatePrompt } from "@/hooks/usePrompts";
+import { logDebug, logError } from "@/lib/logger";
 
 interface UseAutoSaveOptions {
   promptId?: string;
@@ -59,10 +60,13 @@ export function useAutoSave({
           },
         }, {
           onSuccess: () => {
-            console.log("Auto-sauvegarde réussie");
+            logDebug("Auto-sauvegarde réussie", { promptId });
           },
           onError: (error) => {
-            console.error("Erreur auto-sauvegarde:", error);
+            logError("Erreur auto-sauvegarde", { 
+              promptId, 
+              error: error instanceof Error ? error.message : String(error) 
+            });
           },
         });
       }

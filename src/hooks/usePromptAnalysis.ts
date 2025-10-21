@@ -3,6 +3,7 @@ import { errorToast, loadingToast, successToast } from "@/lib/toastUtils";
 import { messages } from "@/constants/messages";
 import { useAnalysisRepository } from "@/contexts/AnalysisRepositoryContext";
 import type { AnalysisResult } from "@/repositories/AnalysisRepository";
+import { captureException } from "@/lib/logger";
 
 /**
  * Hook for analyzing prompts using the injected AnalysisRepository
@@ -27,7 +28,9 @@ export function usePromptAnalysis() {
       setResult(data);
       successToast(messages.success.analysisComplete);
     } catch (error: any) {
-      console.error('Erreur:', error);
+      captureException(error, 'Erreur lors de l\'analyse du prompt', {
+        promptContentLength: promptContent.length,
+      });
       errorToast(messages.labels.error, error.message || messages.errors.analysis.failed);
       setResult(null);
     } finally {

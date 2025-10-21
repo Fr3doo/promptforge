@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, Home, RefreshCw, Bug } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useState } from 'react';
+import { logInfo } from '@/lib/logger';
 
 interface ErrorFallbackProps {
   error: Error | null;
@@ -43,7 +44,7 @@ export function ErrorFallback({ error, errorInfo, onReset }: ErrorFallbackProps)
     // TODO: Implement error reporting
     // Could open a modal with a form to submit error details
     // Or automatically send to a support endpoint
-    console.log('Report error feature - to be implemented');
+    logInfo('Report error feature - to be implemented');
   };
 
   return (
