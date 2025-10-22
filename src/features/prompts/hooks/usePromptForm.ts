@@ -83,8 +83,6 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode, canE
     setDescription,
     content,
     setContent,
-    visibility,
-    setVisibility,
     tags,
     tagInput,
     setTagInput,

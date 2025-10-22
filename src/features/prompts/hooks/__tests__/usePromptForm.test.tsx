@@ -72,7 +72,6 @@ describe("usePromptForm - Integration Tests", () => {
       expect(result.current.title).toBe("");
       expect(result.current.description).toBe("");
       expect(result.current.content).toBe("");
-      expect(result.current.visibility).toBe("PRIVATE");
       expect(result.current.tags).toEqual([]);
       expect(result.current.variables).toEqual([]);
       expect(result.current.isSaving).toBe(false);
@@ -104,7 +103,6 @@ describe("usePromptForm - Integration Tests", () => {
         expect(result.current.title).toBe("Existing Prompt");
         expect(result.current.description).toBe("Description");
         expect(result.current.content).toBe("Content with {{var1}}");
-        expect(result.current.visibility).toBe("SHARED");
         expect(result.current.tags).toEqual(["tag1", "tag2"]);
       });
     });
@@ -448,7 +446,6 @@ describe("usePromptForm - Integration Tests", () => {
         result.current.setTitle("New Prompt");
         result.current.setDescription("Description");
         result.current.setContent("Content");
-        result.current.setVisibility("SHARED");
       });
 
       await act(async () => {
@@ -461,7 +458,7 @@ describe("usePromptForm - Integration Tests", () => {
           description: "Description",
           content: "Content",
           tags: [],
-          visibility: "SHARED",
+          visibility: "PRIVATE",
           variables: [],
         },
         undefined
@@ -615,7 +612,6 @@ describe("usePromptForm - Integration Tests", () => {
         result.current.setTitle("Complete Prompt");
         result.current.setDescription("Full description");
         result.current.setContent("Hello {{name}}, you are {{age}} years old");
-        result.current.setVisibility("SHARED");
         result.current.setTagInput("react");
         result.current.addTag();
         result.current.setTagInput("typescript");
