@@ -190,8 +190,9 @@ export function useToggleVisibility() {
       queryClient.setQueryData(["prompts"], (old: Prompt[] | undefined) =>
         old ? old.map(p => p.id === id ? { 
           ...p, 
-          visibility: newVisibility, 
-          status: "PUBLISHED" as const,
+          visibility: newVisibility,
+          // Only force PUBLISHED when going public, preserve status when returning to private
+          ...(newVisibility === "SHARED" ? { status: "PUBLISHED" as const } : {}),
           public_permission: publicPermission || p.public_permission 
         } : p) : old
       );

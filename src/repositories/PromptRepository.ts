@@ -184,16 +184,18 @@ export class SupabasePromptRepository implements PromptRepository {
     
     const updateData: { 
       visibility: "PRIVATE" | "SHARED"; 
-      status: "PUBLISHED";
+      status?: "PUBLISHED";
       public_permission?: "READ" | "WRITE";
     } = {
-      visibility: newVisibility,
-      status: "PUBLISHED"
+      visibility: newVisibility
     };
 
-    // When switching to SHARED we can set the permission if provided
-    if (newVisibility === "SHARED" && publicPermission) {
-      updateData.public_permission = publicPermission;
+    // Only force PUBLISHED status when going public, not when returning to private
+    if (newVisibility === "SHARED") {
+      updateData.status = "PUBLISHED";
+      if (publicPermission) {
+        updateData.public_permission = publicPermission;
+      }
     }
     
     const result = await supabase
