@@ -3,7 +3,7 @@ import { z } from 'zod';
 // Prompt validation schema
 export const promptSchema = z.object({
   title: z.string().trim().min(1, 'Le titre est requis').max(200, 'Le titre ne peut pas dépasser 200 caractères'),
-  description: z.string().trim().max(1000, 'La description ne peut pas dépasser 1000 caractères').optional().or(z.literal('')),
+  description: z.string().trim().max(3000, 'La description ne peut pas dépasser 3000 caractères').optional().or(z.literal('')),
   content: z.string().trim().min(1, 'Le contenu est requis').max(200000, 'Le contenu ne peut pas dépasser 200000 caractères'),
   tags: z.array(z.string().trim().max(50, 'Chaque tag ne peut pas dépasser 50 caractères')).max(20, 'Vous ne pouvez pas avoir plus de 20 tags'),
   visibility: z.enum(['PRIVATE', 'SHARED'], { errorMap: () => ({ message: 'Visibilité invalide' }) }),
