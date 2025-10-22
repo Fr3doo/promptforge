@@ -100,6 +100,24 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode, canE
 
 
 
+  // Détecter les changements non sauvegardés
+  const hasUnsavedChanges = () => {
+    if (!isEditMode) {
+      // En mode création : vérifier si au moins un champ est rempli
+      return title.trim() !== "" || 
+             description.trim() !== "" || 
+             content.trim() !== "" || 
+             tags.length > 0;
+    } else if (prompt) {
+      // En mode édition : comparer avec les valeurs initiales
+      return title !== prompt.title ||
+             description !== (prompt.description || "") ||
+             content !== prompt.content ||
+             JSON.stringify(tags) !== JSON.stringify(prompt.tags || []);
+    }
+    return false;
+  };
+
   return {
     // Form state
     title,
@@ -125,5 +143,6 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode, canE
     
     // Status
     isSaving,
+    hasUnsavedChanges: hasUnsavedChanges(),
   };
 }

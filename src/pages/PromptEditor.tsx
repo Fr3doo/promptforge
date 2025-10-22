@@ -4,6 +4,7 @@ import { usePrompt } from "@/hooks/usePrompts";
 import { useVariables } from "@/hooks/useVariables";
 import { useVersions, useDeleteVersions } from "@/hooks/useVersions";
 import { useAuth } from "@/hooks/useAuth";
+import { useUnsavedChangesWarning } from "@/hooks/useUnsavedChangesWarning";
 import { usePromptForm } from "@/features/prompts/hooks/usePromptForm";
 import { useAutoSave } from "@/features/prompts/hooks/useAutoSave";
 import { usePromptVersioning } from "@/hooks/usePromptVersioning";
@@ -19,6 +20,16 @@ import { LoadingButton } from "@/components/LoadingButton";
 import { SaveProgress } from "@/components/SaveProgress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ArrowLeft, Loader2, AlertCircle, Eye } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -95,6 +106,11 @@ const PromptEditorPage = () => {
   const previousVersion = selectedVersionIndex < versions.length - 1 
     ? versions[selectedVersionIndex + 1] 
     : null;
+
+  // Avertissement de navigation non enregistrée
+  const { blocker } = useUnsavedChangesWarning({
+    hasUnsavedChanges: form.hasUnsavedChanges && !form.isSaving,
+  });
 
   // Auto-save hook (seulement en mode édition)
   useAutoSave({
@@ -243,6 +259,29 @@ const PromptEditorPage = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Navigation Blocker Dialog */}
+      {blocker.state === "blocked" && (
+        <AlertDialog open={true}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Modifications non enregistrées</AlertDialogTitle>
+              <AlertDialogDescription>
+                Vous avez des modifications non enregistrées. Voulez-vous vraiment quitter cette page ?
+                Vos modifications seront perdues.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => blocker.reset?.()}>
+                Annuler
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={() => blocker.proceed?.()}>
+                Quitter sans enregistrer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
       {/* Diff Dialog */}
       {selectedVersion && (
