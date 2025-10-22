@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { messages } from "@/constants/messages";
 
 interface PromptSearchBarProps {
   value: string;
@@ -10,7 +11,7 @@ interface PromptSearchBarProps {
 export const PromptSearchBar = ({
   value,
   onChange,
-  placeholder = "Rechercher par titre, description ou tags...",
+  placeholder = messages.placeholders.searchByTitleDescriptionTags,
 }: PromptSearchBarProps) => {
   return (
     <div className="relative">

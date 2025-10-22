@@ -11,6 +11,7 @@ import { authSchema } from "@/lib/validation";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { messages } from "@/constants/messages";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +34,7 @@ const Auth = () => {
         password: validatedData.password,
       });
       if (error) throw error;
-      toast.success("Connexion réussie !");
+      toast.success(messages.auth.loginSuccess);
       navigate("/");
     } catch (error: any) {
       toast.error(getSafeErrorMessage(error));
@@ -55,31 +56,31 @@ const Auth = () => {
             </div>
           </div>
           <CardTitle className="text-2xl text-center">
-            Connexion
+            {messages.auth.loginTitle}
           </CardTitle>
           <CardDescription className="text-center">
-            Accédez à vos prompts
+            {messages.auth.loginSubtitle}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{messages.labels.email}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="vous@example.com"
+                placeholder={messages.placeholders.emailExample}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Mot de passe</Label>
+              <Label htmlFor="password">{messages.labels.password}</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder={messages.placeholders.passwordPlaceholder}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -88,7 +89,7 @@ const Auth = () => {
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Se connecter
+              {messages.auth.loginButton}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
@@ -96,7 +97,7 @@ const Auth = () => {
               to="/signup"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Pas de compte ? Créer un compte
+              {messages.auth.noAccount} {messages.auth.createAccount}
             </Link>
           </div>
         </CardContent>

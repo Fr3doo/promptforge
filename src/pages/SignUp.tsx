@@ -11,6 +11,7 @@ import { authSchema } from "@/lib/validation";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { messages } from "@/constants/messages";
 
 const SignUp = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +40,7 @@ const SignUp = () => {
         },
       });
       if (error) throw error;
-      toast.success("Compte créé avec succès !");
+      toast.success(messages.auth.signupSuccess);
       navigate("/");
     } catch (error: any) {
       toast.error(getSafeErrorMessage(error));
@@ -61,42 +62,42 @@ const SignUp = () => {
               </div>
             </div>
             <CardTitle className="text-2xl text-center">
-              Créer un compte
+              {messages.auth.signupTitle}
             </CardTitle>
             <CardDescription className="text-center">
-              Commencez à gérer vos prompts professionnellement
+              {messages.auth.signupSubtitle}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSignUp} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="pseudo">Pseudo</Label>
+                <Label htmlFor="pseudo">{messages.labels.pseudo}</Label>
                 <Input
                   id="pseudo"
                   type="text"
-                  placeholder="Votre pseudo"
+                  placeholder={messages.placeholders.pseudoPlaceholder}
                   value={pseudo}
                   onChange={(e) => setPseudo(e.target.value)}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{messages.labels.email}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="vous@example.com"
+                  placeholder={messages.placeholders.emailExample}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Mot de passe</Label>
+                <Label htmlFor="password">{messages.labels.password}</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder={messages.placeholders.passwordPlaceholder}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -105,7 +106,7 @@ const SignUp = () => {
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Créer mon compte
+                {messages.auth.signupButton}
               </Button>
             </form>
             <div className="mt-4 text-center text-sm">
@@ -113,7 +114,7 @@ const SignUp = () => {
                 to="/auth"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                Déjà un compte ? Se connecter
+                {messages.auth.alreadyHaveAccount} {messages.auth.signIn}
               </Link>
             </div>
           </CardContent>

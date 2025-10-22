@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { messages } from "@/constants/messages";
 
 interface ConflictAlertProps {
   serverUpdatedAt: string;
@@ -23,19 +24,18 @@ export function ConflictAlert({
   return (
     <Alert variant="destructive" className="mb-4">
       <AlertCircle className="h-4 w-4" />
-      <AlertTitle>Conflit détecté</AlertTitle>
+      <AlertTitle>{messages.conflict.title}</AlertTitle>
       <AlertDescription className="flex flex-col gap-2">
         <p>
-          Ce prompt a été modifié par un autre utilisateur {timeAgo}. 
-          Vos modifications risquent d'écraser les changements récents.
+          {messages.conflict.description(timeAgo)}
         </p>
         <div className="flex gap-2">
           <Button onClick={onRefresh} size="sm">
-            Recharger la dernière version
+            {messages.conflict.reloadLatest}
           </Button>
           {onDismiss && (
             <Button onClick={onDismiss} variant="outline" size="sm">
-              Continuer malgré tout
+              {messages.conflict.continueAnyway}
             </Button>
           )}
         </div>

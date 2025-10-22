@@ -5,6 +5,7 @@ import { VariableConfigPanel } from "@/features/variables/components/VariableCon
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Sparkles, Edit3 } from "lucide-react";
 import type { Variable } from "../types";
+import { messages } from "@/constants/messages";
 
 interface PromptContentEditorProps {
   content: string;
@@ -41,25 +42,25 @@ export const PromptContentEditor = ({
       <div className="space-y-4">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Contenu du prompt</h2>
+            <h2 className="text-2xl font-bold">{messages.editor.promptContent}</h2>
             <div className="flex items-center gap-2">
               <Button onClick={onDetectVariables} variant="outline" className="gap-2" disabled={disabled}>
                 <Sparkles className="h-4 w-4" />
-                Détecter variables
+                {messages.editor.detectVariables}
               </Button>
               {variables.length > 0 && (
                 <Sheet open={isVariablesOpen} onOpenChange={setIsVariablesOpen} modal={false}>
                   <SheetTrigger asChild>
                     <Button variant="outline" className="gap-2" disabled={disabled}>
                       <Edit3 className="h-4 w-4" />
-                      Variables ({variables.length})
+                      {messages.editor.variables} ({variables.length})
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="right" className="w-[46rem] overflow-y-auto">
                     <SheetHeader>
-                      <SheetTitle>Configuration des variables</SheetTitle>
+                      <SheetTitle>{messages.editor.variableConfig}</SheetTitle>
                       <SheetDescription>
-                        Définissez les valeurs par défaut et les types de vos variables détectées
+                        {messages.placeholders.defaultConfigDescription}
                       </SheetDescription>
                     </SheetHeader>
                     <div className="mt-6">
@@ -75,9 +76,7 @@ export const PromptContentEditor = ({
             </div>
           </div>
           <p className="text-sm text-muted-foreground">
-            Écrivez le texte de votre prompt. Utilisez <code className="bg-muted px-1.5 py-0.5 rounded text-xs">{'{{nom_variable}}'}</code> pour ajouter des variables réutilisables.
-            <br />
-            <span className="text-xs">Exemple : "Résume cet article sur {'{{sujet}}'} en {'{{nombre_mots}}'} mots"</span>
+            {messages.editor.variableConfigInstructions}
           </p>
           {errors.content && (
             <p className="text-sm text-destructive" role="alert">

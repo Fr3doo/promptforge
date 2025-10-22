@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { messages } from "@/constants/messages";
 
 
 export const Header = () => {
@@ -15,7 +16,7 @@ export const Header = () => {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    toast.success("Déconnexion réussie");
+    toast.success(messages.success.signedOut);
     setMobileMenuOpen(false);
     navigate("/");
   };
@@ -42,30 +43,30 @@ export const Header = () => {
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center gap-6">
                 <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
-                  Tableau de bord
+                  {messages.navigation.dashboard}
                 </Link>
                 <Link to="/resources" className="text-sm font-medium hover:text-primary transition-colors">
-                  Ressources
+                  {messages.navigation.resources}
                 </Link>
                 <Link to="/methodes" className="text-sm font-medium hover:text-primary transition-colors">
-                  Méthodes
+                  {messages.navigation.methods}
                 </Link>
                 <Link to="/faq" className="text-sm font-medium hover:text-primary transition-colors">
-                  FAQ
+                  {messages.navigation.faq}
                 </Link>
                 <Link to="/settings" className="text-sm font-medium hover:text-primary transition-colors">
-                  Paramètres
+                  {messages.navigation.settings}
                 </Link>
                 <Button variant="ghost" onClick={handleSignOut} className="gap-2">
                   <LogOut className="h-4 w-4" />
-                  Déconnexion
+                  {messages.auth.logout}
                 </Button>
               </nav>
 
               {/* Mobile Navigation */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild className="md:hidden">
-                  <Button variant="ghost" size="icon" aria-label="Ouvrir le menu">
+                  <Button variant="ghost" size="icon" aria-label={messages.labels.openMenu}>
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
@@ -73,7 +74,7 @@ export const Header = () => {
                   <SheetHeader>
                     <SheetTitle className="flex items-center gap-2">
                       <Code2 className="h-5 w-5 text-primary" />
-                      Navigation
+                      {messages.navigation.dashboard}
                     </SheetTitle>
                   </SheetHeader>
                   <nav className="flex flex-col gap-4 mt-8">
@@ -82,35 +83,35 @@ export const Header = () => {
                       className="justify-start text-base"
                       onClick={() => handleNavigation("/dashboard")}
                     >
-                      Tableau de bord
+                      {messages.navigation.dashboard}
                     </Button>
                     <Button 
                       variant="ghost" 
                       className="justify-start text-base"
                       onClick={() => handleNavigation("/resources")}
                     >
-                      Ressources
+                      {messages.navigation.resources}
                     </Button>
                     <Button 
                       variant="ghost" 
                       className="justify-start text-base"
                       onClick={() => handleNavigation("/methodes")}
                     >
-                      Méthodes
+                      {messages.navigation.methods}
                     </Button>
                   <Button 
                       variant="ghost" 
                       className="justify-start text-base"
                       onClick={() => handleNavigation("/faq")}
                     >
-                      FAQ
+                      {messages.navigation.faq}
                     </Button>
                     <Button 
                       variant="ghost" 
                       className="justify-start text-base"
                       onClick={() => handleNavigation("/settings")}
                     >
-                      Paramètres
+                      {messages.navigation.settings}
                     </Button>
                     <div className="border-t border-border my-2" />
                     <Button 
@@ -119,7 +120,7 @@ export const Header = () => {
                       className="justify-start gap-2 text-base text-destructive hover:text-destructive"
                     >
                       <LogOut className="h-4 w-4" />
-                      Déconnexion
+                      {messages.auth.logout}
                     </Button>
                   </nav>
                 </SheetContent>
@@ -133,14 +134,14 @@ export const Header = () => {
                 size="sm"
                 className="text-xs sm:text-sm"
               >
-                Se connecter
+                {messages.auth.signInButton}
               </Button>
               <Button 
                 onClick={() => navigate("/signup")}
                 size="sm"
                 className="text-xs sm:text-sm"
               >
-                S'inscrire
+                {messages.auth.signUpButton}
               </Button>
             </div>
           )}

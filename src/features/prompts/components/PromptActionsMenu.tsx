@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Trash2, Edit, Copy, Lock, Share2, Users } from "lucide-react";
+import { messages } from "@/constants/messages";
 
 interface PromptActionsMenuProps {
   isShared: boolean;
@@ -33,7 +34,7 @@ export const PromptActionsMenu = ({
           size="icon"
           className="h-8 w-8"
           onClick={(e) => e.stopPropagation()}
-          aria-label="Actions du prompt"
+          aria-label={messages.promptActions.title}
         >
           <MoreVertical className="h-4 w-4" />
         </Button>
@@ -44,7 +45,7 @@ export const PromptActionsMenu = ({
           onEdit();
         }}>
           <Edit className="h-4 w-4 mr-2" />
-          Modifier
+          {messages.promptActions.edit}
         </DropdownMenuItem>
         {onDuplicate && (
           <DropdownMenuItem onClick={(e) => {
@@ -52,7 +53,7 @@ export const PromptActionsMenu = ({
             onDuplicate();
           }}>
             <Copy className="h-4 w-4 mr-2" />
-            Dupliquer
+            {messages.promptActions.duplicate}
           </DropdownMenuItem>
         )}
         {onManageSharing && (
@@ -61,7 +62,7 @@ export const PromptActionsMenu = ({
             onManageSharing();
           }}>
             <Users className="h-4 w-4 mr-2" />
-            Partage Privé
+            {messages.promptActions.privateShare}
           </DropdownMenuItem>
         )}
         {onToggleVisibility && (
@@ -72,12 +73,12 @@ export const PromptActionsMenu = ({
             {isShared ? (
               <>
                 <Lock className="h-4 w-4 mr-2" />
-                Arrêter le partage public
+                {messages.promptActions.stopPublicShare}
               </>
             ) : (
               <>
                 <Share2 className="h-4 w-4 mr-2" />
-                Partage Public
+                {messages.promptActions.publicShare}
               </>
             )}
           </DropdownMenuItem>
@@ -91,7 +92,7 @@ export const PromptActionsMenu = ({
           }}
         >
           <Trash2 className="h-4 w-4 mr-2" />
-          Supprimer
+          {messages.promptActions.delete}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

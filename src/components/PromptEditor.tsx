@@ -47,27 +47,27 @@ export const PromptEditor = ({
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <Label htmlFor="prompt-content-editor" className="text-sm font-medium text-muted-foreground">
-              Éditeur
+              {messages.editor.title}
             </Label>
             <Button
               size="sm"
               variant="outline"
               onClick={onDetectVariables}
               className="gap-2"
-              aria-label="Détecter les variables dans le prompt"
+              aria-label={messages.editor.detectVariables}
               disabled={disabled}
             >
               <Wand2 className="h-4 w-4" />
-              Détecter variables
+              {messages.editor.detectVariables}
             </Button>
           </div>
           <Textarea
             id="prompt-content-editor"
             value={content}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Écrivez votre prompt ici... Utilisez {{variable}} pour les variables."
+            placeholder={messages.placeholders.editorPrompt}
             className="flex-1 font-mono text-sm min-h-[400px] bg-editor-bg border-border resize-none"
-            aria-label="Contenu du prompt"
+            aria-label={messages.labels.content}
             disabled={disabled}
           />
         </div>
@@ -75,20 +75,20 @@ export const PromptEditor = ({
         {/* Preview Panel */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-muted-foreground" id="preview-label">Aperçu</h3>
+            <h3 className="text-sm font-medium text-muted-foreground" id="preview-label">{messages.editor.preview}</h3>
             <Button
               size="sm"
               variant="outline"
               onClick={handleCopy}
               className="gap-2"
-              aria-label="Copier l'aperçu du prompt"
+              aria-label={messages.copy.copyPromptPreview}
             >
               {copied ? (
                 <Check className="h-4 w-4" aria-hidden="true" />
               ) : (
                 <Copy className="h-4 w-4" aria-hidden="true" />
               )}
-              {copied ? "Copié !" : "Copier"}
+              {copied ? messages.labels.copied : messages.copy.copyAction}
             </Button>
           </div>
           <Card 
@@ -97,7 +97,7 @@ export const PromptEditor = ({
             aria-labelledby="preview-label"
           >
             <pre className="font-mono text-sm whitespace-pre-wrap text-foreground">
-              {preview || "L'aperçu s'affichera ici..."}
+              {preview || messages.editor.previewPlaceholder}
             </pre>
           </Card>
         </div>
@@ -107,7 +107,7 @@ export const PromptEditor = ({
       {variables.length > 0 && (
         <section className="space-y-4" aria-labelledby="variables-heading">
           <h3 id="variables-heading" className="text-sm font-medium text-muted-foreground">
-            Valeurs des variables
+            {messages.editor.variableValues}
           </h3>
           <VariableInputPanel
             variables={variables}

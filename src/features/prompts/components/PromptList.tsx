@@ -4,6 +4,7 @@ import { PromptListSkeleton } from "@/components/PromptCardSkeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { FileText, Search, Share2 } from "lucide-react";
 import type { Prompt } from "../types";
+import { messages } from "@/constants/messages";
 
 interface PromptListProps {
   prompts: Prompt[];
@@ -41,8 +42,8 @@ export const PromptList = ({
       return (
         <EmptyState
           icon={Search}
-          title="Aucun résultat"
-          description="Aucun prompt ne correspond à votre recherche. Essayez avec d'autres mots-clés."
+          title={messages.promptList.noResults}
+          description={messages.promptList.noResultsDescription}
         />
       );
     }
@@ -51,8 +52,8 @@ export const PromptList = ({
       return (
         <EmptyState
           icon={Share2}
-          title="Aucun prompt partagé"
-          description="Vous n'avez pas encore reçu de prompts partagés. Lorsque d'autres utilisateurs partageront des prompts avec vous, ils apparaîtront ici."
+          title={messages.promptList.noSharedPrompts}
+          description={messages.promptList.noSharedPromptsDescription}
         />
       );
     }
@@ -60,9 +61,9 @@ export const PromptList = ({
     return (
       <EmptyState
         icon={FileText}
-        title="Aucun prompt"
-        description="Vous n'avez pas encore créé de prompt. Commencez par créer votre premier prompt pour organiser vos templates."
-        actionLabel="Créer votre premier prompt"
+        title={messages.promptList.noPrompts}
+        description={messages.promptList.noPromptsDescription}
+        actionLabel={messages.promptList.createFirstPrompt}
         onAction={() => navigate("/prompts/new")}
       />
     );

@@ -1,11 +1,12 @@
 import { Card } from "@/components/ui/card";
+import { messages } from "@/constants/messages";
 
 interface VariableEmptyStateProps {
   message?: string;
 }
 
 export const VariableEmptyState = ({
-  message = 'Aucune variable détectée. Utilisez le bouton "Détecter variables" ou ajoutez des variables manuellement avec la syntaxe',
+  message = messages.variables.emptyState,
 }: VariableEmptyStateProps) => {
   return (
     <Card className="p-8 text-center border-dashed">

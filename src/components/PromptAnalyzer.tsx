@@ -88,15 +88,15 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            Analyseur de Prompts IA
+            {messages.analyzer.title}
           </CardTitle>
           <CardDescription>
-            Extraction automatique des sections, variables et métadonnées
+            {messages.analyzer.subtitle}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Textarea
-            placeholder="Collez votre prompt ici..."
+            placeholder={messages.placeholders.analyzerPrompt}
             value={promptContent}
             onChange={(e) => setPromptContent(e.target.value)}
             rows={10}
@@ -108,7 +108,7 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
             className="w-full gap-2"
           >
             {isAnalyzing && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isAnalyzing ? "Analyse..." : "Analyser"}
+            {isAnalyzing ? messages.analyzer.analyzing : messages.analyzer.analyze}
           </Button>
         </CardContent>
       </Card>
@@ -118,8 +118,8 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Résultats</CardTitle>
-                <CardDescription>Prompt structuré</CardDescription>
+                <CardTitle>{messages.analyzer.results}</CardTitle>
+                <CardDescription>{messages.analyzer.structuredPrompt}</CardDescription>
               </div>
               <div className="flex gap-2">
                 <Button
@@ -129,7 +129,7 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
                   className="gap-2"
                 >
                   <RotateCcw className="h-4 w-4" />
-                  Nouvelle analyse
+                  {messages.analyzer.newAnalysis}
                 </Button>
                 <Button
                   size="sm"
@@ -140,12 +140,12 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
                   {isSaving ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Sauvegarde...
+                      {messages.analyzer.saving}
                     </>
                   ) : (
                     <>
                       <Save className="h-4 w-4" />
-                      Sauvegarder
+                      {messages.analyzer.save}
                     </>
                   )}
                 </Button>
@@ -155,10 +155,10 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
           <CardContent>
             <Tabs defaultValue="metadata">
               <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="metadata">Métadonnées</TabsTrigger>
-                <TabsTrigger value="variables">Variables ({result.variables.length})</TabsTrigger>
-                <TabsTrigger value="template">Template</TabsTrigger>
-                <TabsTrigger value="export">Export</TabsTrigger>
+                <TabsTrigger value="metadata">{messages.analyzer.tabs.metadata}</TabsTrigger>
+                <TabsTrigger value="variables">{messages.analyzer.tabs.variables} ({result.variables.length})</TabsTrigger>
+                <TabsTrigger value="template">{messages.analyzer.tabs.structured}</TabsTrigger>
+                <TabsTrigger value="export">{messages.analyzer.tabs.export}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="metadata">
@@ -167,7 +167,7 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
 
               <TabsContent value="variables" className="space-y-3">
                 {result.variables.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Aucune variable détectée</p>
+                  <p className="text-sm text-muted-foreground">{messages.analyzer.noVariables}</p>
                 ) : (
                   result.variables.map((v, i) => (
                     <Card key={i}>
@@ -213,7 +213,7 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
                     onClick={copyTemplate}
                   >
                     <Copy className="h-3 w-3" />
-                    Copier
+                    {messages.copy.copyAction}
                   </Button>
                 </div>
               </TabsContent>

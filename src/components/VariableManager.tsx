@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Trash2, GripVertical } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { messages } from "@/constants/messages";
 
 interface Variable {
   id?: string;
@@ -39,7 +40,7 @@ export const VariableManager = ({
     return (
       <Card className="p-8 text-center border-dashed">
         <p className="text-muted-foreground">
-          Aucune variable détectée. Utilisez le bouton "Détecter variables" ou ajoutez des variables manuellement avec la syntaxe <code className="font-mono bg-muted px-1 rounded">{"{{nom}}"}</code>
+          {messages.variables.emptyStateWithInstructions}
         </p>
       </Card>
     );
@@ -71,12 +72,12 @@ export const VariableManager = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="STRING">Texte</SelectItem>
-                    <SelectItem value="NUMBER">Nombre</SelectItem>
-                    <SelectItem value="BOOLEAN">Boolean</SelectItem>
-                    <SelectItem value="ENUM">Enum</SelectItem>
-                    <SelectItem value="DATE">Date</SelectItem>
-                    <SelectItem value="MULTISTRING">Multi-texte</SelectItem>
+                    <SelectItem value="STRING">{messages.variables.types.string}</SelectItem>
+                    <SelectItem value="NUMBER">{messages.variables.types.number}</SelectItem>
+                    <SelectItem value="BOOLEAN">{messages.variables.types.boolean}</SelectItem>
+                    <SelectItem value="ENUM">{messages.variables.types.enum}</SelectItem>
+                    <SelectItem value="DATE">{messages.variables.types.date}</SelectItem>
+                    <SelectItem value="MULTISTRING">{messages.variables.types.multiString}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button

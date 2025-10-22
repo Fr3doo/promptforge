@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Code2, Github, Twitter, Mail, Linkedin } from "lucide-react";
+import { messages } from "@/constants/messages";
 
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -17,42 +18,42 @@ export const Footer = () => {
               <span className="text-xl font-bold">PromptForge</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              Gérez et optimisez vos prompts IA avec versioning professionnel et collaboration en équipe.
+              {messages.marketing.tagline}
             </p>
           </div>
 
           {/* Navigation */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Navigation</h3>
+            <h3 className="font-semibold">{messages.navigation.dashboard}</h3>
             <nav className="flex flex-col gap-2">
               <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Tableau de bord
+                {messages.navigation.dashboard}
               </Link>
               <Link to="/prompts" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Mes Prompts
+                {messages.navigation.myPrompts}
               </Link>
               <Link to="/resources" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Ressources
+                {messages.navigation.resources}
               </Link>
             </nav>
           </div>
 
           {/* Apprentissage */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Apprentissage</h3>
+            <h3 className="font-semibold">{messages.navigation.learning}</h3>
             <nav className="flex flex-col gap-2">
               <Link to="/methodes" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Méthodes de Prompting
+                {messages.navigation.promptingMethods}
               </Link>
               <Link to="/faq" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                FAQ
+                {messages.navigation.faq}
               </Link>
             </nav>
           </div>
 
           {/* Contact & Social */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Communauté</h3>
+            <h3 className="font-semibold">{messages.navigation.community}</h3>
             <div className="flex gap-4">
               <a
                 href="https://github.com/Fr3doo"
@@ -89,7 +90,7 @@ export const Footer = () => {
                 <Mail className="h-5 w-5" />
               </a>
             </div>
-            <p className="text-sm text-muted-foreground">Des questions ? Contactez-nous</p>
+            <p className="text-sm text-muted-foreground">{messages.navigation.communityContact}</p>
           </div>
         </div>
 
