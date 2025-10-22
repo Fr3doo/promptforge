@@ -4,6 +4,7 @@ import { promptSchema, variableSchema } from "@/lib/validation";
 import { messages } from "@/constants/messages";
 import { useCreatePrompt, useUpdatePrompt } from "@/hooks/usePrompts";
 import { useBulkUpsertVariables } from "@/hooks/useVariables";
+import { useCreateVersion } from "@/hooks/useVersions";
 import type { PromptFormData, Variable } from "@/features/prompts/types";
 
 interface UsePromptSaveOptions {
@@ -27,6 +28,7 @@ export function usePromptSave({ isEditMode, onSuccess }: UsePromptSaveOptions = 
   const { mutate: createPrompt, isPending: creating } = useCreatePrompt();
   const { mutate: updatePrompt, isPending: updating } = useUpdatePrompt();
   const { mutate: saveVariables } = useBulkUpsertVariables();
+  const { mutate: createInitialVersion } = useCreateVersion();
 
   const savePrompt = async (data: PromptSaveData, promptId?: string) => {
     try {
@@ -96,9 +98,37 @@ export function usePromptSave({ isEditMode, onSuccess }: UsePromptSaveOptions = 
           status: "PUBLISHED",
         }, {
           onSuccess: (newPrompt) => {
+            // Sauvegarder les variables d'abord
             handleVariableSave(newPrompt.id);
-            onSuccess?.();
-            navigate("/prompts");
+            
+            // Créer automatiquement la version initiale
+            createInitialVersion({
+              prompt_id: newPrompt.id,
+              content: newPrompt.content,
+              semver: "1.0.0",
+              message: "Version initiale",
+              variables: validatedVariables.map((v, index) => ({
+                name: v.name,
+                type: v.type,
+                required: v.required,
+                default_value: v.default_value || "",
+                help: v.help || "",
+                pattern: v.pattern || "",
+                options: v.options || [],
+                order_index: index,
+              })),
+            }, {
+              onSuccess: () => {
+                onSuccess?.();
+                navigate("/prompts");
+              },
+              onError: (error) => {
+                console.error("Erreur création version initiale:", error);
+                // Continuer quand même vers /prompts même si la version initiale échoue
+                onSuccess?.();
+                navigate("/prompts");
+              }
+            });
           },
         });
       }
