@@ -24,7 +24,7 @@ Analyse ce bug en suivant ces étapes:
 3. Suggère une équipe assignée
 4. Estime la complexité de résolution`,
     tags: ["dev", "bug", "triage"],
-    visibility: "SHARED" as const,
+    visibility: "PRIVATE" as const,
     variables: [
       { name: "product", type: "STRING", required: true, default_value: "", help: "Nom du produit ou service", order_index: 0 },
       { name: "severity", type: "ENUM", required: true, default_value: "medium", help: "Niveau: low, medium, high, critical", order_index: 1 },
@@ -62,7 +62,7 @@ Scenario: [Nom du scénario]
   Then [résultat attendu]
 \`\`\``,
     tags: ["testing", "qa", "gherkin"],
-    visibility: "SHARED" as const,
+    visibility: "PRIVATE" as const,
     variables: [
       { name: "featureName", type: "STRING", required: true, default_value: "", help: "Nom de la fonctionnalité", order_index: 0 },
       { name: "rules", type: "MULTISTRING", required: true, default_value: "", help: "Liste des règles métier", order_index: 1 },
@@ -96,7 +96,7 @@ Résume cet email en respectant:
 3. L'adaptation à l'audience ({{audience}})
 4. Conservation des points clés et actions requises`,
     tags: ["email", "communication", "summary"],
-    visibility: "SHARED" as const,
+    visibility: "PRIVATE" as const,
     variables: [
       { name: "tone", type: "ENUM", required: true, default_value: "professional", help: "Ton: casual, professional, formal", order_index: 0 },
       { name: "length", type: "NUMBER", required: true, default_value: "100", help: "Nombre de mots maximum", order_index: 1 },

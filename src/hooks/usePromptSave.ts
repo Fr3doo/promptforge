@@ -2,10 +2,12 @@ import { useNavigate } from "react-router-dom";
 import { useToastNotifier } from "@/hooks/useToastNotifier";
 import { promptSchema, variableSchema } from "@/lib/validation";
 import { messages } from "@/constants/messages";
-import { useCreatePrompt, useUpdatePrompt } from "@/hooks/usePrompts";
+import { useCreatePrompt, useUpdatePrompt, usePrompt } from "@/hooks/usePrompts";
 import { useBulkUpsertVariables } from "@/hooks/useVariables";
 import { useCreateVersion } from "@/hooks/useVersions";
+import { useOptimisticLocking, type OptimisticLockError } from "@/hooks/useOptimisticLocking";
 import type { PromptFormData, Variable } from "@/features/prompts/types";
+import { toast } from "sonner";
 
 interface UsePromptSaveOptions {
   isEditMode: boolean;
@@ -21,7 +23,7 @@ interface PromptSaveData {
   variables: Variable[];
 }
 
-export function usePromptSave({ isEditMode, onSuccess }: UsePromptSaveOptions = { isEditMode: false }) {
+export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSaveOptions & { promptId?: string } = { isEditMode: false }) {
   const navigate = useNavigate();
   const { notifyError } = useToastNotifier();
   
@@ -29,6 +31,8 @@ export function usePromptSave({ isEditMode, onSuccess }: UsePromptSaveOptions = 
   const { mutate: updatePrompt, isPending: updating } = useUpdatePrompt();
   const { mutate: saveVariables } = useBulkUpsertVariables();
   const { mutate: createInitialVersion } = useCreateVersion();
+  const { checkForConflicts } = useOptimisticLocking();
+  const { data: currentServerPrompt } = usePrompt(promptId);
 
   const savePrompt = async (data: PromptSaveData, promptId?: string) => {
     try {
@@ -71,6 +75,31 @@ export function usePromptSave({ isEditMode, onSuccess }: UsePromptSaveOptions = 
       };
 
       if (isEditMode && promptId) {
+        // Vérifier le verrouillage optimiste avant mise à jour
+        if (currentServerPrompt) {
+          try {
+            // Créer un prompt client fictif avec updated_at de la dernière lecture
+            const clientPrompt = { 
+              ...currentServerPrompt,
+              updated_at: currentServerPrompt.updated_at 
+            };
+            
+            checkForConflicts(clientPrompt, currentServerPrompt);
+          } catch (error) {
+            const lockError = error as OptimisticLockError;
+            if (lockError.type === "CONFLICT") {
+              toast.error("Conflit détecté", {
+                description: lockError.message,
+                action: {
+                  label: "Recharger",
+                  onClick: () => window.location.reload()
+                }
+              });
+              return;
+            }
+          }
+        }
+
         // Update existing prompt
         updatePrompt(
           { 
