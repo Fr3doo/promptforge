@@ -16,6 +16,7 @@ interface PromptEditorProps {
   variables: any[];
   variableValues: Record<string, string>;
   onVariableValueChange: (name: string, value: string) => void;
+  disabled?: boolean;
 }
 
 export const PromptEditor = ({
@@ -25,6 +26,7 @@ export const PromptEditor = ({
   variables,
   variableValues,
   onVariableValueChange,
+  disabled = false,
 }: PromptEditorProps) => {
   const [copied, setCopied] = useState(false);
   const { preview } = useVariableSubstitution(content, variables, variableValues);
@@ -53,6 +55,7 @@ export const PromptEditor = ({
               onClick={onDetectVariables}
               className="gap-2"
               aria-label="Détecter les variables dans le prompt"
+              disabled={disabled}
             >
               <Wand2 className="h-4 w-4" />
               Détecter variables
@@ -65,6 +68,7 @@ export const PromptEditor = ({
             placeholder="Écrivez votre prompt ici... Utilisez {{variable}} pour les variables."
             className="flex-1 font-mono text-sm min-h-[400px] bg-editor-bg border-border resize-none"
             aria-label="Contenu du prompt"
+            disabled={disabled}
           />
         </div>
 

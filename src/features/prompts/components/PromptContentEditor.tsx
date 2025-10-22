@@ -15,6 +15,7 @@ interface PromptContentEditorProps {
   onDetectVariables: () => void;
   onVariableUpdate: (index: number, variable: Variable) => void;
   onVariableDelete: (index: number) => void;
+  disabled?: boolean;
 }
 
 export const PromptContentEditor = ({
@@ -26,6 +27,7 @@ export const PromptContentEditor = ({
   onDetectVariables,
   onVariableUpdate,
   onVariableDelete,
+  disabled = false,
 }: PromptContentEditorProps) => {
   const [isVariablesOpen, setIsVariablesOpen] = useState(false);
 
@@ -37,14 +39,14 @@ export const PromptContentEditor = ({
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold">Contenu du prompt</h2>
             <div className="flex items-center gap-2">
-              <Button onClick={onDetectVariables} variant="outline" className="gap-2">
+              <Button onClick={onDetectVariables} variant="outline" className="gap-2" disabled={disabled}>
                 <Sparkles className="h-4 w-4" />
                 Détecter variables
               </Button>
               {variables.length > 0 && (
                 <Sheet open={isVariablesOpen} onOpenChange={setIsVariablesOpen} modal={false}>
                   <SheetTrigger asChild>
-                    <Button variant="outline" className="gap-2">
+                    <Button variant="outline" className="gap-2" disabled={disabled}>
                       <Edit3 className="h-4 w-4" />
                       Variables ({variables.length})
                     </Button>
@@ -83,6 +85,7 @@ export const PromptContentEditor = ({
           onVariableValueChange={(name, value) => 
             onVariableValuesChange({ ...variableValues, [name]: value })
           }
+          disabled={disabled}
         />
       </div>
     </>

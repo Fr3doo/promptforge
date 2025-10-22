@@ -21,6 +21,7 @@ interface PromptMetadataFormProps {
   onAddTag: () => void;
   onRemoveTag: (tag: string) => void;
   isEditMode?: boolean;
+  disabled?: boolean;
 }
 
 export const PromptMetadataForm = ({
@@ -36,6 +37,7 @@ export const PromptMetadataForm = ({
   onAddTag,
   onRemoveTag,
   isEditMode = false,
+  disabled = false,
 }: PromptMetadataFormProps) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -67,6 +69,7 @@ export const PromptMetadataForm = ({
             aria-required="true"
             aria-invalid={!title}
             aria-describedby="title-help"
+            disabled={disabled}
           />
           <p id="title-help" className="text-xs text-muted-foreground">Donnez un nom clair et descriptif à votre prompt</p>
         </div>
@@ -83,6 +86,7 @@ export const PromptMetadataForm = ({
             placeholder="Décrivez l'objectif et le contexte d'utilisation de ce prompt"
             className="min-h-[80px]"
             aria-describedby="description-help"
+            disabled={disabled}
           />
           <p id="description-help" className="text-xs text-muted-foreground">Ajoutez des détails pour retrouver facilement ce prompt plus tard</p>
         </div>
@@ -105,7 +109,7 @@ export const PromptMetadataForm = ({
             <div id="advanced-options" className="space-y-6 mt-4">
               <div className="space-y-2">
                 <Label htmlFor="prompt-visibility">Visibilité</Label>
-                <Select value={visibility} onValueChange={(value: any) => onVisibilityChange(value)}>
+                <Select value={visibility} onValueChange={(value: any) => onVisibilityChange(value)} disabled={disabled}>
                   <SelectTrigger id="prompt-visibility" aria-label="Sélectionner la visibilité du prompt">
                     <SelectValue />
                   </SelectTrigger>
@@ -143,12 +147,14 @@ export const PromptMetadataForm = ({
                       }
                     }}
                     aria-describedby="tags-help"
+                    disabled={disabled}
                   />
                   <Button 
                     onClick={onAddTag} 
                     variant="outline" 
                     className="gap-2 shrink-0"
                     aria-label="Ajouter un tag"
+                    disabled={disabled}
                   >
                     <Plus className="h-4 w-4" aria-hidden="true" />
                     Ajouter

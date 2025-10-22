@@ -23,6 +23,7 @@ interface CreateVersionDialogProps {
   onConfirm: () => void;
   isCreating: boolean;
   hasUnsavedChanges: boolean;
+  disabled?: boolean;
 }
 
 export function CreateVersionDialog({
@@ -34,6 +35,7 @@ export function CreateVersionDialog({
   onConfirm,
   isCreating,
   hasUnsavedChanges,
+  disabled = false,
 }: CreateVersionDialogProps) {
   const previewVersion = bumpVersion(currentVersion, versionType);
 
@@ -43,8 +45,14 @@ export function CreateVersionDialog({
         <Button 
           variant="outline" 
           className="gap-2"
-          disabled={!hasUnsavedChanges}
-          title={!hasUnsavedChanges ? "Aucune modification à versionner" : ""}
+          disabled={!hasUnsavedChanges || disabled}
+          title={
+            disabled 
+              ? "Vous n'avez pas la permission de créer une version" 
+              : !hasUnsavedChanges 
+              ? "Aucune modification à versionner" 
+              : ""
+          }
         >
           <GitBranch className="h-4 w-4" />
           Créer une version

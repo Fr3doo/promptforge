@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePromptForm } from "@/features/prompts/hooks/usePromptForm";
 import { useAutoSave } from "@/features/prompts/hooks/useAutoSave";
 import { usePromptVersioning } from "@/hooks/usePromptVersioning";
+import { usePromptPermission } from "@/hooks/usePromptPermission";
 import { PromptMetadataForm } from "@/features/prompts/components/PromptMetadataForm";
 import { PromptContentEditor } from "@/features/prompts/components/PromptContentEditor";
 import { VersionTimeline } from "@/features/prompts/components/VersionTimeline";
@@ -16,7 +17,7 @@ import { LoadingButton } from "@/components/LoadingButton";
 import { SaveProgress } from "@/components/SaveProgress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, Eye } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
@@ -31,11 +32,15 @@ const PromptEditorPage = () => {
   const { data: existingVariables = [], isLoading: loadingVariables } = useVariables(id);
   const { data: versions = [] } = useVersions(id);
 
+  // Permissions
+  const { canEdit, canCreateVersion, permission, isOwner } = usePromptPermission(id);
+
   // Form hook with all logic
   const form = usePromptForm({
     prompt,
     existingVariables,
     isEditMode,
+    canEdit,
   });
 
   // Versioning
@@ -109,19 +114,29 @@ const PromptEditorPage = () => {
       
       <div className="border-b border-border bg-card sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <LoadingButton variant="ghost" onClick={() => navigate("/prompts")} className="gap-2">
               <ArrowLeft className="h-4 w-4" />
               Retour
             </LoadingButton>
-            <LoadingButton
-              onClick={() => form.handleSave(id)}
-              isLoading={form.isSaving}
-              loadingText="Enregistrement..."
-              className="gap-2"
-            >
-              Enregistrer
-            </LoadingButton>
+            
+            <div className="flex items-center gap-3">
+              {!canEdit && permission && (
+                <Badge variant="secondary" className="gap-1.5">
+                  <Eye className="h-3 w-3" />
+                  Mode lecture seule
+                </Badge>
+              )}
+              <LoadingButton
+                onClick={() => form.handleSave(id)}
+                isLoading={form.isSaving}
+                loadingText="Enregistrement..."
+                className="gap-2"
+                disabled={!canEdit}
+              >
+                Enregistrer
+              </LoadingButton>
+            </div>
           </div>
         </div>
       </div>
@@ -141,6 +156,7 @@ const PromptEditorPage = () => {
           onAddTag={form.addTag}
           onRemoveTag={form.removeTag}
           isEditMode={isEditMode}
+          disabled={!canEdit}
         />
 
         {/* Tabs for Editor, Variables, and Versions */}
@@ -160,6 +176,7 @@ const PromptEditorPage = () => {
               onDetectVariables={form.detectVariables}
               onVariableUpdate={form.updateVariable}
               onVariableDelete={form.deleteVariable}
+              disabled={!canEdit}
             />
           </TabsContent>
 
@@ -189,6 +206,7 @@ const PromptEditorPage = () => {
                 onConfirm={handleCreateVersion}
                 isCreating={isCreating}
                 hasUnsavedChanges={hasUnsavedChanges}
+                disabled={!canCreateVersion}
               />
             </div>
 
