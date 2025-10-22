@@ -6,11 +6,16 @@ import { useState } from "react";
 import { Loader2, Sparkles, Copy, Save, RotateCcw } from "lucide-react";
 import { usePromptAnalysis } from "@/hooks/usePromptAnalysis";
 import { useCreatePrompt } from "@/hooks/usePrompts";
+import { useBulkUpsertVariables } from "@/hooks/useVariables";
+import { useCreateVersion } from "@/hooks/useVersions";
 import { MetadataView } from "./analyzer/MetadataView";
 import { ExportActions } from "./analyzer/ExportActions";
 import { Badge } from "@/components/ui/badge";
-import { successToast } from "@/lib/toastUtils";
+import { successToast, errorToast } from "@/lib/toastUtils";
+import { getSafeErrorMessage } from "@/lib/errorHandler";
+import { promptSchema } from "@/lib/validation";
 import { messages } from "@/constants/messages";
+import { captureException } from "@/lib/logger";
 
 interface PromptAnalyzerProps {
   onClose?: () => void;
@@ -20,6 +25,8 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
   const [promptContent, setPromptContent] = useState("");
   const { result, isAnalyzing, analyze, reset } = usePromptAnalysis();
   const { mutate: createPrompt, isPending: isSaving } = useCreatePrompt();
+  const { mutate: saveVariables } = useBulkUpsertVariables();
+  const { mutate: createInitialVersion } = useCreateVersion();
 
   const copyTemplate = () => {
     if (result) {
@@ -31,50 +38,141 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
   const handleSavePrompt = () => {
     if (!result) return;
 
-    // Construire la description à partir des métadonnées
-    let description = "";
-    
-    // Ajouter l'objectif
-    if (result.metadata.objectifs && result.metadata.objectifs.length > 0) {
-      description += "**Objectif:**\n" + result.metadata.objectifs.map(obj => `- ${obj}`).join('\n') + "\n\n";
-    }
-    
-    // Ajouter les étapes
-    if (result.metadata.etapes && result.metadata.etapes.length > 0) {
-      description += "**Étapes:**\n" + result.metadata.etapes.map((etape, i) => `${i + 1}. ${etape}`).join('\n') + "\n\n";
-    }
-    
-    // Ajouter les critères de qualité
-    if (result.metadata.criteres && result.metadata.criteres.length > 0) {
-      description += "**Critères de qualité:**\n" + result.metadata.criteres.map(crit => `- ${crit}`).join('\n');
-    }
-    
-    // Utiliser le rôle si aucune autre information n'est disponible
-    if (!description && result.metadata.role) {
-      description = result.metadata.role;
-    }
+    try {
+      // Construire la description à partir des métadonnées
+      let description = "";
+      
+      // Ajouter l'objectif
+      if (result.metadata.objectifs && result.metadata.objectifs.length > 0) {
+        description += "**Objectif:**\n" + result.metadata.objectifs.map(obj => `- ${obj}`).join('\n') + "\n\n";
+      }
+      
+      // Ajouter les étapes
+      if (result.metadata.etapes && result.metadata.etapes.length > 0) {
+        description += "**Étapes:**\n" + result.metadata.etapes.map((etape, i) => `${i + 1}. ${etape}`).join('\n') + "\n\n";
+      }
+      
+      // Ajouter les critères de qualité
+      if (result.metadata.criteres && result.metadata.criteres.length > 0) {
+        description += "**Critères de qualité:**\n" + result.metadata.criteres.map(crit => `- ${crit}`).join('\n');
+      }
+      
+      // Utiliser le rôle si aucune autre information n'est disponible
+      if (!description && result.metadata.role) {
+        description = result.metadata.role;
+      }
 
-    const categories = result.metadata.categories || [];
-    
-    createPrompt(
-      {
+      const categories = result.metadata.categories || [];
+      
+      const promptData = {
         title: result.metadata.objectifs?.[0] || "Prompt analysé",
         content: result.prompt_template,
         description: description.trim(),
         tags: categories,
         is_favorite: false,
         version: "1.0.0",
-        visibility: "PRIVATE",
-        status: "PUBLISHED",
+        visibility: "PRIVATE" as const,
+        status: "PUBLISHED" as const,
         public_permission: "READ" as const,
-      },
-      {
-        onSuccess: () => {
-          successToast(messages.success.promptSaved);
-          onClose?.();
+      };
+
+      // Valider avec Zod avant de sauvegarder
+      promptSchema.parse(promptData);
+
+      createPrompt(promptData, {
+        onSuccess: (newPrompt) => {
+          // Étape 1: Sauvegarder les variables
+          if (result.variables && result.variables.length > 0) {
+            // Mapper le type SELECT vers ENUM (type DB réel)
+            const mapVariableType = (type: string): "STRING" | "NUMBER" | "BOOLEAN" | "ENUM" => {
+              const upperType = type?.toUpperCase() || "STRING";
+              if (upperType === "SELECT") return "ENUM";
+              if (["STRING", "NUMBER", "BOOLEAN", "ENUM"].includes(upperType)) {
+                return upperType as "STRING" | "NUMBER" | "BOOLEAN" | "ENUM";
+              }
+              return "STRING";
+            };
+
+            const variablesToSave = result.variables.map((v, index) => ({
+              name: v.name,
+              type: mapVariableType(v.type),
+              required: v.required !== undefined ? v.required : false,
+              default_value: v.default_value || "",
+              help: v.description || "",
+              pattern: v.pattern || "",
+              options: v.options || [],
+              order_index: index,
+            }));
+
+            saveVariables(
+              { promptId: newPrompt.id, variables: variablesToSave },
+              {
+                onSuccess: () => {
+                  // Étape 2: Créer la version initiale
+                  createInitialVersion(
+                    {
+                      prompt_id: newPrompt.id,
+                      content: newPrompt.content,
+                      semver: "1.0.0",
+                      message: "Version initiale créée depuis l'analyseur",
+                    },
+                    {
+                      onSuccess: () => {
+                        successToast(messages.success.promptSaved);
+                        onClose?.();
+                      },
+                      onError: (error) => {
+                        // Version échouée mais prompt + variables sauvés
+                        captureException(error, "Échec création version initiale depuis analyseur");
+                        successToast(messages.success.promptSaved, "La version initiale n'a pas pu être créée");
+                        onClose?.();
+                      },
+                    }
+                  );
+                },
+                onError: (error) => {
+                  captureException(error, "Échec sauvegarde variables depuis analyseur");
+                  errorToast(messages.errors.variables.saveFailed, getSafeErrorMessage(error));
+                  // Continuer quand même: prompt sauvé
+                  onClose?.();
+                },
+              }
+            );
+          } else {
+            // Pas de variables: créer juste la version initiale
+            createInitialVersion(
+              {
+                prompt_id: newPrompt.id,
+                content: newPrompt.content,
+                semver: "1.0.0",
+                message: "Version initiale créée depuis l'analyseur",
+              },
+              {
+                onSuccess: () => {
+                  successToast(messages.success.promptSaved);
+                  onClose?.();
+                },
+                onError: (error) => {
+                  captureException(error, "Échec création version initiale depuis analyseur");
+                  successToast(messages.success.promptSaved, "La version initiale n'a pas pu être créée");
+                  onClose?.();
+                },
+              }
+            );
+          }
         },
-      }
-    );
+        onError: (error) => {
+          captureException(error, "Échec sauvegarde prompt depuis analyseur");
+          errorToast(messages.labels.error, getSafeErrorMessage(error));
+        },
+      });
+    } catch (validationError: any) {
+      captureException(validationError, "Validation échouée pour prompt analyseur");
+      errorToast(
+        messages.labels.error,
+        validationError.errors?.[0]?.message || "Données invalides"
+      );
+    }
   };
 
   const handleNewAnalysis = () => {

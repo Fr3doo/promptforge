@@ -12,6 +12,8 @@ export interface AnalysisResult {
     type: string;
     default_value?: string;
     options?: string[];
+    required?: boolean;
+    pattern?: string;
   }>;
   prompt_template: string;
   metadata: {
