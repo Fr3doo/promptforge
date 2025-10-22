@@ -44,12 +44,21 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode, canE
   }, [prompt]);
 
 
-  const handleSave = async (promptId?: string) => {
+  const handleSave = async (promptId?: string, hasConflict?: boolean) => {
     // Bloquer la sauvegarde si pas de permission d'édition
     if (!canEdit) {
       errorToast(
         "Action interdite",
         "Vous n'avez pas la permission de modifier ce prompt. Contactez le propriétaire pour obtenir l'accès en écriture."
+      );
+      return;
+    }
+
+    // Bloquer la sauvegarde en cas de conflit non résolu
+    if (hasConflict) {
+      errorToast(
+        "Conflit détecté",
+        "Veuillez recharger le prompt pour obtenir la dernière version avant de sauvegarder."
       );
       return;
     }

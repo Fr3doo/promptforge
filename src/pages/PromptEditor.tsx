@@ -8,7 +8,9 @@ import { usePromptForm } from "@/features/prompts/hooks/usePromptForm";
 import { useAutoSave } from "@/features/prompts/hooks/useAutoSave";
 import { usePromptVersioning } from "@/hooks/usePromptVersioning";
 import { usePromptPermission } from "@/hooks/usePromptPermission";
+import { useConflictDetection } from "@/hooks/useConflictDetection";
 import { PromptMetadataForm } from "@/features/prompts/components/PromptMetadataForm";
+import { ConflictAlert } from "@/components/ConflictAlert";
 import { PromptContentEditor } from "@/features/prompts/components/PromptContentEditor";
 import { VersionTimeline } from "@/features/prompts/components/VersionTimeline";
 import { CreateVersionDialog } from "@/features/prompts/components/CreateVersionDialog";
@@ -28,12 +30,25 @@ const PromptEditorPage = () => {
   const isEditMode = !!id;
 
   // Queries
-  const { data: prompt, isLoading: loadingPrompt } = usePrompt(id);
-  const { data: existingVariables = [], isLoading: loadingVariables } = useVariables(id);
+  const { data: prompt, isLoading: loadingPrompt, refetch: refetchPrompt } = usePrompt(id);
+  const { data: existingVariables = [], isLoading: loadingVariables, refetch: refetchVariables } = useVariables(id);
   const { data: versions = [] } = useVersions(id);
 
   // Permissions
   const { canEdit, canCreateVersion, permission, isOwner } = usePromptPermission(id);
+
+  // Détection des conflits d'édition concurrente
+  const { hasConflict, serverUpdatedAt, resetConflict } = useConflictDetection(
+    id,
+    prompt?.updated_at,
+    canEdit // Ne vérifier que si l'utilisateur peut éditer
+  );
+
+  const handleRefreshPrompt = () => {
+    refetchPrompt(); // Recharger le prompt depuis le serveur
+    refetchVariables(); // Recharger les variables
+    resetConflict(); // Réinitialiser l'état de conflit
+  };
 
   // Form hook with all logic
   const form = usePromptForm({
@@ -128,11 +143,11 @@ const PromptEditorPage = () => {
                 </Badge>
               )}
               <LoadingButton
-                onClick={() => form.handleSave(id)}
+                onClick={() => form.handleSave(id, hasConflict)}
                 isLoading={form.isSaving}
                 loadingText="Enregistrement..."
                 className="gap-2"
-                disabled={!canEdit}
+                disabled={!canEdit || hasConflict}
               >
                 Enregistrer
               </LoadingButton>
@@ -142,6 +157,15 @@ const PromptEditorPage = () => {
       </div>
 
       <main className="container mx-auto px-4 py-8 space-y-8 max-w-7xl">
+        {/* Conflict Alert */}
+        {hasConflict && serverUpdatedAt && (
+          <ConflictAlert 
+            serverUpdatedAt={serverUpdatedAt}
+            onRefresh={handleRefreshPrompt}
+            onDismiss={resetConflict}
+          />
+        )}
+
         {/* Metadata Section */}
         <PromptMetadataForm
           title={form.title}

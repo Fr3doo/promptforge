@@ -72,8 +72,46 @@ export function useOptimisticLocking() {
     return !!data;
   }, []);
 
+  /**
+   * Vérifie si le prompt a été modifié sur le serveur
+   * @param promptId - ID du prompt
+   * @param clientUpdatedAt - Date de dernière modification côté client
+   * @returns Object avec hasConflict et optionnellement serverUpdatedAt
+   */
+  const checkForServerUpdates = useCallback(async (
+    promptId: string,
+    clientUpdatedAt: string
+  ): Promise<{ hasConflict: boolean; serverUpdatedAt?: string }> => {
+    const { SupabasePromptRepository } = await import("@/repositories/PromptRepository");
+    const repository = new SupabasePromptRepository();
+    
+    try {
+      const serverPrompt = await repository.fetchById(promptId);
+      
+      if (!serverPrompt || !clientUpdatedAt) {
+        return { hasConflict: false };
+      }
+
+      const clientDate = new Date(clientUpdatedAt);
+      const serverDate = new Date(serverPrompt.updated_at);
+
+      if (serverDate > clientDate) {
+        return { 
+          hasConflict: true, 
+          serverUpdatedAt: serverPrompt.updated_at 
+        };
+      }
+
+      return { hasConflict: false };
+    } catch (error) {
+      console.error("Erreur lors de la vérification des mises à jour:", error);
+      return { hasConflict: false };
+    }
+  }, []);
+
   return {
     checkForConflicts,
     checkVersionExists,
+    checkForServerUpdates,
   };
 }
