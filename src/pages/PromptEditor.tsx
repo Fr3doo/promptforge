@@ -46,7 +46,10 @@ const PromptEditorPage = () => {
   const { data: versions = [] } = useVersions(id);
 
   // Permissions
-  const { canEdit, canCreateVersion, permission, isOwner } = usePromptPermission(id);
+  const { canEdit: canEditFromPermission, canCreateVersion, permission, isOwner } = usePromptPermission(id);
+  
+  // En mode création, l'utilisateur peut toujours éditer
+  const canEdit = !isEditMode || canEditFromPermission;
 
   // Détection des conflits d'édition concurrente
   const { hasConflict, serverUpdatedAt, resetConflict } = useConflictDetection(
