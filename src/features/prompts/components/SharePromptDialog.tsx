@@ -71,9 +71,9 @@ export const SharePromptDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Partager "{promptTitle}"</DialogTitle>
+          <DialogTitle>Partage Privé : "{promptTitle}"</DialogTitle>
           <DialogDescription>
-            Partagez ce prompt avec d'autres utilisateurs en lecture seule ou avec
+            Partagez ce prompt avec des utilisateurs spécifiques en lecture seule ou avec
             droits de modification
           </DialogDescription>
         </DialogHeader>
@@ -152,7 +152,20 @@ export const SharePromptDialog = ({
                 })}
               </div>
             </div>
-          ) : null}
+           ) : null}
+
+          {/* Stop all private sharing button */}
+          {shares.length > 0 && (
+            <Button 
+              variant="destructive" 
+              onClick={() => {
+                shares.forEach((share) => handleDeleteShare(share.id));
+              }}
+              className="w-full"
+            >
+              Arrêter tous les partages privés
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

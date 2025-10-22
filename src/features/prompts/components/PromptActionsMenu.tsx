@@ -61,7 +61,7 @@ export const PromptActionsMenu = ({
             onManageSharing();
           }}>
             <Users className="h-4 w-4 mr-2" />
-            Gérer les partages
+            Partage Privé
           </DropdownMenuItem>
         )}
         {onToggleVisibility && (
@@ -72,12 +72,12 @@ export const PromptActionsMenu = ({
             {isShared ? (
               <>
                 <Lock className="h-4 w-4 mr-2" />
-                Rendre privé
+                Arrêter le partage public
               </>
             ) : (
               <>
                 <Share2 className="h-4 w-4 mr-2" />
-                Partager publiquement
+                Partage Public
               </>
             )}
           </DropdownMenuItem>

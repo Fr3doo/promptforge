@@ -56,7 +56,7 @@ export const PublicShareDialog = ({
         <DialogHeader>
           <DialogTitle>
             {currentVisibility === "PRIVATE" 
-              ? `Partager publiquement "${promptTitle}"` 
+              ? `Partage Public : "${promptTitle}"` 
               : `Modifier le partage public de "${promptTitle}"`}
           </DialogTitle>
           <DialogDescription>
@@ -153,14 +153,14 @@ export const PublicShareDialog = ({
                 disabled={isLoading}
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Rendre privé
+                Arrêter le partage public
               </Button>
             </>
           )}
           {currentVisibility === "PRIVATE" && (
             <Button onClick={handleConfirm} disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Partager publiquement
+              Activer le partage public
             </Button>
           )}
         </DialogFooter>
