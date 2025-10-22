@@ -3,6 +3,7 @@ import { useTagManager } from "@/hooks/useTagManager";
 import { useVariableManager } from "@/hooks/useVariableManager";
 import { usePromptSave } from "@/hooks/usePromptSave";
 import { errorToast } from "@/lib/toastUtils";
+import { useDraftAutoSave, loadDraft, clearDraft } from "./useDraftAutoSave";
 import type { Prompt, Variable } from "../types";
 
 interface UsePromptFormOptions {
@@ -13,8 +14,16 @@ interface UsePromptFormOptions {
 }
 
 export function usePromptForm({ prompt, existingVariables = [], isEditMode, canEdit = true }: UsePromptFormOptions) {
-  // Save logic
-  const { savePrompt, isSaving } = usePromptSave({ isEditMode });
+  // Save logic with callback to clear draft on success
+  const { savePrompt, isSaving } = usePromptSave({ 
+    isEditMode,
+    onSuccess: () => {
+      // Supprimer le brouillon après enregistrement réussi (mode création uniquement)
+      if (!isEditMode) {
+        clearDraft();
+      }
+    }
+  });
 
   // Form state
   const [title, setTitle] = useState("");
@@ -31,6 +40,15 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode, canE
     initialVariables: existingVariables,
   });
 
+  // Auto-sauvegarde locale (uniquement en mode création)
+  useDraftAutoSave({
+    title,
+    description,
+    content,
+    tags,
+    enabled: !isEditMode,
+  });
+
   // Initialize form with existing data
   useEffect(() => {
     if (prompt) {
@@ -38,8 +56,17 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode, canE
       setDescription(prompt.description || "");
       setContent(prompt.content);
       setTags(prompt.tags || []);
+    } else if (!isEditMode) {
+      // En mode création, charger le brouillon s'il existe
+      const draft = loadDraft();
+      if (draft) {
+        setTitle(draft.title);
+        setDescription(draft.description);
+        setContent(draft.content);
+        setTags(draft.tags);
+      }
     }
-  }, [prompt]);
+  }, [prompt, isEditMode]);
 
 
   const handleSave = async (promptId?: string, hasConflict?: boolean) => {
