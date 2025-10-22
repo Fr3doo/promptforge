@@ -780,5 +780,305 @@ describe("usePromptForm - Integration Tests", () => {
       expect(result.current.isSaving).toBe(true);
     });
   });
+
+  describe("Validation - Negative Tests (Task 6 & 8)", () => {
+    it("should show error when title is empty", async () => {
+      const { result } = renderHook(
+        () => usePromptForm({ isEditMode: false }),
+        { wrapper: createWrapper() }
+      );
+
+      act(() => {
+        result.current.setTitle("");
+        result.current.setContent("Some content");
+      });
+
+      await waitFor(() => {
+        expect(result.current.validationErrors.title).toBeDefined();
+        expect(result.current.validationErrors.title).toBe("Le titre est requis");
+        expect(result.current.isFormValid).toBe(false);
+      });
+    });
+
+    it("should show error when content is empty", async () => {
+      const { result } = renderHook(
+        () => usePromptForm({ isEditMode: false }),
+        { wrapper: createWrapper() }
+      );
+
+      act(() => {
+        result.current.setTitle("Valid Title");
+        result.current.setContent("");
+      });
+
+      await waitFor(() => {
+        expect(result.current.validationErrors.content).toBeDefined();
+        expect(result.current.validationErrors.content).toBe("Le contenu est requis");
+        expect(result.current.isFormValid).toBe(false);
+      });
+    });
+
+    it("should show error when title exceeds 200 characters", async () => {
+      const { result } = renderHook(
+        () => usePromptForm({ isEditMode: false }),
+        { wrapper: createWrapper() }
+      );
+
+      const longTitle = "a".repeat(201);
+
+      act(() => {
+        result.current.setTitle(longTitle);
+        result.current.setContent("Content");
+      });
+
+      await waitFor(() => {
+        expect(result.current.validationErrors.title).toBeDefined();
+        expect(result.current.validationErrors.title).toBe("Le titre ne peut pas dépasser 200 caractères");
+        expect(result.current.isFormValid).toBe(false);
+      });
+    });
+
+    it("should show error when description exceeds 3000 characters", async () => {
+      const { result } = renderHook(
+        () => usePromptForm({ isEditMode: false }),
+        { wrapper: createWrapper() }
+      );
+
+      const longDescription = "a".repeat(3001);
+
+      act(() => {
+        result.current.setTitle("Title");
+        result.current.setContent("Content");
+        result.current.setDescription(longDescription);
+      });
+
+      await waitFor(() => {
+        expect(result.current.validationErrors.description).toBeDefined();
+        expect(result.current.validationErrors.description).toBe("La description ne peut pas dépasser 3000 caractères");
+        expect(result.current.isFormValid).toBe(false);
+      });
+    });
+
+    it("should show error when more than 20 tags are added", async () => {
+      const { result } = renderHook(
+        () => usePromptForm({ isEditMode: false }),
+        { wrapper: createWrapper() }
+      );
+
+      act(() => {
+        result.current.setTitle("Title");
+        result.current.setContent("Content");
+        
+        // Add 21 tags
+        for (let i = 1; i <= 21; i++) {
+          result.current.setTagInput(`tag${i}`);
+          result.current.addTag();
+        }
+      });
+
+      await waitFor(() => {
+        expect(result.current.validationErrors.tags).toBeDefined();
+        expect(result.current.validationErrors.tags).toBe("Vous ne pouvez pas avoir plus de 20 tags");
+        expect(result.current.isFormValid).toBe(false);
+      });
+    });
+
+    it("should not add duplicate tags", () => {
+      const { result } = renderHook(
+        () => usePromptForm({ isEditMode: false }),
+        { wrapper: createWrapper() }
+      );
+
+      act(() => {
+        result.current.setTagInput("duplicate");
+        result.current.addTag();
+        result.current.setTagInput("duplicate");
+        result.current.addTag();
+      });
+
+      expect(result.current.tags.filter(t => t === "duplicate")).toHaveLength(1);
+    });
+
+    it("should validate form is valid with correct data", async () => {
+      const { result } = renderHook(
+        () => usePromptForm({ isEditMode: false }),
+        { wrapper: createWrapper() }
+      );
+
+      act(() => {
+        result.current.setTitle("Valid Title");
+        result.current.setDescription("Valid description under 3000 chars");
+        result.current.setContent("Valid content");
+        result.current.setTagInput("tag1");
+        result.current.addTag();
+      });
+
+      await waitFor(() => {
+        expect(result.current.validationErrors).toEqual({});
+        expect(result.current.isFormValid).toBe(true);
+      });
+    });
+
+    it("should prevent saving when form is invalid", async () => {
+      const mockSavePrompt = vi.fn().mockResolvedValue(undefined);
+      const { usePromptSave } = await import("@/hooks/usePromptSave");
+      vi.mocked(usePromptSave).mockReturnValue({
+        savePrompt: mockSavePrompt,
+        isSaving: false,
+      });
+
+      const { result } = renderHook(
+        () => usePromptForm({ isEditMode: false }),
+        { wrapper: createWrapper() }
+      );
+
+      act(() => {
+        result.current.setTitle(""); // Invalid: empty title
+        result.current.setContent("Some content");
+      });
+
+      await waitFor(() => {
+        expect(result.current.isFormValid).toBe(false);
+      });
+
+      await act(async () => {
+        await result.current.handleSave();
+      });
+
+      // Should not call savePrompt because form is invalid
+      expect(mockSavePrompt).not.toHaveBeenCalled();
+    });
+
+    it("should allow saving when all validations pass", async () => {
+      const mockSavePrompt = vi.fn().mockResolvedValue(undefined);
+      const { usePromptSave } = await import("@/hooks/usePromptSave");
+      vi.mocked(usePromptSave).mockReturnValue({
+        savePrompt: mockSavePrompt,
+        isSaving: false,
+      });
+
+      const { result } = renderHook(
+        () => usePromptForm({ isEditMode: false }),
+        { wrapper: createWrapper() }
+      );
+
+      act(() => {
+        result.current.setTitle("Valid Title");
+        result.current.setDescription("Valid Description");
+        result.current.setContent("Valid Content");
+      });
+
+      await waitFor(() => {
+        expect(result.current.isFormValid).toBe(true);
+      });
+
+      await act(async () => {
+        await result.current.handleSave();
+      });
+
+      expect(mockSavePrompt).toHaveBeenCalled();
+    });
+
+    it("should trim whitespace before validation", async () => {
+      const { result } = renderHook(
+        () => usePromptForm({ isEditMode: false }),
+        { wrapper: createWrapper() }
+      );
+
+      act(() => {
+        result.current.setTitle("   Valid Title   ");
+        result.current.setContent("   Valid Content   ");
+        result.current.setDescription("   Valid Description   ");
+      });
+
+      await waitFor(() => {
+        expect(result.current.validationErrors).toEqual({});
+        expect(result.current.isFormValid).toBe(true);
+      });
+    });
+
+    it("should show error for content exceeding 200000 characters", async () => {
+      const { result } = renderHook(
+        () => usePromptForm({ isEditMode: false }),
+        { wrapper: createWrapper() }
+      );
+
+      const veryLongContent = "a".repeat(200001);
+
+      act(() => {
+        result.current.setTitle("Title");
+        result.current.setContent(veryLongContent);
+      });
+
+      await waitFor(() => {
+        expect(result.current.validationErrors.content).toBeDefined();
+        expect(result.current.validationErrors.content).toBe("Le contenu ne peut pas dépasser 200000 caractères");
+        expect(result.current.isFormValid).toBe(false);
+      });
+    });
+
+    it("should validate tag length does not exceed 50 characters", async () => {
+      const { result } = renderHook(
+        () => usePromptForm({ isEditMode: false }),
+        { wrapper: createWrapper() }
+      );
+
+      const longTag = "a".repeat(51);
+
+      act(() => {
+        result.current.setTitle("Title");
+        result.current.setContent("Content");
+        result.current.setTagInput(longTag);
+        result.current.addTag();
+      });
+
+      await waitFor(() => {
+        expect(result.current.validationErrors.tags).toBeDefined();
+        expect(result.current.validationErrors.tags).toContain("ne peut pas dépasser 50 caractères");
+        expect(result.current.isFormValid).toBe(false);
+      });
+    });
+
+    it("should clear validation errors when errors are fixed", async () => {
+      const { result } = renderHook(
+        () => usePromptForm({ isEditMode: false }),
+        { wrapper: createWrapper() }
+      );
+
+      // Start with invalid data
+      act(() => {
+        result.current.setTitle("");
+        result.current.setContent("");
+      });
+
+      await waitFor(() => {
+        expect(result.current.validationErrors.title).toBeDefined();
+        expect(result.current.validationErrors.content).toBeDefined();
+        expect(result.current.isFormValid).toBe(false);
+      });
+
+      // Fix the errors
+      act(() => {
+        result.current.setTitle("Valid Title");
+        result.current.setContent("Valid Content");
+      });
+
+      await waitFor(() => {
+        expect(result.current.validationErrors).toEqual({});
+        expect(result.current.isFormValid).toBe(true);
+      });
+    });
+
+    it("should not validate if no fields are filled", () => {
+      const { result } = renderHook(
+        () => usePromptForm({ isEditMode: false }),
+        { wrapper: createWrapper() }
+      );
+
+      // Empty form should not trigger validation
+      expect(result.current.validationErrors).toEqual({});
+      expect(result.current.isFormValid).toBe(false); // But still not valid because title and content are required
+    });
+  });
 });
 
