@@ -6,6 +6,7 @@ import { useCreatePrompt, useUpdatePrompt, usePrompt } from "@/hooks/usePrompts"
 import { useBulkUpsertVariables } from "@/hooks/useVariables";
 import { useCreateVersion } from "@/hooks/useVersions";
 import { useOptimisticLocking, type OptimisticLockError } from "@/hooks/useOptimisticLocking";
+import { useAuth } from "@/hooks/useAuth";
 import type { PromptFormData, Variable } from "@/features/prompts/types";
 import { toast } from "sonner";
 
@@ -33,6 +34,7 @@ export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSave
   const { mutate: createInitialVersion } = useCreateVersion();
   const { checkForConflicts } = useOptimisticLocking();
   const { data: currentServerPrompt } = usePrompt(promptId);
+  const { user } = useAuth();
 
   const savePrompt = async (data: PromptSaveData, promptId?: string) => {
     try {
@@ -75,8 +77,20 @@ export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSave
       };
 
       if (isEditMode && promptId) {
-        // Vérifier le verrouillage optimiste avant mise à jour
+        // Vérifier les permissions d'écriture
         if (currentServerPrompt) {
+          const isOwner = currentServerPrompt.owner_id === user?.id;
+          const isPublicWritable = currentServerPrompt.visibility === "SHARED" && 
+                                   currentServerPrompt.public_permission === "WRITE";
+          
+          if (!isOwner && !isPublicWritable) {
+            toast.error("Modification non autorisée", {
+              description: "Ce prompt est en lecture seule. Vous ne pouvez pas le modifier.",
+            });
+            return;
+          }
+
+          // Vérifier le verrouillage optimiste avant mise à jour
           try {
             // Créer un prompt client fictif avec updated_at de la dernière lecture
             const clientPrompt = { 
