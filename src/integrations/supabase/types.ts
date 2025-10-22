@@ -41,6 +41,41 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_shares: {
+        Row: {
+          created_at: string | null
+          id: string
+          permission: Database["public"]["Enums"]["sharing_permission"]
+          prompt_id: string
+          shared_by: string
+          shared_with_user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          permission?: Database["public"]["Enums"]["sharing_permission"]
+          prompt_id: string
+          shared_by: string
+          shared_with_user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          permission?: Database["public"]["Enums"]["sharing_permission"]
+          prompt_id?: string
+          shared_by?: string
+          shared_with_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_shares_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prompt_usage: {
         Row: {
           id: string
@@ -289,6 +324,7 @@ export type Database = {
     Enums: {
       app_role: "USER" | "ADMIN"
       prompt_status: "DRAFT" | "PUBLISHED"
+      sharing_permission: "READ" | "WRITE"
       var_type:
         | "STRING"
         | "NUMBER"
@@ -426,6 +462,7 @@ export const Constants = {
     Enums: {
       app_role: ["USER", "ADMIN"],
       prompt_status: ["DRAFT", "PUBLISHED"],
+      sharing_permission: ["READ", "WRITE"],
       var_type: ["STRING", "NUMBER", "BOOLEAN", "ENUM", "DATE", "MULTISTRING"],
       visibility: ["PRIVATE", "SHARED"],
     },

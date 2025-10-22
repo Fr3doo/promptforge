@@ -6,13 +6,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, Edit, Copy, Lock, Share2 } from "lucide-react";
+import { MoreVertical, Trash2, Edit, Copy, Lock, Share2, Users } from "lucide-react";
 
 interface PromptActionsMenuProps {
   isShared: boolean;
   onEdit: () => void;
   onDuplicate?: () => void;
   onToggleVisibility?: () => void;
+  onManageSharing?: () => void;
   onDelete: () => void;
 }
 
@@ -21,6 +22,7 @@ export const PromptActionsMenu = ({
   onEdit,
   onDuplicate,
   onToggleVisibility,
+  onManageSharing,
   onDelete,
 }: PromptActionsMenuProps) => {
   return (
@@ -53,6 +55,15 @@ export const PromptActionsMenu = ({
             Dupliquer
           </DropdownMenuItem>
         )}
+        {onManageSharing && (
+          <DropdownMenuItem onClick={(e) => {
+            e.stopPropagation();
+            onManageSharing();
+          }}>
+            <Users className="h-4 w-4 mr-2" />
+            Gérer les partages
+          </DropdownMenuItem>
+        )}
         {onToggleVisibility && (
           <DropdownMenuItem onClick={(e) => {
             e.stopPropagation();
@@ -66,7 +77,7 @@ export const PromptActionsMenu = ({
             ) : (
               <>
                 <Share2 className="h-4 w-4 mr-2" />
-                Partager
+                Partager publiquement
               </>
             )}
           </DropdownMenuItem>

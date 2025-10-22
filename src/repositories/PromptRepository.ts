@@ -7,6 +7,7 @@ export type Prompt = Tables<"prompts">;
 
 export interface PromptRepository {
   fetchAll(): Promise<Prompt[]>;
+  fetchOwned(): Promise<Prompt[]>;
   fetchById(id: string): Promise<Prompt>;
   create(userId: string, promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt>;
   update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
@@ -21,6 +22,20 @@ export class SupabasePromptRepository implements PromptRepository {
     const result = await supabase
       .from("prompts")
       .select("*")
+      .order("updated_at", { ascending: false });
+    
+    handleSupabaseError(result);
+    return result.data as Prompt[];
+  }
+
+  async fetchOwned(): Promise<Prompt[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Utilisateur non authentifié");
+    
+    const result = await supabase
+      .from("prompts")
+      .select("*")
+      .eq("owner_id", user.id)
       .order("updated_at", { ascending: false });
     
     handleSupabaseError(result);

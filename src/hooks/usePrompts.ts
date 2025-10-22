@@ -7,13 +7,24 @@ import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
 import { useAuth } from "@/hooks/useAuth";
 import type { Prompt } from "@/repositories/PromptRepository";
 
-// Hook de lecture - liste complète
+// Hook de lecture - liste complète (tous les prompts accessibles)
 export function usePrompts() {
   const repository = usePromptRepository();
   
   return useQuery({
     queryKey: ["prompts"],
     queryFn: () => repository.fetchAll(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+// Hook de lecture - seulement les prompts possédés par l'utilisateur
+export function useOwnedPrompts() {
+  const repository = usePromptRepository();
+  
+  return useQuery({
+    queryKey: ["prompts", "owned"],
+    queryFn: () => repository.fetchOwned(),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }

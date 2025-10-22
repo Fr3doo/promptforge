@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePrompts, useToggleFavorite, useDeletePrompt, useDuplicatePrompt, useToggleVisibility } from "@/hooks/usePrompts";
+import { useOwnedPrompts, useToggleFavorite, useDeletePrompt, useDuplicatePrompt, useToggleVisibility } from "@/hooks/usePrompts";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePromptFilters } from "@/features/prompts/hooks/usePromptFilters";
 import { PromptList } from "@/features/prompts/components/PromptList";
@@ -20,7 +20,7 @@ const Prompts = () => {
   const navigate = useNavigate();
   
   const debouncedSearch = useDebounce(searchQuery, 300);
-  const { data: prompts = [], isLoading } = usePrompts();
+  const { data: prompts = [], isLoading } = useOwnedPrompts();
   const { mutate: toggleFavorite } = useToggleFavorite();
   const { mutate: deletePrompt } = useDeletePrompt();
   const { mutate: duplicatePrompt } = useDuplicatePrompt();

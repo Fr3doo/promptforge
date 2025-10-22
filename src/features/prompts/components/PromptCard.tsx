@@ -16,6 +16,7 @@ import { useState } from "react";
 import { FavoriteButton } from "./FavoriteButton";
 import { VisibilityBadge } from "./VisibilityBadge";
 import { PromptActionsMenu } from "./PromptActionsMenu";
+import { SharePromptDialog } from "./SharePromptDialog";
 import type { Prompt } from "../types";
 
 interface PromptCardProps {
@@ -40,6 +41,7 @@ export const PromptCard = ({
   currentUserId 
 }: PromptCardProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
   const isOwner = currentUserId && prompt.owner_id === currentUserId;
   const isDraft = prompt.status === "DRAFT";
   const isShared = prompt.visibility === "SHARED";
@@ -88,6 +90,7 @@ export const PromptCard = ({
                     isShared={isShared}
                     onEdit={onClick}
                     onDuplicate={onDuplicate ? () => onDuplicate(prompt.id) : undefined}
+                    onManageSharing={() => setShowShareDialog(true)}
                     onToggleVisibility={onToggleVisibility ? () => onToggleVisibility(prompt.id, prompt.visibility) : undefined}
                     onDelete={() => setShowDeleteDialog(true)}
                   />
@@ -123,6 +126,13 @@ export const PromptCard = ({
           </CardContent>
         </Card>
       </motion.div>
+
+      <SharePromptDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        promptId={prompt.id}
+        promptTitle={prompt.title}
+      />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
