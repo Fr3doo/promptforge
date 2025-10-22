@@ -57,7 +57,7 @@ describe("promptSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("should accept empty description", () => {
+  it("should transform empty description to null", () => {
     const validData = {
       title: "Test",
       description: "",
@@ -68,6 +68,25 @@ describe("promptSchema", () => {
 
     const result = promptSchema.safeParse(validData);
     expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.description).toBeNull();
+    }
+  });
+
+  it("should keep non-empty description as string", () => {
+    const validData = {
+      title: "Test",
+      description: "Valid description",
+      content: "Content",
+      tags: [],
+      visibility: "PRIVATE" as const,
+    };
+
+    const result = promptSchema.safeParse(validData);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.description).toBe("Valid description");
+    }
   });
 
   it("should reject content over 50000 characters", () => {
