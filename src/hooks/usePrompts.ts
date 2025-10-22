@@ -193,7 +193,8 @@ export function useToggleVisibility() {
           visibility: newVisibility,
           // Only force PUBLISHED when going public, preserve status when returning to private
           ...(newVisibility === "SHARED" ? { status: "PUBLISHED" as const } : {}),
-          public_permission: publicPermission || p.public_permission 
+          // Reset public_permission to null when going private, update it otherwise
+          public_permission: newVisibility === "PRIVATE" ? null : (publicPermission || p.public_permission)
         } : p) : old
       );
       

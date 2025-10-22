@@ -185,7 +185,7 @@ export class SupabasePromptRepository implements PromptRepository {
     const updateData: { 
       visibility: "PRIVATE" | "SHARED"; 
       status?: "PUBLISHED";
-      public_permission?: "READ" | "WRITE";
+      public_permission?: "READ" | "WRITE" | null;
     } = {
       visibility: newVisibility
     };
@@ -196,6 +196,9 @@ export class SupabasePromptRepository implements PromptRepository {
       if (publicPermission) {
         updateData.public_permission = publicPermission;
       }
+    } else {
+      // Reset public_permission to null when going private
+      updateData.public_permission = null;
     }
     
     const result = await supabase
