@@ -104,7 +104,7 @@ export const PromptMetadataForm = ({
             value={description}
             onChange={(e) => onDescriptionChange(e.target.value)}
             placeholder={messages.placeholders.promptDescription}
-            className={`min-h-[80px] ${errors.description ? "border-destructive" : ""}`}
+            className={`min-h-[240px] ${errors.description ? "border-destructive" : ""}`}
             aria-describedby={errors.description ? "description-error description-help" : "description-help"}
             aria-invalid={!!errors.description}
             disabled={disabled}
