@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Trash2 } from "lucide-react";
 import { usePromptShares, useAddPromptShare, useDeletePromptShare } from "@/hooks/usePromptShares";
+import { useToastNotifier } from "@/hooks/useToastNotifier";
 
 interface SharePromptDialogProps {
   open: boolean;
@@ -34,11 +35,13 @@ export const SharePromptDialog = ({
 }: SharePromptDialogProps) => {
   const [email, setEmail] = useState("");
   const [permission, setPermission] = useState<"READ" | "WRITE">("READ");
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
 
   // Use hooks from the repository layer
   const { data: shares = [], isLoading: loadingShares, refetch } = usePromptShares(open ? promptId : undefined);
   const { mutate: addShare, isPending: isAdding } = useAddPromptShare(promptId);
   const { mutate: deleteShare } = useDeletePromptShare(promptId);
+  const { notifySuccess, notifyError } = useToastNotifier();
 
   // Refetch shares when dialog opens
   useEffect(() => {
@@ -65,6 +68,28 @@ export const SharePromptDialog = ({
 
   const handleDeleteShare = (shareId: string) => {
     deleteShare(shareId);
+  };
+
+  const handleStopAllSharing = async () => {
+    setIsDeletingAll(true);
+    try {
+      // Créer un tableau de promesses pour toutes les suppressions
+      await Promise.all(
+        shares.map(share => 
+          new Promise<void>((resolve, reject) => {
+            deleteShare(share.id, {
+              onSuccess: () => resolve(),
+              onError: (error) => reject(error)
+            });
+          })
+        )
+      );
+      notifySuccess("Tous les partages privés ont été supprimés");
+    } catch (error) {
+      notifyError("Erreur", "Certains partages n'ont pas pu être supprimés");
+    } finally {
+      setIsDeletingAll(false);
+    }
   };
 
   return (
@@ -158,11 +183,11 @@ export const SharePromptDialog = ({
           {shares.length > 0 && (
             <Button 
               variant="destructive" 
-              onClick={() => {
-                shares.forEach((share) => handleDeleteShare(share.id));
-              }}
+              onClick={handleStopAllSharing}
+              disabled={isDeletingAll}
               className="w-full"
             >
+              {isDeletingAll && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Arrêter tous les partages privés
             </Button>
           )}

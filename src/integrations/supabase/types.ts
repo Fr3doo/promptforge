@@ -84,6 +84,13 @@ export type Database = {
             referencedRelation: "prompts_with_share_count"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "prompt_shares_shared_with_user_id_fkey"
+            columns: ["shared_with_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       prompt_usage: {
