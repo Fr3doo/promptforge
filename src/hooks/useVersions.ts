@@ -166,86 +166,37 @@ export function useRestoreVersion() {
       versionId: string; 
       promptId: string;
     }) => {
-      logDebug("Début restauration", { versionId, promptId });
+      logDebug("Début restauration via edge function", { versionId, promptId });
       
-      // Récupérer la version
-      const { data: version, error: versionError } = await supabase
-        .from("versions")
-        .select("*")
-        .eq("id", versionId)
-        .single();
-
-      if (versionError) {
-        logError("Erreur récupération version", { 
-          versionId, 
-          error: versionError.message 
-        });
-        throw versionError;
-      }
-
-      logDebug("Version récupérée", { 
-        semver: version.semver, 
-        contentLength: version.content.length 
+      // Appeler l'edge function pour restauration avec transaction
+      const { data, error } = await supabase.functions.invoke('restore-version', {
+        body: { versionId, promptId }
       });
 
-      // Restaurer dans le prompt
-      const { error: updateError } = await supabase
-        .from("prompts")
-        .update({ 
-          content: version.content,
-          version: version.semver,
-        })
-        .eq("id", promptId);
-
-      if (updateError) {
-        logError("Erreur mise à jour prompt", { 
-          promptId, 
-          error: updateError.message 
+      if (error) {
+        logError("Erreur edge function restore-version", { 
+          versionId,
+          promptId,
+          error: error.message 
         });
-        throw updateError;
+        throw new Error(error.message || "Échec de la restauration");
       }
 
-      logInfo("Prompt mis à jour vers version", { semver: version.semver });
-
-      // Restaurer les variables si présentes
-      if (version.variables) {
-        logDebug("Restauration des variables");
-        
-        // Supprimer anciennes variables
-        const { error: deleteError } = await supabase
-          .from("variables")
-          .delete()
-          .eq("prompt_id", promptId);
-
-        if (deleteError) {
-          logError("Erreur suppression variables", { 
-            promptId, 
-            error: deleteError.message 
-          });
-        }
-
-        // Insérer variables de la version
-        const variablesArray = version.variables as any[];
-        if (variablesArray.length > 0) {
-          const { error: insertError } = await supabase
-            .from("variables")
-            .insert(
-              variablesArray.map(v => ({ ...v, prompt_id: promptId }))
-            );
-
-          if (insertError) {
-            logError("Erreur insertion variables", { 
-              promptId, 
-              count: variablesArray.length,
-              error: insertError.message 
-            });
-          } else {
-            logInfo("Variables restaurées", { count: variablesArray.length });
-          }
-        }
+      if (!data?.success) {
+        logError("Échec restauration", { 
+          versionId,
+          promptId,
+          errorDetails: data?.error 
+        });
+        throw new Error(data?.error || "Échec de la restauration");
       }
 
-      return version;
+      logInfo("Restauration réussie via edge function", { 
+        semver: data.version.semver,
+        variablesCount: data.version.variablesCount
+      });
+
+      return data.version;
     },
     onSuccess: (version, { promptId }) => {
       logInfo("Restauration réussie", { semver: version.semver, promptId });
