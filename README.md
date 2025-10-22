@@ -14,8 +14,29 @@ PromptForge est une application web moderne permettant de créer, gérer et vers
 - 🎯 **Gestion de prompts** - Éditeur riche avec tags, favoris, recherche
 - 🔄 **Versioning SemVer** - Historique complet avec diff visuel
 - 🎨 **Variables dynamiques** - Détection auto, types multiples, validation
+- 🤝 **Partage et Collaboration** - Partage public et privé avec permissions granulaires
+- 🔒 **Verrou optimiste** - Détection automatique des éditions concurrentes
 - 💫 **UX Premium** - Animations Framer Motion, feedback immédiat
 - 🧪 **Tests complets** - Vitest, Testing Library, CI/CD
+
+## 🤝 Partage et Collaboration
+
+PromptForge v2 offre deux modes de partage :
+
+### Partage Public
+Rendez un prompt accessible à tous les utilisateurs de la plateforme :
+- **Lecture seule** : Les autres utilisateurs peuvent consulter et dupliquer
+- **Lecture et écriture** : Les autres utilisateurs peuvent modifier directement
+
+### Partage Privé
+Partagez avec des utilisateurs spécifiques par email :
+- **Lecture seule** : L'utilisateur peut consulter mais pas modifier
+- **Lecture et écriture** : L'utilisateur peut modifier le contenu et les variables
+
+### Protection contre les éditions concurrentes
+PromptForge détecte automatiquement si un autre utilisateur a modifié un prompt pendant que vous l'éditiez et vous propose de recharger la dernière version.
+
+📖 Voir le [Guide du Partage](./docs/SHARING_GUIDE.md) pour plus de détails.
 
 ## 🚀 Installation
 

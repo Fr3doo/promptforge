@@ -160,6 +160,52 @@ Puis ouvrir l'interface web pour inspecter les tests individuellement.
 6. **Couverture complète**: Tester les cas nominaux ET les cas d'erreur
 7. **Tests asynchrones**: Toujours utiliser `waitFor` pour les opérations async
 
+## Tests du système de partage
+
+### Tests de permissions
+```bash
+npm run test -- usePromptPermission
+```
+
+Vérifie que les permissions sont calculées correctement selon :
+- La propriété du prompt
+- Les partages privés
+- Le partage public
+- L'ordre de priorité (propriétaire > partage privé > partage public)
+
+### Tests de l'interface de partage
+```bash
+npm run test -- SharePromptDialog
+```
+
+Vérifie que :
+- Les partages sont affichés correctement
+- Les ajouts/suppressions fonctionnent
+- Les erreurs sont gérées
+- Le bouton "Arrêter tous les partages" fonctionne
+
+### Tests de détection de conflits
+```bash
+npm run test -- useConflictDetection
+```
+
+Vérifie que :
+- Les conflits sont détectés automatiquement
+- La vérification périodique fonctionne (toutes les 30 secondes)
+- Le reset du conflit fonctionne
+- La détection est désactivable
+
+### Tests du composant d'alerte de conflit
+```bash
+npm run test -- ConflictAlert
+```
+
+Vérifie que :
+- Le message de conflit est affiché
+- Le bouton "Recharger" appelle le bon callback
+- Le bouton "Continuer" est optionnel
+- Le formatage de date fonctionne
+
 ## Exemples de tests complets
 
 ### Hook avec détection de pattern (useVariableDetection)

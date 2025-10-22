@@ -315,6 +315,79 @@ export type SharingState =
 - `src/features/prompts/types.ts` (type `Prompt` enrichi)
 - Migration SQL : `CREATE VIEW prompts_with_share_count`
 
+#### Système de Partage Privé (✨ v2.2)
+
+Le système de partage privé permet au propriétaire d'un prompt de le partager avec des utilisateurs spécifiques en lecture ou écriture.
+
+**Architecture du partage** :
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                  Table prompt_shares                         │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ id (uuid)                                              │ │
+│  │ prompt_id → prompts(id) ON DELETE CASCADE             │ │
+│  │ shared_with_user_id → profiles(id) ON DELETE CASCADE  │ │
+│  │ shared_by → profiles(id)                              │ │
+│  │ permission (READ | WRITE)                             │ │
+│  │ created_at                                             │ │
+│  └────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+                          ▼
+┌──────────────────────────────────────────────────────────────┐
+│           Politiques RLS (Row Level Security)               │
+│  - SELECT : Accessible si propriétaire OU destinataire      │
+│  - INSERT : Uniquement par le propriétaire du prompt        │
+│  - DELETE : Par le propriétaire OU le créateur du partage   │
+└──────────────────────────────────────────────────────────────┘
+                          ▼
+┌──────────────────────────────────────────────────────────────┐
+│              Hook usePromptPermission                        │
+│  Détermine le niveau d'accès (OWNER, READ, WRITE, null)    │
+│  Ordre de priorité :                                         │
+│  1. Propriétaire (owner_id)                                 │
+│  2. Partage privé (prompt_shares)                           │
+│  3. Partage public (visibility=SHARED)                      │
+└──────────────────────────────────────────────────────────────┘
+                          ▼
+┌──────────────────────────────────────────────────────────────┐
+│              Protection de l'éditeur                         │
+│  - Badge "Mode lecture seule" si READ                       │
+│  - Bouton "Enregistrer" désactivé si !canEdit              │
+│  - Textareas désactivées si READ                            │
+└──────────────────────────────────────────────────────────────┘
+                          ▼
+┌──────────────────────────────────────────────────────────────┐
+│          Verrou optimiste (Concurrent Editing)              │
+│  - Détection périodique des modifications serveur          │
+│  - Alerte visuelle en cas de conflit                        │
+│  - Bouton "Recharger" pour résoudre                         │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Composants clés** :
+
+- `SharePromptDialog.tsx` : Interface de gestion des partages
+- `usePromptPermission.ts` : Calcul des permissions utilisateur
+- `useConflictDetection.ts` : Détection des éditions concurrentes
+- `ConflictAlert.tsx` : Alerte visuelle de conflit
+
+**Sécurité** :
+
+1. **RLS au niveau base de données** : Les politiques RLS garantissent que seul le propriétaire peut créer des partages et que seuls les utilisateurs autorisés peuvent voir les partages.
+
+2. **Validation backend** : Le `PromptShareRepository` vérifie que l'utilisateur est bien le propriétaire avant d'autoriser un partage.
+
+3. **Protection frontend** : Le hook `usePromptPermission` désactive les contrôles d'édition pour les utilisateurs en lecture seule.
+
+4. **Cascade de suppression** : Si un utilisateur supprime son compte, tous ses partages sont automatiquement révoqués (`ON DELETE CASCADE`).
+
+**Cas d'usage** :
+
+1. **Collaboration en équipe** : Un chef de projet partage des prompts en écriture avec son équipe
+2. **Revue de contenu** : Un reviewer reçoit un accès lecture seule pour valider un prompt
+3. **Formation** : Un formateur partage des prompts en lecture pour que les apprenants puissent les consulter
+
 #### Composants
 
 ```
