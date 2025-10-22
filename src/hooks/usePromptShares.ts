@@ -58,6 +58,11 @@ export function useAddPromptShare(promptId: string) {
           "Partage impossible", 
           "Vous ne pouvez pas partager un prompt avec vous-même"
         );
+      } else if (error.message === "NOT_PROMPT_OWNER") {
+        errorToast(
+          "Action non autorisée", 
+          "Seul le propriétaire du prompt peut le partager avec d'autres utilisateurs"
+        );
       } else if (error.message === "SESSION_EXPIRED") {
         errorToast(
           "Session expirée", 
@@ -83,8 +88,25 @@ export function useDeletePromptShare(promptId: string) {
       queryClient.invalidateQueries({ queryKey: ["prompt-shares", promptId] });
       successToast("Partage supprimé", "L'accès au prompt a été retiré");
     },
-    onError: (error) => {
-      errorToast("Erreur", getSafeErrorMessage(error));
+    onError: (error: any) => {
+      if (error.message === "SHARE_NOT_FOUND") {
+        errorToast(
+          "Partage introuvable", 
+          "Ce partage n'existe plus ou a déjà été supprimé"
+        );
+      } else if (error.message === "UNAUTHORIZED_DELETE") {
+        errorToast(
+          "Action non autorisée", 
+          "Vous n'avez pas les permissions nécessaires pour supprimer ce partage"
+        );
+      } else if (error.message === "SESSION_EXPIRED") {
+        errorToast(
+          "Session expirée", 
+          "Votre session a expiré. Veuillez vous reconnecter."
+        );
+      } else {
+        errorToast("Erreur", getSafeErrorMessage(error));
+      }
     },
   });
 }
