@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Code2, Zap, GitBranch, FileText, BookOpen, HelpCircle, Lightbulb, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -10,6 +12,20 @@ import { Footer } from "@/components/Footer";
 const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("pseudo")
+        .eq("id", user.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
 
   if (loading) {
     return (
@@ -159,7 +175,7 @@ const Index = () => {
       <main className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto space-y-8 px-4">
           <div className="text-center space-y-4">
-            <h1 className="text-3xl sm:text-4xl font-bold">Bienvenue, {user.email}</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold">Bienvenue, {profile?.pseudo || user.email}</h1>
             <p className="text-lg sm:text-xl text-muted-foreground">
               Prêt à créer des prompts professionnels ?
             </p>

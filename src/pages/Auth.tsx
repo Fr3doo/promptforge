@@ -17,7 +17,7 @@ const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [pseudo, setPseudo] = useState("");
   const navigate = useNavigate();
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -29,7 +29,7 @@ const Auth = () => {
       const validatedData = authSchema.parse({
         email,
         password,
-        name: isSignUp ? (name || email) : undefined,
+        name: isSignUp ? (pseudo || email) : undefined,
       });
 
       if (isSignUp) {
@@ -37,7 +37,7 @@ const Auth = () => {
           email: validatedData.email,
           password: validatedData.password,
           options: {
-            data: { name: validatedData.name || validatedData.email },
+            data: { pseudo: validatedData.name || validatedData.email },
             emailRedirectTo: `${window.location.origin}/`,
           },
         });
@@ -85,13 +85,13 @@ const Auth = () => {
           <form onSubmit={handleAuth} className="space-y-4">
             {isSignUp && (
               <div className="space-y-2">
-                <Label htmlFor="name">Nom</Label>
+                <Label htmlFor="pseudo">Pseudo</Label>
                 <Input
-                  id="name"
+                  id="pseudo"
                   type="text"
-                  placeholder="Votre nom"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Votre pseudo"
+                  value={pseudo}
+                  onChange={(e) => setPseudo(e.target.value)}
                   required={isSignUp}
                 />
               </div>
