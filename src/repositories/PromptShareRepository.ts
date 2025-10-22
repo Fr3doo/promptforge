@@ -52,14 +52,13 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
   }
 
   async getUserByEmail(email: string): Promise<{ id: string } | null> {
-    const result = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
+    const result = await supabase.rpc("get_user_id_by_email", { user_email: email });
 
-    handleSupabaseError(result);
-    return result.data;
+    if (result.error) {
+      handleSupabaseError(result);
+    }
+
+    return result.data ? { id: result.data } : null;
   }
 
   async addShare(promptId: string, sharedWithUserId: string, permission: "READ" | "WRITE"): Promise<void> {
