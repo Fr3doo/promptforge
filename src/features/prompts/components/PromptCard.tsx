@@ -14,12 +14,13 @@ import {
 import { FileText } from "lucide-react";
 import { useState } from "react";
 import { FavoriteButton } from "./FavoriteButton";
-import { VisibilityBadge } from "./VisibilityBadge";
+import { VisibilityBadge, type SharingState } from "./VisibilityBadge";
 import { PromptActionsMenu } from "./PromptActionsMenu";
 import { SharePromptDialog } from "./SharePromptDialog";
 import { PublicShareDialog } from "./PublicShareDialog";
 import type { Prompt } from "../types";
 import { useUpdatePublicPermission } from "@/hooks/usePrompts";
+import { usePromptShares } from "@/hooks/usePromptShares";
 
 interface PromptCardProps {
   prompt: Prompt;
@@ -46,9 +47,19 @@ export const PromptCard = ({
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [publicShareDialogOpen, setPublicShareDialogOpen] = useState(false);
   const { mutateAsync: updatePublicPermission } = useUpdatePublicPermission();
+  const { data: shares } = usePromptShares(prompt.id);
   const isOwner = currentUserId && prompt.owner_id === currentUserId;
   const isDraft = prompt.status === "DRAFT";
   const isShared = prompt.visibility === "SHARED";
+  
+  // Calculer le véritable état de partage
+  const shareCount = shares?.length || 0;
+  const sharingState: SharingState = 
+    prompt.visibility === "SHARED" 
+      ? "PUBLIC" 
+      : shareCount > 0 
+        ? "PRIVATE_SHARED" 
+        : "PRIVATE";
 
   const handleDelete = () => {
     if (onDelete) {
@@ -129,7 +140,7 @@ export const PromptCard = ({
               )}
             </div>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <VisibilityBadge visibility={prompt.visibility} />
+              <VisibilityBadge sharingState={sharingState} shareCount={shareCount} />
               <span>v{prompt.version}</span>
               {!isOwner && (
                 <Badge variant="outline" className="text-xs">
