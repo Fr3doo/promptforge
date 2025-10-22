@@ -22,7 +22,22 @@ export const variableSchema = z.object({
   required: z.boolean(),
   default_value: z.string().max(1000, 'La valeur par défaut ne peut pas dépasser 1000 caractères').optional().or(z.literal('')),
   help: z.string().max(500, 'Le texte d\'aide ne peut pas dépasser 500 caractères').optional().or(z.literal('')),
-  pattern: z.string().max(200, 'Le pattern ne peut pas dépasser 200 caractères').optional().or(z.literal('')),
+  pattern: z.string()
+    .max(200, 'Le pattern ne peut pas dépasser 200 caractères')
+    .refine(
+      (val) => {
+        if (!val) return true; // Empty is valid
+        try {
+          new RegExp(val);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      { message: 'Le pattern doit être une expression régulière valide' }
+    )
+    .optional()
+    .or(z.literal('')),
   options: z.array(z.string()).optional(),
 });
 
