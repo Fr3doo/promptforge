@@ -31,21 +31,35 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization') || '';
+    const jwt = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: `Bearer ${jwt}` },
         },
       }
     );
 
     // Verify user is authenticated
+    if (!jwt) {
+      console.error('Missing Authorization header');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Non authentifié' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     const {
       data: { user },
       error: authError,
-    } = await supabaseClient.auth.getUser();
+    } = await supabaseClient.auth.getUser(jwt);
 
     if (authError || !user) {
       console.error('Authentication error:', authError);
