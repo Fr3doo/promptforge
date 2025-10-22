@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { usePromptSave } from '../usePromptSave';
 import * as usePromptsHook from '../usePrompts';
 import * as useVariablesHook from '../useVariables';
 import * as useToastNotifierHook from '../useToastNotifier';
+import * as useAuthHook from '../useAuth';
+import * as useOptimisticLockingHook from '../useOptimisticLocking';
+import * as useVersionsHook from '../useVersions';
 import { messages } from '@/constants/messages';
 import type { Variable } from '@/features/prompts/types';
 
@@ -18,6 +21,10 @@ describe('usePromptSave', () => {
   let mockUpdatePrompt: any;
   let mockSaveVariables: any;
   let mockNotifyError: any;
+  let mockUsePrompt: any;
+  let mockUser: any;
+  let mockCheckForConflicts: any;
+  let mockCreateVersion: any;
 
   beforeEach(() => {
     mockCreatePrompt = vi.fn((data, options) => {
@@ -32,6 +39,22 @@ describe('usePromptSave', () => {
 
     mockSaveVariables = vi.fn();
     mockNotifyError = vi.fn();
+    mockCheckForConflicts = vi.fn();
+    mockCreateVersion = vi.fn((data, options) => {
+      options?.onSuccess?.();
+    });
+
+    // Default mock for usePrompt - returns null (no prompt loaded)
+    mockUsePrompt = vi.fn(() => ({
+      data: null,
+      isLoading: false,
+      error: null,
+    }));
+
+    // Default mock for useAuth - returns a user
+    mockUser = vi.fn(() => ({
+      user: { id: 'current-user-id' },
+    }));
 
     // Mock hooks
     vi.spyOn(usePromptsHook, 'useCreatePrompt').mockReturnValue({
@@ -43,6 +66,8 @@ describe('usePromptSave', () => {
       mutate: mockUpdatePrompt,
       isPending: false,
     } as any);
+
+    vi.spyOn(usePromptsHook, 'usePrompt').mockImplementation(mockUsePrompt as any);
 
     vi.spyOn(useVariablesHook, 'useBulkUpsertVariables').mockReturnValue({
       mutate: mockSaveVariables,
@@ -59,6 +84,16 @@ describe('usePromptSave', () => {
         update: vi.fn(),
       })),
     });
+
+    vi.spyOn(useAuthHook, 'useAuth').mockImplementation(mockUser as any);
+
+    vi.spyOn(useOptimisticLockingHook, 'useOptimisticLocking').mockReturnValue({
+      checkForConflicts: mockCheckForConflicts,
+    } as any);
+
+    vi.spyOn(useVersionsHook, 'useCreateVersion').mockReturnValue({
+      mutate: mockCreateVersion,
+    } as any);
 
     vi.clearAllMocks();
   });
@@ -381,6 +416,252 @@ describe('usePromptSave', () => {
       const { result } = renderHook(() => usePromptSave({ isEditMode: true }));
 
       expect(result.current.isSaving).toBe(true);
+    });
+  });
+
+  describe('Permission checks (Task 10)', () => {
+    it('should prevent saving when user is not owner and has no write permission', async () => {
+      const mockPrompt = {
+        id: 'prompt-1',
+        title: 'Existing Prompt',
+        content: 'Some content',
+        owner_id: 'other-user-id', // Different from mock user
+        visibility: 'SHARED' as const,
+        public_permission: 'READ' as const, // Only READ permission
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+
+      mockUsePrompt.mockReturnValue({
+        data: mockPrompt,
+        isLoading: false,
+        error: null,
+      });
+
+      mockUser.mockReturnValue({
+        user: { id: 'current-user-id' },
+      });
+
+      const { result } = renderHook(() =>
+        usePromptSave({ isEditMode: true, promptId: 'prompt-1' })
+      );
+
+      await act(async () => {
+        await result.current.savePrompt(
+          {
+            title: 'Updated Title',
+            description: 'Updated description',
+            content: 'Updated content',
+            tags: ['updated'],
+            visibility: 'PRIVATE',
+            variables: [],
+          },
+          'prompt-1'
+        );
+      });
+
+      // Verify that updatePrompt was NOT called
+      expect(mockUpdatePrompt).not.toHaveBeenCalled();
+      
+      // Verify that user was NOT navigated
+      expect(mockNavigate).not.toHaveBeenCalled();
+      
+      // Verify that variables were NOT saved
+      expect(mockSaveVariables).not.toHaveBeenCalled();
+    });
+
+    it('should allow saving when user is owner even without write permission', async () => {
+      const mockPrompt = {
+        id: 'prompt-1',
+        title: 'Existing Prompt',
+        content: 'Some content',
+        owner_id: 'current-user-id', // Same as mock user
+        visibility: 'PRIVATE' as const,
+        public_permission: 'READ' as const,
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+
+      mockUsePrompt.mockReturnValue({
+        data: mockPrompt,
+        isLoading: false,
+        error: null,
+      });
+
+      mockUser.mockReturnValue({
+        user: { id: 'current-user-id' },
+      });
+
+      const { result } = renderHook(() =>
+        usePromptSave({ isEditMode: true, promptId: 'prompt-1' })
+      );
+
+      await act(async () => {
+        await result.current.savePrompt(
+          {
+            title: 'Updated Title',
+            description: 'Updated description',
+            content: 'Updated content',
+            tags: ['updated'],
+            visibility: 'PRIVATE',
+            variables: [],
+          },
+          'prompt-1'
+        );
+      });
+
+      // Verify that updatePrompt WAS called (owner can always update)
+      expect(mockUpdatePrompt).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'prompt-1',
+          updates: expect.objectContaining({
+            title: 'Updated Title',
+          }),
+        }),
+        expect.any(Object)
+      );
+    });
+
+    it('should allow saving when user has write permission on shared prompt', async () => {
+      const mockPrompt = {
+        id: 'prompt-1',
+        title: 'Existing Prompt',
+        content: 'Some content',
+        owner_id: 'other-user-id', // Different from mock user
+        visibility: 'SHARED' as const,
+        public_permission: 'WRITE' as const, // WRITE permission granted
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+
+      mockUsePrompt.mockReturnValue({
+        data: mockPrompt,
+        isLoading: false,
+        error: null,
+      });
+
+      mockUser.mockReturnValue({
+        user: { id: 'current-user-id' },
+      });
+
+      const { result } = renderHook(() =>
+        usePromptSave({ isEditMode: true, promptId: 'prompt-1' })
+      );
+
+      await act(async () => {
+        await result.current.savePrompt(
+          {
+            title: 'Updated Title',
+            description: 'Updated description',
+            content: 'Updated content',
+            tags: ['updated'],
+            visibility: 'PRIVATE',
+            variables: [],
+          },
+          'prompt-1'
+        );
+      });
+
+      // Verify that updatePrompt WAS called (has write permission)
+      expect(mockUpdatePrompt).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'prompt-1',
+          updates: expect.objectContaining({
+            title: 'Updated Title',
+          }),
+        }),
+        expect.any(Object)
+      );
+    });
+
+    it('should prevent saving when prompt visibility is PRIVATE and user is not owner', async () => {
+      const mockPrompt = {
+        id: 'prompt-1',
+        title: 'Existing Prompt',
+        content: 'Some content',
+        owner_id: 'other-user-id',
+        visibility: 'PRIVATE' as const,
+        public_permission: 'READ' as const,
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+
+      mockUsePrompt.mockReturnValue({
+        data: mockPrompt,
+        isLoading: false,
+        error: null,
+      });
+
+      mockUser.mockReturnValue({
+        user: { id: 'current-user-id' },
+      });
+
+      const { result } = renderHook(() =>
+        usePromptSave({ isEditMode: true, promptId: 'prompt-1' })
+      );
+
+      await act(async () => {
+        await result.current.savePrompt(
+          {
+            title: 'Updated Title',
+            description: 'Updated description',
+            content: 'Updated content',
+            tags: ['updated'],
+            visibility: 'PRIVATE',
+            variables: [],
+          },
+          'prompt-1'
+        );
+      });
+
+      // Verify that updatePrompt was NOT called
+      expect(mockUpdatePrompt).not.toHaveBeenCalled();
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('should prevent saving when visibility is SHARED but public_permission is not WRITE', async () => {
+      const mockPrompt = {
+        id: 'prompt-1',
+        title: 'Existing Prompt',
+        content: 'Some content',
+        owner_id: 'other-user-id',
+        visibility: 'SHARED' as const,
+        public_permission: 'READ' as const, // Not WRITE
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+
+      mockUsePrompt.mockReturnValue({
+        data: mockPrompt,
+        isLoading: false,
+        error: null,
+      });
+
+      mockUser.mockReturnValue({
+        user: { id: 'current-user-id' },
+      });
+
+      const { result } = renderHook(() =>
+        usePromptSave({ isEditMode: true, promptId: 'prompt-1' })
+      );
+
+      await act(async () => {
+        await result.current.savePrompt(
+          {
+            title: 'Updated Title',
+            description: 'Updated description',
+            content: 'Updated content',
+            tags: ['updated'],
+            visibility: 'PRIVATE',
+            variables: [],
+          },
+          'prompt-1'
+        );
+      });
+
+      // Verify that updatePrompt was NOT called
+      expect(mockUpdatePrompt).not.toHaveBeenCalled();
+      expect(mockNavigate).not.toHaveBeenCalled();
     });
   });
 
