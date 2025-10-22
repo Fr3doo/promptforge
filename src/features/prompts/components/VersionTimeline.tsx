@@ -31,7 +31,12 @@ export function VersionTimeline({
 }: VersionTimelineProps) {
   const [selectedVersions, setSelectedVersions] = useState<string[]>([]);
 
-  const toggleVersion = (versionId: string) => {
+  const toggleVersion = (versionId: string, versionSemver: string) => {
+    // Empêcher la sélection de la version courante
+    if (versionSemver === currentVersion) {
+      return;
+    }
+    
     setSelectedVersions(prev =>
       prev.includes(versionId)
         ? prev.filter(id => id !== versionId)
@@ -88,8 +93,10 @@ export function VersionTimeline({
               <div className="flex items-start gap-3">
                 <Checkbox
                   checked={selectedVersions.includes(version.id)}
-                  onCheckedChange={() => toggleVersion(version.id)}
+                  onCheckedChange={() => toggleVersion(version.id, version.semver)}
+                  disabled={isCurrent}
                   className="mt-1"
+                  title={isCurrent ? "La version courante ne peut pas être supprimée" : ""}
                 />
                 
                 <div className="flex-1 flex items-start justify-between">

@@ -69,13 +69,27 @@ export function useDeleteVersions() {
   return useMutation({
     mutationFn: async ({ 
       versionIds, 
-      promptId 
+      promptId,
+      currentVersion
     }: { 
       versionIds: string[]; 
       promptId: string;
+      currentVersion?: string;
     }) => {
       logDebug("Suppression de versions", { count: versionIds.length, promptId });
       
+      // Récupérer les versions à supprimer pour vérifier si la version courante est incluse
+      const { data: versionsToDelete, error: fetchError } = await supabase
+        .from("versions")
+        .select("semver")
+        .in("id", versionIds);
+
+      if (fetchError) throw fetchError;
+
+      const isCurrentVersionIncluded = versionsToDelete?.some(
+        v => v.semver === currentVersion
+      );
+
       const { error } = await supabase
         .from("versions")
         .delete()
@@ -88,6 +102,42 @@ export function useDeleteVersions() {
           error: error.message 
         });
         throw error;
+      }
+
+      // Si la version courante a été supprimée, mettre à jour le prompt avec la dernière version restante
+      if (isCurrentVersionIncluded) {
+        logInfo("Version courante supprimée, mise à jour du prompt");
+        
+        const { data: remainingVersions, error: remainingError } = await supabase
+          .from("versions")
+          .select("semver")
+          .eq("prompt_id", promptId)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        if (remainingError) throw remainingError;
+
+        if (remainingVersions && remainingVersions.length > 0) {
+          // Mettre à jour vers la version la plus récente
+          const { error: updateError } = await supabase
+            .from("prompts")
+            .update({ version: remainingVersions[0].semver })
+            .eq("id", promptId);
+
+          if (updateError) throw updateError;
+          
+          logInfo("Prompt mis à jour vers version", { semver: remainingVersions[0].semver });
+        } else {
+          // Aucune version restante, réinitialiser à 1.0.0
+          const { error: updateError } = await supabase
+            .from("prompts")
+            .update({ version: "1.0.0" })
+            .eq("id", promptId);
+
+          if (updateError) throw updateError;
+          
+          logInfo("Aucune version restante, réinitialisation à 1.0.0");
+        }
       }
 
       logInfo("Versions supprimées", { count: versionIds.length, promptId });

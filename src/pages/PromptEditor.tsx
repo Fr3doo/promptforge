@@ -58,7 +58,11 @@ const PromptEditorPage = () => {
 
   const handleDeleteVersions = (versionIds: string[]) => {
     if (!id) return;
-    deleteVersionsMutation.mutate({ versionIds, promptId: id });
+    deleteVersionsMutation.mutate({ 
+      versionIds, 
+      promptId: id,
+      currentVersion: prompt?.version
+    });
   };
 
   const handleViewDiff = (versionId: string) => {
