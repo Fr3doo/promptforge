@@ -26,13 +26,13 @@ export function usePromptVersioning(
   }, [prompt?.content, currentContent]);
 
   const handleCreateVersion = () => {
-    if (!prompt) return;
+    if (!prompt || !currentContent) return;
 
     const newSemver = bumpVersion(prompt.version || "1.0.0", versionType);
 
     createVersion({
       prompt_id: prompt.id,
-      content: prompt.content,
+      content: currentContent,
       semver: newSemver,
       message: versionMessage || `Version ${newSemver}`,
       variables: variables || [],
