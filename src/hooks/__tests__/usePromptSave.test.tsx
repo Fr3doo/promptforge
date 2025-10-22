@@ -425,4 +425,254 @@ describe('usePromptSave', () => {
       );
     });
   });
+
+  describe('Network Error Simulation (Task 9)', () => {
+    it('should handle createPrompt network error without navigating', async () => {
+      const mockError = new Error('Network error: Failed to create prompt');
+      
+      mockCreatePrompt.mockImplementation((data, options) => {
+        options?.onError?.(mockError);
+      });
+
+      const { result } = renderHook(() => usePromptSave({ isEditMode: false }));
+
+      await result.current.savePrompt(validPromptData);
+
+      // Should NOT navigate on error
+      expect(mockNavigate).not.toHaveBeenCalled();
+      
+      // Should NOT create variables on error
+      expect(mockSaveVariables).not.toHaveBeenCalled();
+    });
+
+    it('should handle updatePrompt network error without navigating', async () => {
+      const mockError = new Error('Network error: Failed to update prompt');
+      
+      mockUpdatePrompt.mockImplementation((data, options) => {
+        options?.onError?.(mockError);
+      });
+
+      const { result } = renderHook(() => usePromptSave({ isEditMode: true }));
+
+      await result.current.savePrompt(validPromptData, 'existing-prompt-id');
+
+      // Should NOT navigate on error
+      expect(mockNavigate).not.toHaveBeenCalled();
+      
+      // Should NOT update variables on error
+      expect(mockSaveVariables).not.toHaveBeenCalled();
+    });
+
+    it('should show error message when createPrompt fails', async () => {
+      const mockError = new Error('Database connection failed');
+      
+      mockCreatePrompt.mockImplementation((data, options) => {
+        throw mockError;
+      });
+
+      const { result } = renderHook(() => usePromptSave({ isEditMode: false }));
+
+      await result.current.savePrompt(validPromptData);
+
+      // Should display error notification
+      expect(mockNotifyError).toHaveBeenCalledWith(
+        messages.errors.save.failed,
+        messages.errors.save.unexpected
+      );
+      
+      // Should NOT navigate
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('should handle timeout error gracefully', async () => {
+      const timeoutError = new Error('Request timeout');
+      
+      mockCreatePrompt.mockImplementation(() => {
+        throw timeoutError;
+      });
+
+      const { result } = renderHook(() => usePromptSave({ isEditMode: false }));
+
+      await result.current.savePrompt(validPromptData);
+
+      expect(mockNotifyError).toHaveBeenCalled();
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('should handle 500 server error without creating version', async () => {
+      const serverError = new Error('Internal Server Error');
+      
+      mockCreatePrompt.mockImplementation((data, options) => {
+        throw serverError;
+      });
+
+      const { result } = renderHook(() => usePromptSave({ isEditMode: false }));
+
+      const dataWithVariables = {
+        ...validPromptData,
+        variables: [
+          {
+            id: 'var-1',
+            name: 'test_var',
+            type: 'STRING' as const,
+            required: false,
+            default_value: '',
+            help: '',
+            pattern: '',
+            options: null,
+            order_index: 0,
+            prompt_id: '',
+            created_at: '',
+          },
+        ],
+      };
+
+      await result.current.savePrompt(dataWithVariables);
+
+      // Should NOT save variables when prompt creation fails
+      expect(mockSaveVariables).not.toHaveBeenCalled();
+      
+      // Should display error
+      expect(mockNotifyError).toHaveBeenCalled();
+      
+      // Should NOT navigate
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('should handle network disconnection error', async () => {
+      const networkError = new Error('Network request failed');
+      
+      mockUpdatePrompt.mockImplementation(() => {
+        throw networkError;
+      });
+
+      const { result } = renderHook(() => usePromptSave({ isEditMode: true }));
+
+      await result.current.savePrompt(validPromptData, 'prompt-id');
+
+      expect(mockNotifyError).toHaveBeenCalledWith(
+        messages.errors.save.failed,
+        messages.errors.save.unexpected
+      );
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('should prevent onSuccess callback from being called on error', async () => {
+      const onSuccess = vi.fn();
+      const mockError = new Error('Save failed');
+      
+      mockCreatePrompt.mockImplementation(() => {
+        throw mockError;
+      });
+
+      const { result } = renderHook(() => 
+        usePromptSave({ isEditMode: false, onSuccess })
+      );
+
+      await result.current.savePrompt(validPromptData);
+
+      // onSuccess should NOT be called when save fails
+      expect(onSuccess).not.toHaveBeenCalled();
+      expect(mockNotifyError).toHaveBeenCalled();
+    });
+
+    it('should handle error during variable save gracefully', async () => {
+      const variableError = new Error('Failed to save variables');
+      
+      // Prompt creation succeeds but variable save fails
+      mockCreatePrompt.mockImplementation((data, options) => {
+        options?.onSuccess?.({ id: 'new-prompt-id', ...data });
+      });
+      
+      mockSaveVariables.mockImplementation(() => {
+        throw variableError;
+      });
+
+      const { result } = renderHook(() => usePromptSave({ isEditMode: false }));
+
+      const dataWithVariables = {
+        ...validPromptData,
+        variables: [
+          {
+            id: 'var-1',
+            name: 'test',
+            type: 'STRING' as const,
+            required: false,
+            default_value: '',
+            help: '',
+            pattern: '',
+            options: null,
+            order_index: 0,
+            prompt_id: '',
+            created_at: '',
+          },
+        ],
+      };
+
+      await result.current.savePrompt(dataWithVariables);
+
+      // Prompt should still be created
+      expect(mockCreatePrompt).toHaveBeenCalled();
+      
+      // But error during variable save shouldn't prevent navigation
+      // (this is acceptable behavior as the prompt itself was created)
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith('/prompts');
+      });
+    });
+
+    it('should display specific Zod validation error messages on network error with validation data', async () => {
+      const zodError = {
+        errors: [
+          {
+            path: ['content'],
+            message: 'Le contenu ne peut pas dépasser 200000 caractères',
+          },
+        ],
+      };
+      
+      mockCreatePrompt.mockImplementation(() => {
+        throw zodError;
+      });
+
+      const { result } = renderHook(() => usePromptSave({ isEditMode: false }));
+
+      const dataWithVeryLongContent = {
+        ...validPromptData,
+        content: 'a'.repeat(200001),
+      };
+
+      await result.current.savePrompt(dataWithVeryLongContent);
+
+      expect(mockNotifyError).toHaveBeenCalledWith(
+        messages.errors.validation.failed,
+        expect.stringContaining('200000')
+      );
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('should remain on page after multiple consecutive errors', async () => {
+      const { result } = renderHook(() => usePromptSave({ isEditMode: false }));
+
+      // Simulate multiple save attempts failing
+      mockCreatePrompt.mockImplementation(() => {
+        throw new Error('Network error');
+      });
+
+      // First attempt
+      await result.current.savePrompt(validPromptData);
+      expect(mockNavigate).not.toHaveBeenCalled();
+
+      // Second attempt
+      await result.current.savePrompt(validPromptData);
+      expect(mockNavigate).not.toHaveBeenCalled();
+
+      // Third attempt
+      await result.current.savePrompt(validPromptData);
+      expect(mockNavigate).not.toHaveBeenCalled();
+
+      // Error notification should be called 3 times
+      expect(mockNotifyError).toHaveBeenCalledTimes(3);
+    });
+  });
 });
