@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { GitBranch, Loader2 } from "lucide-react";
 import { bumpVersion, type VersionBump } from "@/lib/semver";
+import { messages } from "@/constants/messages";
 
 interface CreateVersionDialogProps {
   currentVersion: string;
@@ -48,34 +49,34 @@ export function CreateVersionDialog({
           disabled={!hasUnsavedChanges || disabled}
           title={
             disabled 
-              ? "Vous n'avez pas la permission de créer une version" 
+              ? messages.permissions.noPermissionToCreateVersion
               : !hasUnsavedChanges 
-              ? "Aucune modification à versionner" 
+              ? messages.permissions.noChangesToVersion
               : ""
           }
         >
           <GitBranch className="h-4 w-4" />
-          Créer une version
+          {messages.buttons.createVersion}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Créer une nouvelle version</DialogTitle>
+          <DialogTitle>{messages.dialogs.createVersion.title}</DialogTitle>
           <DialogDescription>
             {hasUnsavedChanges 
-              ? "Sauvegardez une version de ce prompt pour suivre son évolution"
-              : "Modifiez d'abord votre prompt pour créer une nouvelle version"}
+              ? messages.dialogs.createVersion.descriptionWithChanges
+              : messages.dialogs.createVersion.descriptionNoChanges}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label>Type de version</Label>
+            <Label>{messages.versions.typeLabel}</Label>
             <RadioGroup value={versionType} onValueChange={(v) => onTypeChange(v as VersionBump)}>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="major" id="major" />
                 <Label htmlFor="major" className="cursor-pointer font-normal">
-                  <span className="font-semibold">Major</span> - Changements incompatibles (
+                  <span className="font-semibold">{messages.versions.typeMajor}</span> - {messages.versions.typeMajorDescription} (
                   <code className="font-mono text-xs">{bumpVersion(currentVersion, "major")}</code>
                   )
                 </Label>
@@ -83,7 +84,7 @@ export function CreateVersionDialog({
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="minor" id="minor" />
                 <Label htmlFor="minor" className="cursor-pointer font-normal">
-                  <span className="font-semibold">Minor</span> - Nouvelles fonctionnalités (
+                  <span className="font-semibold">{messages.versions.typeMinor}</span> - {messages.versions.typeMinorDescription} (
                   <code className="font-mono text-xs">{bumpVersion(currentVersion, "minor")}</code>
                   )
                 </Label>
@@ -91,7 +92,7 @@ export function CreateVersionDialog({
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="patch" id="patch" />
                 <Label htmlFor="patch" className="cursor-pointer font-normal">
-                  <span className="font-semibold">Patch</span> - Corrections mineures (
+                  <span className="font-semibold">{messages.versions.typePatch}</span> - {messages.versions.typePatchDescription} (
                   <code className="font-mono text-xs">{bumpVersion(currentVersion, "patch")}</code>
                   )
                 </Label>
@@ -100,10 +101,10 @@ export function CreateVersionDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="message">Message (optionnel)</Label>
+            <Label htmlFor="message">{messages.versions.messageLabel}</Label>
             <Input
               id="message"
-              placeholder="Décrivez les changements..."
+              placeholder={messages.placeholders.versionMessage}
               value={versionMessage}
               onChange={(e) => onMessageChange(e.target.value)}
               maxLength={500}
@@ -112,10 +113,10 @@ export function CreateVersionDialog({
 
           <div className="rounded-lg bg-muted p-4">
             <p className="text-sm text-muted-foreground">
-              Version actuelle : <code className="font-mono">{currentVersion}</code>
+              {messages.versions.currentVersion} : <code className="font-mono">{currentVersion}</code>
             </p>
             <p className="text-sm font-semibold mt-1">
-              Nouvelle version : <code className="font-mono text-primary">{previewVersion}</code>
+              {messages.versions.newVersion} : <code className="font-mono text-primary">{previewVersion}</code>
             </p>
           </div>
         </div>
@@ -127,7 +128,7 @@ export function CreateVersionDialog({
             className="gap-2"
           >
             {isCreating && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isCreating ? "Création..." : "Créer la version"}
+            {isCreating ? messages.labels.creating : messages.buttons.createVersionAction}
           </Button>
         </DialogFooter>
       </DialogContent>

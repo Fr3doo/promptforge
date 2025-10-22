@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trash2, GripVertical } from "lucide-react";
 import type { Variable } from "@/features/prompts/types";
+import { messages } from "@/constants/messages";
 
 interface VariableConfigItemProps {
   variable: Variable;
@@ -30,7 +31,7 @@ export const VariableConfigItem = ({
             onChange={(e) =>
               onUpdate(index, { ...variable, name: e.target.value })
             }
-            placeholder="Nom de la variable"
+            placeholder={messages.placeholders.variableName}
             className="flex-1 font-mono"
           />
           <Select
@@ -72,7 +73,7 @@ export const VariableConfigItem = ({
             onChange={(e) =>
               onUpdate(index, { ...variable, default_value: e.target.value })
             }
-            placeholder="Valeur par défaut..."
+            placeholder={messages.placeholders.variableDefaultValue}
           />
         </div>
 
@@ -87,7 +88,7 @@ export const VariableConfigItem = ({
             onChange={(e) =>
               onUpdate(index, { ...variable, help: e.target.value })
             }
-            placeholder="Description ou aide pour cette variable..."
+            placeholder={messages.placeholders.variableHelp}
           />
         </div>
       </div>

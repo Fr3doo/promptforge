@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import type { Variable } from "@/features/prompts/types";
+import { messages } from "@/constants/messages";
 
 interface VariableInputItemProps {
   variable: Variable;
@@ -31,7 +32,7 @@ export const VariableInputItem = ({
           id={inputId}
           value={value || variable.default_value || ""}
           onChange={(e) => onChange(variable.name, e.target.value)}
-          placeholder={variable.default_value || `Entrez ${variable.name}...`}
+          placeholder={variable.default_value || messages.placeholders.variableInput(variable.name)}
           required={variable.required}
           aria-required={variable.required}
           aria-describedby={helpId}

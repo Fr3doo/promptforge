@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Plus, X, Lock, Globe, ChevronDown, ChevronUp } from "lucide-react";
+import { messages } from "@/constants/messages";
 
 interface PromptMetadataFormProps {
   title: string;
@@ -66,7 +67,7 @@ export const PromptMetadataForm = ({
             id="prompt-title"
             value={title}
             onChange={(e) => onTitleChange(e.target.value)}
-            placeholder="Ex: Résumé d'articles de blog"
+            placeholder={messages.placeholders.promptTitle}
             required
             aria-required="true"
             aria-invalid={!!errors.title}
@@ -91,7 +92,7 @@ export const PromptMetadataForm = ({
             id="prompt-description"
             value={description}
             onChange={(e) => onDescriptionChange(e.target.value)}
-            placeholder="Décrivez l'objectif et le contexte d'utilisation de ce prompt"
+            placeholder={messages.placeholders.promptDescription}
             className={`min-h-[80px] ${errors.description ? "border-destructive" : ""}`}
             aria-describedby={errors.description ? "description-error description-help" : "description-help"}
             aria-invalid={!!errors.description}
@@ -132,7 +133,7 @@ export const PromptMetadataForm = ({
                     id="prompt-tags"
                     value={tagInput}
                     onChange={(e) => onTagInputChange(e.target.value)}
-                    placeholder="Ex: marketing, email, SEO"
+                    placeholder={messages.placeholders.tagInput}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();

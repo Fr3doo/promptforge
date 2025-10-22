@@ -14,6 +14,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SharePromptDialog } from "@/features/prompts/components/SharePromptDialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { messages } from "@/constants/messages";
 
 
 const Prompts = () => {
@@ -127,9 +128,9 @@ const Prompts = () => {
             <Share2 className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between gap-4">
               <div className="flex-1">
-                <p className="font-medium">Prompt créé avec succès !</p>
+                <p className="font-medium">{messages.shareBanner.promptCreated}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Souhaitez-vous partager "{justCreatedPrompt.title}" avec d'autres utilisateurs ?
+                  {messages.shareBanner.shareQuestion(justCreatedPrompt.title)}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -140,7 +141,7 @@ const Prompts = () => {
                   className="gap-2"
                 >
                   <Share2 className="h-4 w-4" />
-                  Partager maintenant
+                  {messages.buttons.shareNow}
                 </Button>
                 <Button
                   variant="ghost"

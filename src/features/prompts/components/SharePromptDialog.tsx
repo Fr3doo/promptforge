@@ -22,6 +22,7 @@ import { usePromptShares, useAddPromptShare, useUpdatePromptShare, useDeleteProm
 import { useToastNotifier } from "@/hooks/useToastNotifier";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { messages } from "@/constants/messages";
 
 interface SharePromptDialogProps {
   open: boolean;
@@ -88,9 +89,9 @@ export const SharePromptDialog = ({
           })
         )
       );
-      notifySuccess("Tous les partages privés ont été supprimés");
+      notifySuccess(messages.success.allPrivateSharesDeleted);
     } catch (error) {
-      notifyError("Erreur", "Certains partages n'ont pas pu être supprimés");
+      notifyError(messages.labels.error, messages.errors.share.deleteSomeFailed);
     } finally {
       setIsDeletingAll(false);
     }
@@ -102,32 +103,32 @@ export const SharePromptDialog = ({
         <DialogHeader>
           <DialogTitle>
             {shares.length === 0 
-              ? `Partage Privé : "${promptTitle}"`
-              : `Gérer le partage privé de "${promptTitle}"`
+              ? messages.dialogs.privateShare.titleNew(promptTitle)
+              : messages.dialogs.privateShare.titleExisting(promptTitle)
             }
           </DialogTitle>
           <DialogDescription>
             {shares.length === 0
-              ? "Partagez ce prompt avec des utilisateurs spécifiques en lecture seule ou avec droits de modification"
-              : `${shares.length} utilisateur${shares.length > 1 ? 's ont' : ' a'} accès à ce prompt`
+              ? messages.dialogs.privateShare.descriptionNew
+              : messages.dialogs.privateShare.descriptionExisting(shares.length)
             }
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email de l'utilisateur</Label>
+            <Label htmlFor="email">{messages.placeholders.emailInput}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="utilisateur@exemple.com"
+              placeholder={messages.placeholders.emailInput}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="permission">Niveau d'accès</Label>
+            <Label htmlFor="permission">{messages.permissions.privateAccess}</Label>
             <Select
               value={permission}
               onValueChange={(value: "READ" | "WRITE") => setPermission(value)}
@@ -136,15 +137,15 @@ export const SharePromptDialog = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="READ">Lecture seule</SelectItem>
-                <SelectItem value="WRITE">Lecture et modification</SelectItem>
+                <SelectItem value="READ">{messages.permissions.readOnly}</SelectItem>
+                <SelectItem value="WRITE">{messages.permissions.readAndWrite}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <Button onClick={handleShare} disabled={isAdding || !email.trim()} className="w-full">
             {isAdding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Partager
+            {messages.buttons.sharePrivate}
           </Button>
 
           {/* List of existing shares */}
@@ -154,7 +155,7 @@ export const SharePromptDialog = ({
             </div>
           ) : shares.length > 0 ? (
             <div className="space-y-2">
-              <Label>Partagé avec</Label>
+              <Label>{messages.sharedWith.label}</Label>
               <div className="space-y-2 max-h-64 overflow-y-auto">
               {shares.map((share) => {
                 const profile = share.shared_with_profile;
@@ -174,7 +175,7 @@ export const SharePromptDialog = ({
                           </p>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
-                          Partagé le {format(new Date(share.created_at), "d MMM yyyy", { locale: fr })}
+                          {messages.sharedWith.sharedOn} {format(new Date(share.created_at), "d MMM yyyy", { locale: fr })}
                         </p>
                       </div>
                         
@@ -195,13 +196,13 @@ export const SharePromptDialog = ({
                               <SelectItem value="READ">
                                 <div className="flex items-center gap-2">
                                   <Eye className="h-4 w-4" />
-                                  Lecture seule
+                                  {messages.permissions.readOnly}
                                 </div>
                               </SelectItem>
                               <SelectItem value="WRITE">
                                 <div className="flex items-center gap-2">
                                   <Edit className="h-4 w-4" />
-                                  Lecture et modification
+                                  {messages.permissions.readAndWrite}
                                 </div>
                               </SelectItem>
                             </SelectContent>
@@ -233,7 +234,7 @@ export const SharePromptDialog = ({
               className="w-full"
             >
               {isDeletingAll && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Arrêter tous les partages privés
+              {messages.buttons.stopAllPrivateSharing}
             </Button>
           )}
         </div>

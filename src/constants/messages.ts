@@ -7,6 +7,112 @@ export const messages = {
   // Generic labels
   labels: {
     error: "Erreur",
+    cancel: "Annuler",
+    confirm: "Confirmer",
+    save: "Enregistrer",
+    update: "Mettre à jour",
+    delete: "Supprimer",
+    loading: "Chargement...",
+    creating: "Création...",
+  },
+
+  // Placeholders
+  placeholders: {
+    promptTitle: "Ex: Résumé d'articles de blog",
+    promptDescription: "Décrivez l'objectif et le contexte d'utilisation de ce prompt",
+    promptContent: "Saisissez votre prompt ici...",
+    tagInput: "Ex: marketing, email, SEO",
+    emailInput: "utilisateur@exemple.com",
+    versionMessage: "Décrivez les changements...",
+    variableName: "Nom de la variable",
+    variableDefaultValue: "Valeur par défaut...",
+    variableHelp: "Description ou aide pour cette variable...",
+    variableInput: (name: string) => `Entrez ${name}...`,
+    search: "Rechercher des prompts...",
+  },
+
+  // Dialog and modal titles
+  dialogs: {
+    deletePrompt: {
+      title: "Confirmer la suppression",
+      description: (title: string) => 
+        `Êtes-vous sûr de vouloir supprimer le prompt "${title}" ?\n\nCette action est irréversible et supprimera également toutes les versions associées.`,
+    },
+    createVersion: {
+      title: "Créer une nouvelle version",
+      descriptionWithChanges: "Sauvegardez une version de ce prompt pour suivre son évolution",
+      descriptionNoChanges: "Modifiez d'abord votre prompt pour créer une nouvelle version",
+    },
+    publicShare: {
+      titlePrivate: (title: string) => `Partage Public : "${title}"`,
+      titleShared: (title: string) => `Modifier le partage public de "${title}"`,
+      descriptionPrivate: "Choisissez le niveau d'accès pour les utilisateurs qui verront ce prompt",
+      descriptionShared: "Modifier le niveau d'accès public ou rendre le prompt privé",
+    },
+    privateShare: {
+      titleNew: (title: string) => `Partage Privé : "${title}"`,
+      titleExisting: (title: string) => `Gérer le partage privé de "${title}"`,
+      descriptionNew: "Partagez ce prompt avec des utilisateurs spécifiques en lecture seule ou avec droits de modification",
+      descriptionExisting: (count: number) => 
+        `${count} utilisateur${count > 1 ? 's ont' : ' a'} accès à ce prompt`,
+    },
+    compareVersions: {
+      title: "Comparaison de versions",
+    },
+  },
+
+  // Buttons and actions
+  buttons: {
+    shareNow: "Partager maintenant",
+    sharePrivate: "Partager",
+    stopAllPrivateSharing: "Arrêter tous les partages privés",
+    stopPublicSharing: "Arrêter le partage public",
+    enablePublicSharing: "Activer le partage public",
+    createVersion: "Créer une version",
+    createVersionAction: "Créer la version",
+    updatePermission: "Mettre à jour",
+    retry: "Réessayer",
+    reload: "Recharger",
+    close: "Fermer",
+  },
+
+  // Permission and access levels
+  permissions: {
+    readOnly: "Lecture seule",
+    readAndWrite: "Lecture et modification",
+    publicAccess: "Niveau d'accès public",
+    privateAccess: "Niveau d'accès",
+    readOnlyDescription: "Tous les utilisateurs pourront voir ce prompt mais ne pourront pas le modifier",
+    readWriteDescription: "Tous les utilisateurs pourront voir et modifier ce prompt",
+    noPermissionToCreateVersion: "Vous n'avez pas la permission de créer une version",
+    noChangesToVersion: "Aucune modification à versionner",
+  },
+
+  // Version control
+  versions: {
+    typeMajor: "Major",
+    typeMinor: "Minor",
+    typePatch: "Patch",
+    typeMajorDescription: "Changements incompatibles",
+    typeMinorDescription: "Nouvelles fonctionnalités",
+    typePatchDescription: "Corrections mineures",
+    currentVersion: "Version actuelle",
+    newVersion: "Nouvelle version",
+    typeLabel: "Type de version",
+    messageLabel: "Message (optionnel)",
+  },
+
+  // Share banners and notifications
+  shareBanner: {
+    promptCreated: "Prompt créé avec succès !",
+    shareQuestion: (title: string) => 
+      `Souhaitez-vous partager "${title}" avec d'autres utilisateurs ?`,
+  },
+
+  // Shared with section
+  sharedWith: {
+    label: "Partagé avec",
+    sharedOn: "Partagé le",
   },
 
   // Error messages
@@ -50,6 +156,9 @@ export const messages = {
     auth: {
       signOutFailed: "Impossible de se déconnecter",
     },
+    share: {
+      deleteSomeFailed: "Certains partages n'ont pas pu être supprimés",
+    },
     // Database errors (for getSafeErrorMessage)
     database: {
       duplicate: "Cette entrée existe déjà",
@@ -77,6 +186,7 @@ export const messages = {
     promptDuplicated: "Prompt dupliqué avec succès",
     promptShared: "Prompt partagé avec la communauté",
     promptPrivate: "Prompt redevenu privé",
+    allPrivateSharesDeleted: "Tous les partages privés ont été supprimés",
     analysisComplete: "Analyse terminée",
     variablesSaved: "Variables enregistrées",
     variablesDetected: (count: number) => `${count} variable(s) détectée(s)`,

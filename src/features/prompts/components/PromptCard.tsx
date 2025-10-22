@@ -20,6 +20,7 @@ import { SharePromptDialog } from "./SharePromptDialog";
 import { PublicShareDialog } from "./PublicShareDialog";
 import type { Prompt } from "../types";
 import { useUpdatePublicPermission } from "@/hooks/usePrompts";
+import { messages } from "@/constants/messages";
 
 interface PromptCardProps {
   prompt: Prompt;
@@ -170,16 +171,13 @@ export const PromptCard = ({
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-            <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer le prompt "<strong>{prompt.title}</strong>" ?
-              <br />
-              <br />
-              Cette action est <strong>irréversible</strong> et supprimera également toutes les versions associées.
+            <AlertDialogTitle>{messages.dialogs.deletePrompt.title}</AlertDialogTitle>
+            <AlertDialogDescription style={{ whiteSpace: "pre-line" }}>
+              {messages.dialogs.deletePrompt.description(prompt.title)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel>{messages.labels.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

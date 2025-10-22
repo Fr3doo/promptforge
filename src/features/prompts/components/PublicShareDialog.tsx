@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { messages } from "@/constants/messages";
 
 interface PublicShareDialogProps {
   open: boolean;
@@ -56,20 +57,20 @@ export const PublicShareDialog = ({
         <DialogHeader>
           <DialogTitle>
             {currentVisibility === "PRIVATE" 
-              ? `Partage Public : "${promptTitle}"` 
-              : `Modifier le partage public de "${promptTitle}"`}
+              ? messages.dialogs.publicShare.titlePrivate(promptTitle)
+              : messages.dialogs.publicShare.titleShared(promptTitle)}
           </DialogTitle>
           <DialogDescription>
             {currentVisibility === "PRIVATE"
-              ? "Choisissez le niveau d'accès pour les utilisateurs qui verront ce prompt"
-              : "Modifier le niveau d'accès public ou rendre le prompt privé"}
+              ? messages.dialogs.publicShare.descriptionPrivate
+              : messages.dialogs.publicShare.descriptionShared}
           </DialogDescription>
         </DialogHeader>
 
         {currentVisibility === "SHARED" && (
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="permission">Niveau d'accès public</Label>
+              <Label htmlFor="permission">{messages.permissions.publicAccess}</Label>
               <Select
                 value={permission}
                 onValueChange={(value: "READ" | "WRITE") => setPermission(value)}
@@ -78,14 +79,14 @@ export const PublicShareDialog = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="READ">Lecture seule</SelectItem>
-                  <SelectItem value="WRITE">Lecture et modification</SelectItem>
+                  <SelectItem value="READ">{messages.permissions.readOnly}</SelectItem>
+                  <SelectItem value="WRITE">{messages.permissions.readAndWrite}</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">
                 {permission === "READ"
-                  ? "Tous les utilisateurs pourront voir ce prompt mais ne pourront pas le modifier"
-                  : "Tous les utilisateurs pourront voir et modifier ce prompt"}
+                  ? messages.permissions.readOnlyDescription
+                  : messages.permissions.readWriteDescription}
               </p>
             </div>
           </div>
@@ -94,7 +95,7 @@ export const PublicShareDialog = ({
         {currentVisibility === "PRIVATE" && (
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="permission">Niveau d'accès public</Label>
+              <Label htmlFor="permission">{messages.permissions.publicAccess}</Label>
               <Select
                 value={permission}
                 onValueChange={(value: "READ" | "WRITE") => setPermission(value)}
@@ -103,14 +104,14 @@ export const PublicShareDialog = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="READ">Lecture seule</SelectItem>
-                  <SelectItem value="WRITE">Lecture et modification</SelectItem>
+                  <SelectItem value="READ">{messages.permissions.readOnly}</SelectItem>
+                  <SelectItem value="WRITE">{messages.permissions.readAndWrite}</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">
                 {permission === "READ"
-                  ? "Tous les utilisateurs pourront voir ce prompt mais ne pourront pas le modifier"
-                  : "Tous les utilisateurs pourront voir et modifier ce prompt"}
+                  ? messages.permissions.readOnlyDescription
+                  : messages.permissions.readWriteDescription}
               </p>
             </div>
           </div>
@@ -118,7 +119,7 @@ export const PublicShareDialog = ({
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
-            Annuler
+            {messages.labels.cancel}
           </Button>
           {currentVisibility === "SHARED" && (
             <>
@@ -136,7 +137,7 @@ export const PublicShareDialog = ({
                   disabled={isLoading || permission === currentPermission}
                 >
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Mettre à jour
+                  {messages.buttons.updatePermission}
                 </Button>
               )}
               <Button 
@@ -153,14 +154,14 @@ export const PublicShareDialog = ({
                 disabled={isLoading}
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Arrêter le partage public
+                {messages.buttons.stopPublicSharing}
               </Button>
             </>
           )}
           {currentVisibility === "PRIVATE" && (
             <Button onClick={handleConfirm} disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Activer le partage public
+              {messages.buttons.enablePublicSharing}
             </Button>
           )}
         </DialogFooter>
