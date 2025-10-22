@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useOwnedPrompts, useToggleFavorite, useDeletePrompt, useDuplicatePrompt, useToggleVisibility } from "@/hooks/usePrompts";
+import { useOwnedPrompts, useSharedWithMePrompts, useToggleFavorite, useDeletePrompt, useDuplicatePrompt, useToggleVisibility } from "@/hooks/usePrompts";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePromptFilters } from "@/features/prompts/hooks/usePromptFilters";
 import { PromptList } from "@/features/prompts/components/PromptList";
 import { PromptSearchBar } from "@/features/prompts/components/PromptSearchBar";
 import { Button } from "@/components/ui/button";
-import { Plus, Sparkles } from "lucide-react";
+import { Plus, Sparkles, Share2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerTrigger } from "@/components/ui/drawer";
 import { PromptAnalyzer } from "@/components/PromptAnalyzer";
@@ -21,11 +21,13 @@ const Prompts = () => {
   
   const debouncedSearch = useDebounce(searchQuery, 300);
   const { data: prompts = [], isLoading } = useOwnedPrompts();
+  const { data: sharedWithMe = [], isLoading: isLoadingShared } = useSharedWithMePrompts();
   const { mutate: toggleFavorite } = useToggleFavorite();
   const { mutate: deletePrompt } = useDeletePrompt();
   const { mutate: duplicatePrompt } = useDuplicatePrompt();
   const { mutate: toggleVisibility } = useToggleVisibility();
   const { filteredPrompts } = usePromptFilters(prompts, debouncedSearch);
+  const { filteredPrompts: filteredSharedPrompts } = usePromptFilters(sharedWithMe, debouncedSearch);
 
   const handleDuplicate = async (id: string) => {
     duplicatePrompt(id, {
@@ -85,7 +87,7 @@ const Prompts = () => {
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 space-y-12">
         <div className="mb-8">
           <PromptSearchBar
             value={searchQuery}
@@ -93,19 +95,42 @@ const Prompts = () => {
           />
         </div>
 
-        <PromptList
-          prompts={filteredPrompts}
-          isLoading={isLoading}
-          onToggleFavorite={(id, currentState) =>
-            toggleFavorite({ id, currentState })
-          }
-          onDelete={(id) => deletePrompt(id)}
-          onDuplicate={handleDuplicate}
-          onToggleVisibility={handleToggleVisibility}
-          emptySearchState={!!searchQuery}
-          searchQuery={searchQuery}
-          currentUserId={user?.id}
-        />
+        <section>
+          <h2 className="text-xl font-semibold mb-4">Mes Prompts</h2>
+          <PromptList
+            prompts={filteredPrompts}
+            isLoading={isLoading}
+            onToggleFavorite={(id, currentState) =>
+              toggleFavorite({ id, currentState })
+            }
+            onDelete={(id) => deletePrompt(id)}
+            onDuplicate={handleDuplicate}
+            onToggleVisibility={handleToggleVisibility}
+            emptySearchState={!!searchQuery}
+            searchQuery={searchQuery}
+            currentUserId={user?.id}
+          />
+        </section>
+
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <Share2 className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold">Partagés avec moi</h2>
+          </div>
+          <PromptList
+            prompts={filteredSharedPrompts}
+            isLoading={isLoadingShared}
+            onToggleFavorite={(id, currentState) =>
+              toggleFavorite({ id, currentState })
+            }
+            onDelete={(id) => deletePrompt(id)}
+            onDuplicate={handleDuplicate}
+            onToggleVisibility={handleToggleVisibility}
+            emptySearchState={!!searchQuery}
+            searchQuery={searchQuery}
+            currentUserId={user?.id}
+          />
+        </section>
       </main>
       
       <Footer />

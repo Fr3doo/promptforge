@@ -145,6 +145,36 @@ const Dashboard = () => {
           </section>
         )}
 
+        {/* Privately Shared With Me */}
+        {dashboardData?.privatelySharedWithMe && dashboardData.privatelySharedWithMe.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <Share2 className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-semibold">Partagés avec moi</h2>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {dashboardData.privatelySharedWithMe.map((prompt) => (
+                <PromptCard
+                  key={prompt.id}
+                  prompt={prompt}
+                  onToggleFavorite={(id, currentState) =>
+                    toggleFavorite({ id, currentState })
+                  }
+                  onToggleVisibility={async (id, currentVisibility, permission) => {
+                    if (permission !== undefined) {
+                      await toggleVisibility({ id, currentVisibility, publicPermission: permission });
+                    } else {
+                      await toggleVisibility({ id, currentVisibility });
+                    }
+                  }}
+                  onClick={() => navigate(`/prompts/${prompt.id}`)}
+                  currentUserId={user?.id}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Shared Prompts */}
         {dashboardData?.sharedPrompts && dashboardData.sharedPrompts.length > 0 && (
           <section>
@@ -179,6 +209,7 @@ const Dashboard = () => {
         {(!dashboardData?.recentPrompts?.length && 
           !dashboardData?.favoritePrompts?.length && 
           !dashboardData?.sharedPrompts?.length &&
+          !dashboardData?.privatelySharedWithMe?.length &&
           !dashboardData?.usageStats?.length) && (
           <Card>
             <CardHeader>

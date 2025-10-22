@@ -29,6 +29,17 @@ export function useOwnedPrompts() {
   });
 }
 
+// Hook de lecture - prompts partagés avec moi (partage privé)
+export function useSharedWithMePrompts() {
+  const repository = usePromptRepository();
+  
+  return useQuery({
+    queryKey: ["prompts", "shared-with-me"],
+    queryFn: () => repository.fetchSharedWithMe(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
 // Hook de lecture - prompt unique
 export function usePrompt(id: string | undefined) {
   const repository = usePromptRepository();

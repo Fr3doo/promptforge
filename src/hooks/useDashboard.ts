@@ -6,6 +6,7 @@ interface DashboardStats {
   recentPrompts: Prompt[];
   favoritePrompts: Prompt[];
   sharedPrompts: Prompt[];
+  privatelySharedWithMe: Prompt[];
   usageStats: {
     promptId: string;
     title: string;
@@ -42,7 +43,7 @@ export function useDashboard() {
         .order("updated_at", { ascending: false })
         .limit(5);
 
-      // Fetch shared prompts
+      // Fetch shared prompts (public)
       const { data: sharedPrompts } = await supabase
         .from("prompts")
         .select("*")
@@ -50,6 +51,25 @@ export function useDashboard() {
         .neq("owner_id", user.id)
         .order("updated_at", { ascending: false })
         .limit(5);
+
+      // Fetch privately shared prompts
+      const { data: privateShares } = await supabase
+        .from("prompt_shares")
+        .select("prompt_id")
+        .eq("shared_with_user_id", user.id)
+        .limit(50);
+      
+      let privatelySharedWithMe: Prompt[] = [];
+      if (privateShares && privateShares.length > 0) {
+        const promptIds = privateShares.map(share => share.prompt_id);
+        const { data: sharedWithMePrompts } = await supabase
+          .from("prompts")
+          .select("*")
+          .in("id", promptIds)
+          .order("updated_at", { ascending: false })
+          .limit(5);
+        privatelySharedWithMe = sharedWithMePrompts || [];
+      }
 
       // Fetch usage statistics
       const { data: promptsWithUsage } = await supabase
@@ -83,6 +103,7 @@ export function useDashboard() {
         recentPrompts: recentPrompts || [],
         favoritePrompts: favoritePrompts || [],
         sharedPrompts: sharedPrompts || [],
+        privatelySharedWithMe,
         usageStats,
       };
     },

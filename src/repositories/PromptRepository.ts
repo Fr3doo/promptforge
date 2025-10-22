@@ -8,6 +8,7 @@ export type Prompt = Tables<"prompts"> & { share_count?: number };
 export interface PromptRepository {
   fetchAll(): Promise<Prompt[]>;
   fetchOwned(): Promise<Prompt[]>;
+  fetchSharedWithMe(): Promise<Prompt[]>;
   fetchById(id: string): Promise<Prompt>;
   create(userId: string, promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt>;
   update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
@@ -40,6 +41,35 @@ export class SupabasePromptRepository implements PromptRepository {
       .from("prompts_with_share_count")
       .select("*")
       .eq("owner_id", user.id)
+      .order("updated_at", { ascending: false });
+    
+    handleSupabaseError(result);
+    return result.data as Prompt[];
+  }
+
+  async fetchSharedWithMe(): Promise<Prompt[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Utilisateur non authentifié");
+    
+    // Fetch prompt_ids shared with the current user
+    const sharesResult = await supabase
+      .from("prompt_shares")
+      .select("prompt_id")
+      .eq("shared_with_user_id", user.id);
+    
+    handleSupabaseError(sharesResult);
+    
+    if (!sharesResult.data || sharesResult.data.length === 0) {
+      return [];
+    }
+    
+    const promptIds = sharesResult.data.map(share => share.prompt_id);
+    
+    // Fetch the actual prompts
+    const result = await supabase
+      .from("prompts_with_share_count")
+      .select("*")
+      .in("id", promptIds)
       .order("updated_at", { ascending: false });
     
     handleSupabaseError(result);
