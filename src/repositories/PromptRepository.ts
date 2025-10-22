@@ -20,6 +20,9 @@ export interface PromptRepository {
 
 export class SupabasePromptRepository implements PromptRepository {
   async fetchAll(): Promise<Prompt[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Utilisateur non authentifié");
+    
     const result = await supabase
       .from("prompts")
       .select("*")
