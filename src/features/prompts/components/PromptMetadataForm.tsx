@@ -102,7 +102,9 @@ export const PromptMetadataForm = ({
               {errors.description}
             </p>
           )}
-          <p id="description-help" className="text-xs text-muted-foreground">Ajoutez des détails pour retrouver facilement ce prompt plus tard</p>
+          <p id="description-help" className="text-xs text-muted-foreground">
+            Ajoutez des détails pour retrouver facilement ce prompt plus tard ({description.length}/3000)
+          </p>
         </div>
 
         {/* Options avancées */}
