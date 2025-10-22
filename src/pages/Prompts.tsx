@@ -1,23 +1,32 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useOwnedPrompts, useSharedWithMePrompts, useToggleFavorite, useDeletePrompt, useDuplicatePrompt, useToggleVisibility } from "@/hooks/usePrompts";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useOwnedPrompts, useSharedWithMePrompts, useToggleFavorite, useDeletePrompt, useDuplicatePrompt, useToggleVisibility, usePrompt } from "@/hooks/usePrompts";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePromptFilters } from "@/features/prompts/hooks/usePromptFilters";
 import { PromptList } from "@/features/prompts/components/PromptList";
 import { PromptSearchBar } from "@/features/prompts/components/PromptSearchBar";
 import { Button } from "@/components/ui/button";
-import { Plus, Sparkles, Share2 } from "lucide-react";
+import { Plus, Sparkles, Share2, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerTrigger } from "@/components/ui/drawer";
 import { PromptAnalyzer } from "@/components/PromptAnalyzer";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { SharePromptDialog } from "@/features/prompts/components/SharePromptDialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
 
 const Prompts = () => {
   const { user, loading: authLoading } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [analyzerOpen, setAnalyzerOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [showShareBanner, setShowShareBanner] = useState(false);
   const navigate = useNavigate();
+  
+  const justCreatedId = searchParams.get("justCreated");
+  const { data: justCreatedPrompt } = usePrompt(justCreatedId || undefined);
   
   const debouncedSearch = useDebounce(searchQuery, 300);
   const { data: prompts = [], isLoading } = useOwnedPrompts();
@@ -28,6 +37,13 @@ const Prompts = () => {
   const { mutate: toggleVisibility } = useToggleVisibility();
   const { filteredPrompts } = usePromptFilters(prompts, debouncedSearch);
   const { filteredPrompts: filteredSharedPrompts } = usePromptFilters(sharedWithMe, debouncedSearch);
+
+  // Detect newly created prompt and show share banner
+  useEffect(() => {
+    if (justCreatedId && justCreatedPrompt) {
+      setShowShareBanner(true);
+    }
+  }, [justCreatedId, justCreatedPrompt]);
 
   const handleDuplicate = async (id: string) => {
     duplicatePrompt(id, {
@@ -43,6 +59,23 @@ const Prompts = () => {
     } else {
       await toggleVisibility({ id, currentVisibility });
     }
+  };
+
+  const handleDismissBanner = () => {
+    setShowShareBanner(false);
+    // Remove query param
+    setSearchParams({});
+  };
+
+  const handleOpenShareDialog = () => {
+    setShareDialogOpen(true);
+    setShowShareBanner(false);
+  };
+
+  const handleCloseShareDialog = () => {
+    setShareDialogOpen(false);
+    // Remove query param when dialog closes
+    setSearchParams({});
   };
 
   if (!authLoading && !user) {
@@ -88,6 +121,40 @@ const Prompts = () => {
       </div>
 
       <main className="container mx-auto px-4 py-8 space-y-12">
+        {/* Share Banner for newly created prompts */}
+        {showShareBanner && justCreatedPrompt && (
+          <Alert className="border-primary bg-primary/5">
+            <Share2 className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <p className="font-medium">Prompt créé avec succès !</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Souhaitez-vous partager "{justCreatedPrompt.title}" avec d'autres utilisateurs ?
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleOpenShareDialog}
+                  className="gap-2"
+                >
+                  <Share2 className="h-4 w-4" />
+                  Partager maintenant
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleDismissBanner}
+                  aria-label="Fermer"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="mb-8">
           <PromptSearchBar
             value={searchQuery}
@@ -133,6 +200,16 @@ const Prompts = () => {
           />
         </section>
       </main>
+      
+      {/* Share Dialog */}
+      {justCreatedPrompt && (
+        <SharePromptDialog
+          open={shareDialogOpen}
+          onOpenChange={handleCloseShareDialog}
+          promptId={justCreatedPrompt.id}
+          promptTitle={justCreatedPrompt.title}
+        />
+      )}
       
       <Footer />
     </div>

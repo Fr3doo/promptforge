@@ -165,13 +165,14 @@ export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSave
             }, {
               onSuccess: () => {
                 onSuccess?.();
-                navigate("/prompts");
+                // Redirect with query param to show share dialog
+                navigate(`/prompts?justCreated=${newPrompt.id}`);
               },
               onError: (error) => {
                 console.error("Erreur création version initiale:", error);
-                // Continuer quand même vers /prompts même si la version initiale échoue
+                // Continuer quand même vers /prompts avec le prompt créé
                 onSuccess?.();
-                navigate("/prompts");
+                navigate(`/prompts?justCreated=${newPrompt.id}`);
               }
             });
           },
