@@ -129,6 +129,7 @@ const Prompts = () => {
             emptySearchState={!!searchQuery}
             searchQuery={searchQuery}
             currentUserId={user?.id}
+            isSharedSection={true}
           />
         </section>
       </main>

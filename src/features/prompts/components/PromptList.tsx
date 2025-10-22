@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { PromptCard } from "./PromptCard";
 import { PromptListSkeleton } from "@/components/PromptCardSkeleton";
 import { EmptyState } from "@/components/EmptyState";
-import { FileText, Search } from "lucide-react";
+import { FileText, Search, Share2 } from "lucide-react";
 import type { Prompt } from "../types";
 
 interface PromptListProps {
@@ -15,6 +15,7 @@ interface PromptListProps {
   emptySearchState?: boolean;
   searchQuery?: string;
   currentUserId?: string;
+  isSharedSection?: boolean;
 }
 
 export const PromptList = ({
@@ -27,6 +28,7 @@ export const PromptList = ({
   emptySearchState = false,
   searchQuery = "",
   currentUserId,
+  isSharedSection = false,
 }: PromptListProps) => {
   const navigate = useNavigate();
 
@@ -41,6 +43,16 @@ export const PromptList = ({
           icon={Search}
           title="Aucun résultat"
           description="Aucun prompt ne correspond à votre recherche. Essayez avec d'autres mots-clés."
+        />
+      );
+    }
+
+    if (isSharedSection) {
+      return (
+        <EmptyState
+          icon={Share2}
+          title="Aucun prompt partagé"
+          description="Vous n'avez pas encore reçu de prompts partagés. Lorsque d'autres utilisateurs partageront des prompts avec vous, ils apparaîtront ici."
         />
       );
     }
