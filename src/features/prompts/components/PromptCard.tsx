@@ -55,9 +55,9 @@ export const PromptCard = ({
     }
   };
 
-  const handleToggleVisibility = async (permission: "READ" | "WRITE") => {
+  const handleToggleVisibility = async (permission?: "READ" | "WRITE") => {
     if (onToggleVisibility) {
-      await onToggleVisibility(prompt.id, prompt.visibility, permission);
+      await onToggleVisibility(prompt.id, prompt.visibility, permission || "READ");
     }
   };
 

@@ -168,18 +168,7 @@ export class SupabasePromptRepository implements PromptRepository {
     currentVisibility: "PRIVATE" | "SHARED",
     publicPermission?: "READ" | "WRITE"
   ): Promise<"PRIVATE" | "SHARED"> {
-    // If already shared and only the permission is changing, update only public_permission
-    if (currentVisibility === "SHARED" && publicPermission) {
-      const permResult = await supabase
-        .from("prompts")
-        .update({ public_permission: publicPermission })
-        .eq("id", id);
-
-      handleSupabaseError(permResult);
-      return "SHARED";
-    }
-
-    // Otherwise, toggle PRIVATE <-> SHARED
+    // Toggle PRIVATE <-> SHARED
     const newVisibility = currentVisibility === "PRIVATE" ? "SHARED" : "PRIVATE";
     
     const updateData: { 

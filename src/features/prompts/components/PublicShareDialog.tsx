@@ -24,7 +24,7 @@ interface PublicShareDialogProps {
   promptTitle: string;
   currentVisibility: "PRIVATE" | "SHARED";
   currentPermission: "READ" | "WRITE";
-  onConfirm: (permission: "READ" | "WRITE") => Promise<void>;
+  onConfirm: (permission?: "READ" | "WRITE") => Promise<void>;
 }
 
 export const PublicShareDialog = ({
@@ -124,7 +124,7 @@ export const PublicShareDialog = ({
               onClick={async () => {
                 setIsLoading(true);
                 try {
-                  await onConfirm(permission);
+                  await onConfirm(); // Ne pas passer de permission pour forcer le toggle vers PRIVATE
                   onOpenChange(false);
                 } finally {
                   setIsLoading(false);
