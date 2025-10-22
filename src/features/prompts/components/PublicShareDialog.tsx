@@ -64,37 +64,84 @@ export const PublicShareDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="permission">Niveau d'accès public</Label>
-            <Select
-              value={permission}
-              onValueChange={(value: "READ" | "WRITE") => setPermission(value)}
-            >
-              <SelectTrigger id="permission">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="READ">Lecture seule</SelectItem>
-                <SelectItem value="WRITE">Lecture et modification</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-muted-foreground">
-              {permission === "READ"
-                ? "Tous les utilisateurs pourront voir ce prompt mais ne pourront pas le modifier"
-                : "Tous les utilisateurs pourront voir et modifier ce prompt"}
-            </p>
+        {currentVisibility === "SHARED" && (
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="permission">Niveau d'accès public</Label>
+              <Select
+                value={permission}
+                onValueChange={(value: "READ" | "WRITE") => setPermission(value)}
+              >
+                <SelectTrigger id="permission">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="READ">Lecture seule</SelectItem>
+                  <SelectItem value="WRITE">Lecture et modification</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                {permission === "READ"
+                  ? "Tous les utilisateurs pourront voir ce prompt mais ne pourront pas le modifier"
+                  : "Tous les utilisateurs pourront voir et modifier ce prompt"}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
-        <DialogFooter>
+        {currentVisibility === "PRIVATE" && (
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="permission">Niveau d'accès public</Label>
+              <Select
+                value={permission}
+                onValueChange={(value: "READ" | "WRITE") => setPermission(value)}
+              >
+                <SelectTrigger id="permission">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="READ">Lecture seule</SelectItem>
+                  <SelectItem value="WRITE">Lecture et modification</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                {permission === "READ"
+                  ? "Tous les utilisateurs pourront voir ce prompt mais ne pourront pas le modifier"
+                  : "Tous les utilisateurs pourront voir et modifier ce prompt"}
+              </p>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
             Annuler
           </Button>
-          <Button onClick={handleConfirm} disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {currentVisibility === "PRIVATE" ? "Partager" : "Modifier"}
-          </Button>
+          {currentVisibility === "SHARED" && (
+            <Button 
+              variant="destructive" 
+              onClick={async () => {
+                setIsLoading(true);
+                try {
+                  await onConfirm(permission);
+                  onOpenChange(false);
+                } finally {
+                  setIsLoading(false);
+                }
+              }} 
+              disabled={isLoading}
+            >
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Rendre privé
+            </Button>
+          )}
+          {currentVisibility === "PRIVATE" && (
+            <Button onClick={handleConfirm} disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Partager publiquement
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
