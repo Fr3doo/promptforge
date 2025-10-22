@@ -9,6 +9,7 @@ export interface PromptShareWithProfile extends PromptShare {
     id: string;
     email: string | null;
     name: string | null;
+    pseudo: string | null;
   };
 }
 
@@ -41,7 +42,7 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
     const userIds = sharesData.map(s => s.shared_with_user_id);
     const profilesResult = await supabase
       .from("profiles")
-      .select("id, email, name")
+      .select("id, email, name, pseudo")
       .in("id", userIds);
 
     handleSupabaseError(profilesResult);

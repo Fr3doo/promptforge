@@ -156,26 +156,27 @@ export const SharePromptDialog = ({
             <div className="space-y-2">
               <Label>Partagé avec</Label>
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {shares.map((share) => {
-                  const userEmail = share.shared_with_profile?.email || "Utilisateur inconnu";
-                  const userName = share.shared_with_profile?.name;
-                  
-                  return (
-                    <Card key={share.id} className="p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {userName || userEmail}
+              {shares.map((share) => {
+                const profile = share.shared_with_profile;
+                const displayName = profile?.pseudo || profile?.email || "Utilisateur inconnu";
+                const hasSecondaryInfo = profile?.pseudo && profile?.email;
+                
+                return (
+                  <Card key={share.id} className="p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {displayName}
+                        </p>
+                        {hasSecondaryInfo && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {profile.email}
                           </p>
-                          {userName && (
-                            <p className="text-xs text-muted-foreground truncate">
-                              {userEmail}
-                            </p>
-                          )}
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Partagé le {format(new Date(share.created_at), "d MMM yyyy", { locale: fr })}
-                          </p>
-                        </div>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Partagé le {format(new Date(share.created_at), "d MMM yyyy", { locale: fr })}
+                        </p>
+                      </div>
                         
                         <div className="flex items-center gap-2">
                           <Select
