@@ -39,7 +39,11 @@ describe('AnalysisRepository', () => {
           objectifs: ['Test objective'],
         },
         exports: {
-          json: {},
+          json: {
+            original: 'Template {{testVar}}',
+            version: '1.0',
+            created_at: new Date().toISOString(),
+          },
           markdown: '# Test',
         },
       };

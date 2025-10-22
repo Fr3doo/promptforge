@@ -88,6 +88,44 @@ saveVariables({
 | `v.options` | `options` | `\|\| []` |
 | `index` | `order_index` | Position dans le tableau |
 
+## Préservation du Contenu Original
+
+### Différence entre `prompt_template` et `original`
+
+| Champ | Description | Usage |
+|-------|-------------|-------|
+| `result.prompt_template` | Version restructurée par l'IA avec sections, formatage Markdown | Visualisation, export Markdown |
+| `result.exports.json.original` | Contenu brut original exact entré par l'utilisateur | **Sauvegarde en base de données** |
+
+### Pourquoi Sauvegarder `original` ?
+
+1. **Préservation Exacte** : Les sauts de ligne, indentations, et structure sont conservés tel quel
+2. **Pas de Reformulation** : L'IA ne modifie pas le texte original
+3. **Intégrité des Données** : L'utilisateur retrouve exactement ce qu'il a saisi
+
+### Exemple de Transformation
+
+**Contenu Original** :
+```
+Tu es un assistant.
+
+
+Ton rôle est {{role}}.
+  Ligne indentée
+```
+
+**Template Structuré (prompt_template)** :
+```
+# Rôle
+Tu es un assistant.
+
+# Instructions
+Ton rôle est {{role}}.
+Ligne indentée
+```
+
+**Ce qui est sauvegardé** : Le contenu original (avec les 3 sauts de ligne et l'indentation).
+
 **En cas d'échec** :
 - Toast d'erreur spécifique aux variables
 - Le prompt reste créé (pas de rollback)
@@ -211,6 +249,7 @@ Voir `src/components/__tests__/PromptAnalyzer.test.tsx` pour les tests couvrant 
 - ✅ Échec de création prompt
 - ✅ Échec de sauvegarde variables (continue quand même)
 - ✅ Échec de création version (continue quand même)
+- ✅ Préservation du contenu original (sauts de ligne, indentation)
 
 ## Références
 
@@ -224,6 +263,41 @@ Voir `src/components/__tests__/PromptAnalyzer.test.tsx` pour les tests couvrant 
 
 - **Edge Functions** :
   - `create-initial-version` : [`supabase/functions/create-initial-version/index.ts`](../supabase/functions/create-initial-version/index.ts)
+
+## Test Manuel de Vérification
+
+Pour vérifier la préservation du contenu original :
+
+1. **Créer un prompt de test** avec :
+   - Plusieurs sauts de ligne consécutifs (`\n\n\n`)
+   - Indentations (espaces en début de ligne)
+   - Variables inline (`Texte {{var}} suite`)
+
+**Exemple de prompt de test** :
+```
+Rôle : Tu es un {{role}}.
+
+
+Contexte : Voici le contexte.
+  Sous-point indenté
+
+Instructions :
+- Génère {{output}}
+- Respecte {{format}}
+
+Note : Texte avec {{var}} inline.
+```
+
+2. **Analyser** le prompt via l'Analyseur IA
+3. **Sauvegarder** le prompt
+4. **Vérifier** dans la base de données que `prompts.content` contient exactement le contenu original
+
+**Vérification SQL** :
+```sql
+SELECT content FROM prompts WHERE id = '<id_du_prompt_test>';
+```
+
+**Attendu** : Le contenu doit être identique au prompt de test, y compris les 3 sauts de ligne, l'indentation, et les variables inline.
 
 ## Améliorations Futures
 

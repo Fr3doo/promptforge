@@ -34,7 +34,11 @@ const mockAnalysisResult = {
     categories: ['test'],
   },
   exports: {
-    json: {},
+    json: {
+      version: '1.0',
+      created_at: new Date().toISOString(),
+      original: 'Template avec {{topic}}',
+    },
     markdown: '',
   },
 };
@@ -279,6 +283,44 @@ describe('PromptAnalyzer - Save Function', () => {
     await waitFor(() => {
       expect(mockSaveVariables).not.toHaveBeenCalled();
       expect(mockOnClose).not.toHaveBeenCalled();
+    });
+  });
+
+  it('should preserve original content with line breaks and indentation', async () => {
+    const originalPrompt = "Ligne 1\n\n\nLigne 4 (3 sauts)\n  Ligne indentée\n{{var1}}\n\nTexte {{var2}} inline";
+    
+    const resultWithOriginalContent = {
+      ...mockAnalysisResult,
+      prompt_template: "# Restructuré\nLigne 1\n\nLigne 4 (3 sauts)\nLigne indentée\n{{var1}}\n\nTexte {{var2}} inline",
+      exports: {
+        json: {
+          version: '1.0',
+          created_at: new Date().toISOString(),
+          original: originalPrompt,
+        },
+        markdown: '',
+      },
+    };
+
+    vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue({
+      result: resultWithOriginalContent,
+      isAnalyzing: false,
+      analyze: vi.fn(),
+      reset: vi.fn(),
+    });
+
+    render(<PromptAnalyzer onClose={mockOnClose} />);
+
+    const saveButton = screen.getByRole('button', { name: /sauvegarder/i });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(mockCreatePrompt).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: originalPrompt, // ✅ Doit être l'original, pas le template
+        }),
+        expect.any(Object)
+      );
     });
   });
 });

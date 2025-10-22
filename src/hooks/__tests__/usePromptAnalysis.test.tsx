@@ -33,7 +33,12 @@ describe('usePromptAnalysis', () => {
         criteres: ['Criterion 1'],
       },
       exports: { 
-        json: { test: 'data' }, 
+        json: { 
+          test: 'data',
+          original: 'Original prompt content',
+          version: '1.0',
+          created_at: new Date().toISOString(),
+        }, 
         markdown: '# Test\n\nContent here' 
       },
     };

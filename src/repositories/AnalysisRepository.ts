@@ -24,7 +24,12 @@ export interface AnalysisResult {
     categories?: string[];
   };
   exports: {
-    json: any;
+    json: {
+      version?: string;
+      created_at?: string;
+      original: string;
+      [key: string]: any;
+    };
     markdown: string;
   };
 }

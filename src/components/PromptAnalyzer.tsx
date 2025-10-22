@@ -66,7 +66,7 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
       
       const promptData = {
         title: result.metadata.objectifs?.[0] || "Prompt analysé",
-        content: result.prompt_template,
+        content: result.exports.json.original,
         description: description.trim(),
         tags: categories,
         is_favorite: false,
