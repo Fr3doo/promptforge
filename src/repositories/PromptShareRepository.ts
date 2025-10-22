@@ -15,6 +15,7 @@ export interface PromptShareWithProfile extends PromptShare {
 export interface PromptShareRepository {
   getShares(promptId: string): Promise<PromptShareWithProfile[]>;
   addShare(promptId: string, sharedWithUserId: string, permission: "READ" | "WRITE"): Promise<void>;
+  updateSharePermission(shareId: string, permission: "READ" | "WRITE"): Promise<void>;
   deleteShare(shareId: string): Promise<void>;
   getUserByEmail(email: string): Promise<{ id: string } | null>;
   isPromptOwner(promptId: string, userId: string): Promise<boolean>;
@@ -89,6 +90,35 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
         permission,
         shared_by: user.id,
       });
+
+    handleSupabaseError(result);
+  }
+
+  async updateSharePermission(shareId: string, permission: "READ" | "WRITE"): Promise<void> {
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error("SESSION_EXPIRED");
+    }
+
+    // Get share details
+    const share = await this.getShareById(shareId);
+    if (!share) {
+      throw new Error("SHARE_NOT_FOUND");
+    }
+
+    // Verify authorization: user must be either the share creator or the prompt owner
+    const isSharedBy = share.shared_by === user.id;
+    const isPromptOwner = await this.isPromptOwner(share.prompt_id, user.id);
+
+    if (!isSharedBy && !isPromptOwner) {
+      throw new Error("UNAUTHORIZED_UPDATE");
+    }
+
+    const result = await supabase
+      .from("prompt_shares")
+      .update({ permission })
+      .eq("id", shareId);
 
     handleSupabaseError(result);
   }

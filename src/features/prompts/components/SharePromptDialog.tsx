@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -16,9 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Trash2 } from "lucide-react";
-import { usePromptShares, useAddPromptShare, useDeletePromptShare } from "@/hooks/usePromptShares";
+import { Loader2, Trash2, Eye, Edit } from "lucide-react";
+import { usePromptShares, useAddPromptShare, useUpdatePromptShare, useDeletePromptShare } from "@/hooks/usePromptShares";
 import { useToastNotifier } from "@/hooks/useToastNotifier";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface SharePromptDialogProps {
   open: boolean;
@@ -40,6 +43,7 @@ export const SharePromptDialog = ({
   // Use hooks from the repository layer
   const { data: shares = [], isLoading: loadingShares, refetch } = usePromptShares(open ? promptId : undefined);
   const { mutate: addShare, isPending: isAdding } = useAddPromptShare(promptId);
+  const { mutate: updateShare } = useUpdatePromptShare(promptId);
   const { mutate: deleteShare } = useDeletePromptShare(promptId);
   const { notifySuccess, notifyError } = useToastNotifier();
 
@@ -96,10 +100,17 @@ export const SharePromptDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Partage Privé : "{promptTitle}"</DialogTitle>
+          <DialogTitle>
+            {shares.length === 0 
+              ? `Partage Privé : "${promptTitle}"`
+              : `Gérer le partage privé de "${promptTitle}"`
+            }
+          </DialogTitle>
           <DialogDescription>
-            Partagez ce prompt avec des utilisateurs spécifiques en lecture seule ou avec
-            droits de modification
+            {shares.length === 0
+              ? "Partagez ce prompt avec des utilisateurs spécifiques en lecture seule ou avec droits de modification"
+              : `${shares.length} utilisateur${shares.length > 1 ? 's ont' : ' a'} accès à ce prompt`
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -144,35 +155,68 @@ export const SharePromptDialog = ({
           ) : shares.length > 0 ? (
             <div className="space-y-2">
               <Label>Partagé avec</Label>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+              <div className="space-y-2 max-h-64 overflow-y-auto">
                 {shares.map((share) => {
-                  const userDisplay = share.shared_with_profile?.name || 
-                                     share.shared_with_profile?.email || 
-                                     share.shared_with_user_id;
+                  const userEmail = share.shared_with_profile?.email || "Utilisateur inconnu";
+                  const userName = share.shared_with_profile?.name;
                   
                   return (
-                    <div
-                      key={share.id}
-                      className="flex items-center justify-between p-2 border rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">
-                          {userDisplay}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {share.permission === "READ"
-                            ? "Lecture seule"
-                            : "Lecture et modification"}
-                        </p>
+                    <Card key={share.id} className="p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {userName || userEmail}
+                          </p>
+                          {userName && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              {userEmail}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Partagé le {format(new Date(share.created_at), "d MMM yyyy", { locale: fr })}
+                          </p>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={share.permission}
+                            onValueChange={(newPermission: "READ" | "WRITE") => {
+                              updateShare({ 
+                                shareId: share.id, 
+                                permission: newPermission 
+                              });
+                            }}
+                          >
+                            <SelectTrigger className="w-[180px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="READ">
+                                <div className="flex items-center gap-2">
+                                  <Eye className="h-4 w-4" />
+                                  Lecture seule
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="WRITE">
+                                <div className="flex items-center gap-2">
+                                  <Edit className="h-4 w-4" />
+                                  Lecture et modification
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteShare(share.id)}
+                            aria-label="Supprimer le partage"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteShare(share.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    </Card>
                   );
                 })}
               </div>

@@ -80,6 +80,33 @@ export function useAddPromptShare(promptId: string) {
   });
 }
 
+// Hook to update a share permission
+export function useUpdatePromptShare(promptId: string) {
+  const queryClient = useQueryClient();
+  const repository = usePromptShareRepository();
+
+  return useMutation({
+    mutationFn: async ({ shareId, permission }: { shareId: string; permission: "READ" | "WRITE" }) => {
+      await repository.updateSharePermission(shareId, permission);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["prompt-shares", promptId] });
+      successToast("Permission mise à jour", "Le niveau d'accès a été modifié avec succès");
+    },
+    onError: (error: any) => {
+      if (error.message === "SHARE_NOT_FOUND") {
+        errorToast("Partage introuvable", "Ce partage n'existe plus ou a déjà été supprimé");
+      } else if (error.message === "UNAUTHORIZED_UPDATE") {
+        errorToast("Action non autorisée", "Vous n'êtes pas autorisé à modifier ce partage");
+      } else if (error.message === "SESSION_EXPIRED") {
+        errorToast("Session expirée", "Votre session a expiré. Veuillez vous reconnecter.");
+      } else {
+        errorToast("Erreur", getSafeErrorMessage(error));
+      }
+    },
+  });
+}
+
 // Hook to delete a share
 export function useDeletePromptShare(promptId: string) {
   const queryClient = useQueryClient();
