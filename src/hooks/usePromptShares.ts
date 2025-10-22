@@ -49,7 +49,20 @@ export function useAddPromptShare(promptId: string) {
     },
     onError: (error: any) => {
       if (error.message === "USER_NOT_FOUND") {
-        errorToast("Utilisateur introuvable", "Aucun utilisateur trouvé avec cet email");
+        errorToast(
+          "Utilisateur introuvable", 
+          "Cet email n'est pas encore inscrit. Invitez cet utilisateur à créer un compte pour pouvoir partager avec lui."
+        );
+      } else if (error.message === "SELF_SHARE") {
+        errorToast(
+          "Partage impossible", 
+          "Vous ne pouvez pas partager un prompt avec vous-même"
+        );
+      } else if (error.message === "SESSION_EXPIRED") {
+        errorToast(
+          "Session expirée", 
+          "Votre session a expiré. Veuillez vous reconnecter."
+        );
       } else if (error.code === "23505") {
         errorToast("Déjà partagé", "Ce prompt est déjà partagé avec cet utilisateur");
       } else {

@@ -64,8 +64,15 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
 
   async addShare(promptId: string, sharedWithUserId: string, permission: "READ" | "WRITE"): Promise<void> {
     // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Non authentifié");
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error("SESSION_EXPIRED");
+    }
+
+    // Prevent sharing with oneself
+    if (sharedWithUserId === user.id) {
+      throw new Error("SELF_SHARE");
+    }
 
     const result = await supabase
       .from("prompt_shares")
