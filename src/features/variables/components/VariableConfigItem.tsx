@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trash2, GripVertical } from "lucide-react";
@@ -44,12 +45,12 @@ export const VariableConfigItem = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="STRING">Texte</SelectItem>
-              <SelectItem value="NUMBER">Nombre</SelectItem>
-              <SelectItem value="BOOLEAN">Boolean</SelectItem>
-              <SelectItem value="ENUM">Enum</SelectItem>
-              <SelectItem value="DATE">Date</SelectItem>
-              <SelectItem value="MULTISTRING">Multi-texte</SelectItem>
+              <SelectItem value="STRING">{messages.variables.typeLabels.STRING}</SelectItem>
+              <SelectItem value="NUMBER">{messages.variables.typeLabels.NUMBER}</SelectItem>
+              <SelectItem value="BOOLEAN">{messages.variables.typeLabels.BOOLEAN}</SelectItem>
+              <SelectItem value="ENUM">{messages.variables.typeLabels.ENUM}</SelectItem>
+              <SelectItem value="DATE">{messages.variables.typeLabels.DATE}</SelectItem>
+              <SelectItem value="MULTISTRING">{messages.variables.typeLabels.MULTISTRING}</SelectItem>
             </SelectContent>
           </Select>
           <Button
@@ -62,10 +63,24 @@ export const VariableConfigItem = ({
           </Button>
         </div>
 
+        {/* Required Switch */}
+        <div className="flex items-center justify-between">
+          <Label htmlFor={`required-${index}`} className="text-xs text-muted-foreground">
+            {messages.variables.requiredLabel}
+          </Label>
+          <Switch
+            id={`required-${index}`}
+            checked={variable.required || false}
+            onCheckedChange={(checked) =>
+              onUpdate(index, { ...variable, required: checked })
+            }
+          />
+        </div>
+
         {/* Default Value */}
         <div className="space-y-2">
           <Label htmlFor={`default-${index}`} className="text-xs text-muted-foreground">
-            Valeur par défaut
+            {messages.variables.defaultValueLabel}
           </Label>
           <Input
             id={`default-${index}`}
@@ -77,10 +92,26 @@ export const VariableConfigItem = ({
           />
         </div>
 
+        {/* Pattern */}
+        <div className="space-y-2">
+          <Label htmlFor={`pattern-${index}`} className="text-xs text-muted-foreground">
+            {messages.variables.patternLabel}
+          </Label>
+          <Input
+            id={`pattern-${index}`}
+            value={variable.pattern || ""}
+            onChange={(e) =>
+              onUpdate(index, { ...variable, pattern: e.target.value })
+            }
+            placeholder={messages.placeholders.variablePattern}
+            className="font-mono text-sm"
+          />
+        </div>
+
         {/* Help Text */}
         <div className="space-y-2">
           <Label htmlFor={`help-${index}`} className="text-xs text-muted-foreground">
-            Texte d'aide
+            {messages.variables.helpTextLabel}
           </Label>
           <Input
             id={`help-${index}`}

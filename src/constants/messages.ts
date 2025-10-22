@@ -45,6 +45,7 @@ export const messages = {
     variableName: "Nom de la variable",
     variableDefaultValue: "Valeur par défaut...",
     variableHelp: "Description ou aide pour cette variable...",
+    variablePattern: "Expression régulière (ex: ^[A-Z].*)",
     variableInput: (name: string) => `Entrez ${name}...`,
     search: "Rechercher des prompts...",
     searchByTitleDescriptionTags: "Rechercher par titre, description ou tags...",
@@ -483,6 +484,14 @@ export const messages = {
   variables: {
     emptyState: 'Aucune variable détectée. Utilisez le bouton "Détecter variables" ou ajoutez des variables manuellement avec la syntaxe',
     emptyStateWithInstructions: 'Commencez par ajouter des variables avec la syntaxe {{variable}} dans votre prompt, puis utilisez le bouton "Détecter variables".',
+    typeLabels: {
+      STRING: "Texte",
+      NUMBER: "Nombre",
+      BOOLEAN: "Boolean",
+      ENUM: "Enum",
+      DATE: "Date",
+      MULTISTRING: "Multi-texte",
+    },
     types: {
       string: "Texte",
       number: "Nombre",
@@ -491,6 +500,10 @@ export const messages = {
       date: "Date",
       multiString: "Multi-texte",
     },
+    requiredLabel: "Obligatoire",
+    defaultValueLabel: "Valeur par défaut",
+    helpTextLabel: "Texte d'aide",
+    patternLabel: "Pattern de validation",
   },
 
   // Prompt Actions Menu
