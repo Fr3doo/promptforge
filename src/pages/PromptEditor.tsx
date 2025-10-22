@@ -103,7 +103,7 @@ const PromptEditorPage = () => {
     content: form.content,
     description: form.description,
     tags: form.tags,
-    visibility: form.visibility,
+    visibility: "PRIVATE", // Valeur par défaut, non modifiable depuis l'éditeur
     enabled: isEditMode && !!id,
     interval: 30000, // 30 secondes
   });
@@ -172,8 +172,6 @@ const PromptEditorPage = () => {
           onTitleChange={form.setTitle}
           description={form.description}
           onDescriptionChange={form.setDescription}
-          visibility={form.visibility}
-          onVisibilityChange={form.setVisibility}
           tags={form.tags}
           tagInput={form.tagInput}
           onTagInputChange={form.setTagInput}

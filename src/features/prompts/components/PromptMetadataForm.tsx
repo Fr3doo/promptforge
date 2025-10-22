@@ -13,8 +13,6 @@ interface PromptMetadataFormProps {
   onTitleChange: (title: string) => void;
   description: string;
   onDescriptionChange: (description: string) => void;
-  visibility: "PRIVATE" | "SHARED";
-  onVisibilityChange: (visibility: "PRIVATE" | "SHARED") => void;
   tags: string[];
   tagInput: string;
   onTagInputChange: (input: string) => void;
@@ -29,8 +27,6 @@ export const PromptMetadataForm = ({
   onTitleChange,
   description,
   onDescriptionChange,
-  visibility,
-  onVisibilityChange,
   tags,
   tagInput,
   onTagInputChange,
@@ -107,29 +103,6 @@ export const PromptMetadataForm = ({
 
           {showAdvanced && (
             <div id="advanced-options" className="space-y-6 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="prompt-visibility">Visibilité</Label>
-                <Select value={visibility} onValueChange={(value: any) => onVisibilityChange(value)} disabled={disabled}>
-                  <SelectTrigger id="prompt-visibility" aria-label="Sélectionner la visibilité du prompt">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PRIVATE">
-                      <div className="flex items-center gap-2">
-                        <Lock className="h-4 w-4" aria-hidden="true" />
-                        <span>Privé - Visible uniquement par vous</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="SHARED">
-                      <div className="flex items-center gap-2">
-                        <Globe className="h-4 w-4" aria-hidden="true" />
-                        <span>Partagé - Visible par tous</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="prompt-tags">
                   Tags <span className="text-muted-foreground font-normal">(optionnel)</span>
