@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { messages } from "@/constants/messages";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -30,7 +31,7 @@ const Index = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse">Chargement...</div>
+        <div className="animate-pulse">{messages.marketing.loading}</div>
       </div>
     );
   }
@@ -46,19 +47,19 @@ const Index = () => {
           <div className="text-center max-w-3xl space-y-8">
             <div className="space-y-4 px-4">
               <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-                Gérez et optimisez vos prompts IA – dans un seul outil
+                {messages.marketing.hero.title}
               </h1>
               <p className="text-lg sm:text-xl text-muted-foreground">
-                Créez, versionnez, partagez vos prompts, et mesurez leur efficacité
+                {messages.marketing.hero.subtitle}
               </p>
               <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
-                Centralisez vos templates IA, automatisez vos workflows et collaborez en équipe avec un système de versioning professionnel
+                {messages.marketing.hero.description}
               </p>
             </div>
 
             <div className="flex gap-4 justify-center flex-wrap">
               <Button size="lg" onClick={() => navigate("/signup")} className="gap-2">
-                Commencer gratuitement
+                {messages.marketing.hero.cta}
               </Button>
             </div>
 
@@ -69,8 +70,8 @@ const Index = () => {
                   <div className="h-16 w-16 rounded-full bg-destructive/20 flex items-center justify-center mx-auto">
                     <FileText className="h-8 w-8 text-destructive" />
                   </div>
-                  <p className="font-semibold">Avant</p>
-                  <p className="text-sm text-muted-foreground">Prompts éparpillés, non versionnés</p>
+                  <p className="font-semibold">{messages.marketing.beforeAfter.before}</p>
+                  <p className="text-sm text-muted-foreground">{messages.marketing.beforeAfter.beforePoint1}</p>
                 </div>
                 <div className="flex justify-center">
                   <div className="h-0.5 w-12 bg-primary md:rotate-0 rotate-90" />
@@ -79,8 +80,8 @@ const Index = () => {
                   <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
                     <Code2 className="h-8 w-8 text-primary" />
                   </div>
-                  <p className="font-semibold">Après</p>
-                  <p className="text-sm text-muted-foreground">Bibliothèque centralisée et optimisée</p>
+                  <p className="font-semibold">{messages.marketing.beforeAfter.after}</p>
+                  <p className="text-sm text-muted-foreground">{messages.marketing.beforeAfter.afterPoint1}</p>
                 </div>
               </div>
             </div>
@@ -90,9 +91,9 @@ const Index = () => {
               <Card className="border-primary/20 hover:border-primary/40 transition-all">
                 <CardHeader>
                   <Zap className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle className="text-lg">Marketing</CardTitle>
+                  <CardTitle className="text-lg">{messages.marketing.useCases.marketing.title}</CardTitle>
                   <CardDescription>
-                    Générez des campagnes ciblées avec des templates personnalisables. Créez des variations A/B et suivez les performances.
+                    {messages.marketing.useCases.marketing.description}
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -100,9 +101,9 @@ const Index = () => {
               <Card className="border-primary/20 hover:border-primary/40 transition-all">
                 <CardHeader>
                   <GitBranch className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle className="text-lg">Développement</CardTitle>
+                  <CardTitle className="text-lg">{messages.marketing.useCases.development.title}</CardTitle>
                   <CardDescription>
-                    Automatisez vos prompts d'IA avec versioning SemVer. Intégrez dans vos workflows CI/CD et partagez avec l'équipe.
+                    {messages.marketing.useCases.development.description}
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -110,9 +111,9 @@ const Index = () => {
               <Card className="border-primary/20 hover:border-primary/40 transition-all">
                 <CardHeader>
                   <FileText className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle className="text-lg">Recherche</CardTitle>
+                  <CardTitle className="text-lg">{messages.marketing.useCases.research.title}</CardTitle>
                   <CardDescription>
-                    Centralisez vos templates de recherche. Exportez en JSON/Markdown et collaborez efficacement sur vos projets.
+                    {messages.marketing.useCases.research.description}
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -124,11 +125,11 @@ const Index = () => {
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <BookOpen className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">Ressources</CardTitle>
+                    <CardTitle className="text-lg">{messages.marketing.quickLinks.resources.title}</CardTitle>
                   </div>
                   <CardDescription>
-                    Guides et tutoriels sur le prompt engineering
-                    <span className="block mt-2 text-xs italic">(Connexion requise)</span>
+                    {messages.marketing.quickLinks.resources.description}
+                    <span className="block mt-2 text-xs italic">{messages.marketing.quickLinks.resources.descriptionWithAuth}</span>
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -137,11 +138,11 @@ const Index = () => {
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <Lightbulb className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">Méthodes</CardTitle>
+                    <CardTitle className="text-lg">{messages.marketing.quickLinks.methods.title}</CardTitle>
                   </div>
                   <CardDescription>
-                    12 techniques de prompting expliquées
-                    <span className="block mt-2 text-xs italic">(Connexion requise)</span>
+                    {messages.marketing.quickLinks.methods.description}
+                    <span className="block mt-2 text-xs italic">{messages.marketing.quickLinks.methods.descriptionWithAuth}</span>
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -150,11 +151,11 @@ const Index = () => {
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <HelpCircle className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">FAQ</CardTitle>
+                    <CardTitle className="text-lg">{messages.marketing.quickLinks.faq.title}</CardTitle>
                   </div>
                   <CardDescription>
-                    Réponses à vos questions fréquentes
-                    <span className="block mt-2 text-xs italic">(Connexion requise)</span>
+                    {messages.marketing.quickLinks.faq.description}
+                    <span className="block mt-2 text-xs italic">{messages.marketing.quickLinks.faq.descriptionWithAuth}</span>
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -175,9 +176,9 @@ const Index = () => {
       <main className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto space-y-8 px-4">
           <div className="text-center space-y-4">
-            <h1 className="text-3xl sm:text-4xl font-bold">Bienvenue, {profile?.pseudo || user.email}</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold">{messages.marketing.hero.welcomeBack(profile?.pseudo || user.email)}</h1>
             <p className="text-lg sm:text-xl text-muted-foreground">
-              Prêt à créer des prompts professionnels ?
+              {messages.marketing.hero.welcomeDescription}
             </p>
           </div>
 
@@ -186,10 +187,10 @@ const Index = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <LayoutDashboard className="h-5 w-5" />
-                  Tableau de bord
+                  {messages.marketing.quickLinks.dashboard.title}
                 </CardTitle>
                 <CardDescription>
-                  Vue d'ensemble et statistiques
+                  {messages.marketing.quickLinks.dashboard.description}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -198,10 +199,10 @@ const Index = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Code2 className="h-5 w-5" />
-                  Nouveau prompt
+                  {messages.marketing.quickLinks.newPrompt.title}
                 </CardTitle>
                 <CardDescription>
-                  Créez un prompt avec variables paramétrables
+                  {messages.marketing.quickLinks.newPrompt.description}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -210,10 +211,10 @@ const Index = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  Mes prompts
+                  {messages.marketing.quickLinks.myPrompts.title}
                 </CardTitle>
                 <CardDescription>
-                  Consultez et gérez tous vos prompts
+                  {messages.marketing.quickLinks.myPrompts.description}
                 </CardDescription>
               </CardHeader>
             </Card>

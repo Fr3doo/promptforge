@@ -109,8 +109,8 @@ export default function Settings() {
     const trimmedPseudo = pseudo.trim();
     if (trimmedPseudo.length < 2 || trimmedPseudo.length > 50) {
       toast({
-        title: "Erreur",
-        description: "Le pseudo doit contenir entre 2 et 50 caractères",
+        title: messages.labels.error,
+        description: messages.settings.profile.pseudoLengthError,
         variant: "destructive",
       });
       return;
@@ -118,8 +118,8 @@ export default function Settings() {
 
     if (!/^[a-zA-Z0-9_-]{2,50}$/.test(trimmedPseudo)) {
       toast({
-        title: "Erreur",
-        description: "Le pseudo ne peut contenir que des lettres, chiffres, tirets et underscores",
+        title: messages.labels.error,
+        description: messages.settings.profile.pseudoInvalidChars,
         variant: "destructive",
       });
       return;
@@ -135,22 +135,22 @@ export default function Settings() {
       if (error) {
         // Check for unique constraint violation
         if (error.code === '23505') {
-          throw new Error("Ce pseudo est déjà utilisé");
+          throw new Error(messages.settings.profile.pseudoAlreadyUsed);
         }
         throw error;
       }
       
       toast({
-        title: "Pseudo mis à jour",
-        description: "Votre pseudo a été modifié avec succès",
+        title: messages.settings.profile.pseudoUpdated,
+        description: messages.settings.profile.pseudoUpdatedDescription,
       });
 
       // Invalidate queries to refresh profile data across the app
       queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
     } catch (error) {
       toast({
-        title: "Erreur",
-        description: error instanceof Error ? error.message : "Impossible de mettre à jour le pseudo",
+        title: messages.labels.error,
+        description: error instanceof Error ? error.message : messages.settings.profile.pseudoUpdateError,
         variant: "destructive",
       });
     } finally {
@@ -161,8 +161,8 @@ export default function Settings() {
   return (
     <>
       <SEO
-        title="Paramètres - PromptForge"
-        description="Personnalisez votre expérience PromptForge"
+        title={messages.settings.pageTitle}
+        description={messages.settings.pageDescription}
       />
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
@@ -175,37 +175,37 @@ export default function Settings() {
               className="mb-4"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Retour
+              {messages.settings.backButton}
             </Button>
-            <h1 className="text-4xl font-bold mb-2">Paramètres</h1>
-            <p className="text-muted-foreground">Personnalisez votre expérience</p>
+            <h1 className="text-4xl font-bold mb-2">{messages.settings.title}</h1>
+            <p className="text-muted-foreground">{messages.settings.subtitle}</p>
           </div>
 
           <Tabs defaultValue="appearance" className="space-y-6">
             <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 gap-1 h-auto p-1">
               <TabsTrigger value="appearance" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
                 <Sun className="h-4 w-4 flex-shrink-0" />
-                <span className="hidden md:inline text-sm">Apparence</span>
+                <span className="hidden md:inline text-sm">{messages.settings.tabs.appearance}</span>
               </TabsTrigger>
               <TabsTrigger value="language" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
                 <Globe className="h-4 w-4 flex-shrink-0" />
-                <span className="hidden md:inline text-sm">Langue</span>
+                <span className="hidden md:inline text-sm">{messages.settings.tabs.language}</span>
               </TabsTrigger>
               <TabsTrigger value="notifications" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
                 <Bell className="h-4 w-4 flex-shrink-0" />
-                <span className="hidden md:inline text-sm">Notifications</span>
+                <span className="hidden md:inline text-sm">{messages.settings.tabs.notifications}</span>
               </TabsTrigger>
               <TabsTrigger value="data" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
                 <Database className="h-4 w-4 flex-shrink-0" />
-                <span className="hidden md:inline text-sm">Données</span>
+                <span className="hidden md:inline text-sm">{messages.settings.tabs.data}</span>
               </TabsTrigger>
               <TabsTrigger value="security" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
                 <Shield className="h-4 w-4 flex-shrink-0" />
-                <span className="hidden md:inline text-sm">Sécurité</span>
+                <span className="hidden md:inline text-sm">{messages.settings.tabs.security}</span>
               </TabsTrigger>
               <TabsTrigger value="about" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
                 <Info className="h-4 w-4 flex-shrink-0" />
-                <span className="hidden md:inline text-sm">À propos</span>
+                <span className="hidden md:inline text-sm">{messages.settings.tabs.about}</span>
               </TabsTrigger>
             </TabsList>
 
@@ -213,17 +213,17 @@ export default function Settings() {
             <TabsContent value="appearance">
               <Card className="max-w-3xl">
                 <CardHeader>
-                  <CardTitle>Apparence & Thème</CardTitle>
+                  <CardTitle>{messages.settings.appearance.title}</CardTitle>
                   <CardDescription>
-                    Personnalisez l'apparence de l'interface
+                    {messages.settings.appearance.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1 flex-1">
-                      <Label htmlFor="dark-mode">Mode sombre</Label>
+                      <Label htmlFor="dark-mode">{messages.settings.appearance.darkModeTitle}</Label>
                       <p className="text-sm text-muted-foreground">
-                        Activez le mode sombre pour réduire la fatigue oculaire
+                        {messages.settings.appearance.darkModeDescription}
                       </p>
                     </div>
                     <Switch
@@ -231,7 +231,7 @@ export default function Settings() {
                       checked={darkMode}
                       onCheckedChange={(checked) => {
                         setDarkMode(checked);
-                        handleSaveSetting("Mode sombre");
+                        handleSaveSetting(messages.settings.appearance.darkModeTitle);
                       }}
                       disabled={systemTheme}
                     />
@@ -241,9 +241,9 @@ export default function Settings() {
                   
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1 flex-1">
-                      <Label htmlFor="system-theme">Respecter les préférences système</Label>
+                      <Label htmlFor="system-theme">{messages.settings.appearance.systemThemeTitle}</Label>
                       <p className="text-sm text-muted-foreground">
-                        Utiliser le thème de votre système d'exploitation
+                        {messages.settings.appearance.systemThemeDescription}
                       </p>
                     </div>
                     <Switch
@@ -251,7 +251,7 @@ export default function Settings() {
                       checked={systemTheme}
                       onCheckedChange={(checked) => {
                         setSystemTheme(checked);
-                        handleSaveSetting("Préférences système");
+                        handleSaveSetting(messages.settings.appearance.systemThemeTitle);
                       }}
                     />
                   </div>
@@ -259,18 +259,18 @@ export default function Settings() {
                   <Separator />
                   
                   <div className="space-y-2">
-                    <Label htmlFor="font-size">Taille de la police</Label>
+                    <Label htmlFor="font-size">{messages.settings.appearance.fontSizeTitle}</Label>
                     <Select value={fontSize} onValueChange={(value) => {
                       setFontSize(value);
-                      handleSaveSetting("Taille de police");
+                      handleSaveSetting(messages.settings.appearance.fontSizeTitle);
                     }}>
                       <SelectTrigger id="font-size">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="small">Petite</SelectItem>
-                        <SelectItem value="medium">Moyenne</SelectItem>
-                        <SelectItem value="large">Grande</SelectItem>
+                        <SelectItem value="small">{messages.settings.appearance.fontSizeSmall}</SelectItem>
+                        <SelectItem value="medium">{messages.settings.appearance.fontSizeMedium}</SelectItem>
+                        <SelectItem value="large">{messages.settings.appearance.fontSizeLarge}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -278,14 +278,14 @@ export default function Settings() {
                   <Separator />
 
                   <div className="space-y-2">
-                    <Label htmlFor="pseudo">Pseudo</Label>
+                    <Label htmlFor="pseudo">{messages.settings.profile.pseudoLabel}</Label>
                     <div className="flex gap-2">
                       <Input
                         id="pseudo"
                         type="text"
                         value={pseudo}
                         onChange={(e) => setPseudo(e.target.value)}
-                        placeholder="Votre pseudo"
+                        placeholder={messages.placeholders.pseudoPlaceholder}
                         className="flex-1"
                         maxLength={50}
                       />
@@ -293,11 +293,11 @@ export default function Settings() {
                         onClick={handleUpdatePseudo}
                         disabled={isPseudoLoading || !pseudo.trim()}
                       >
-                        {isPseudoLoading ? "Sauvegarde..." : "Sauvegarder"}
+                        {isPseudoLoading ? messages.settings.profile.savingButton : messages.settings.profile.saveButton}
                       </Button>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Ce pseudo sera affiché à la place de votre adresse email
+                      {messages.settings.appearance.pseudoDisplayDescription}
                     </p>
                   </div>
                 </CardContent>
@@ -308,17 +308,17 @@ export default function Settings() {
             <TabsContent value="language">
               <Card className="max-w-3xl">
                 <CardHeader>
-                  <CardTitle>Langue & Région</CardTitle>
+                  <CardTitle>{messages.settings.language.title}</CardTitle>
                   <CardDescription>
-                    Choisissez la langue de l'interface utilisateur
+                    {messages.settings.language.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1 flex-1">
-                      <Label htmlFor="auto-language">Détection automatique de langue</Label>
+                      <Label htmlFor="auto-language">{messages.settings.language.autoDetectTitle}</Label>
                       <p className="text-sm text-muted-foreground">
-                        Détecter automatiquement la langue du navigateur
+                        {messages.settings.language.autoDetectDescription}
                       </p>
                     </div>
                     <Switch
@@ -326,7 +326,7 @@ export default function Settings() {
                       checked={autoDetectLanguage}
                       onCheckedChange={(checked) => {
                         setAutoDetectLanguage(checked);
-                        handleSaveSetting("Détection automatique");
+                        handleSaveSetting(messages.settings.language.autoDetectTitle);
                       }}
                     />
                   </div>
@@ -334,12 +334,12 @@ export default function Settings() {
                   <Separator />
                   
                   <div className="space-y-2">
-                    <Label htmlFor="language">Langue de l'interface</Label>
+                    <Label htmlFor="language">{messages.settings.language.interfaceLanguageTitle}</Label>
                     <Select 
                       value={language} 
                       onValueChange={(value) => {
                         setLanguage(value);
-                        handleSaveSetting("Langue");
+                        handleSaveSetting(messages.settings.language.interfaceLanguageTitle);
                       }}
                       disabled={autoDetectLanguage}
                     >
@@ -347,14 +347,14 @@ export default function Settings() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="fr">Français</SelectItem>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="es">Español</SelectItem>
-                        <SelectItem value="de">Deutsch</SelectItem>
+                        <SelectItem value="fr">{messages.settings.language.french}</SelectItem>
+                        <SelectItem value="en">{messages.settings.language.english}</SelectItem>
+                        <SelectItem value="es">{messages.settings.language.spanish}</SelectItem>
+                        <SelectItem value="de">{messages.settings.language.german}</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-sm text-muted-foreground">
-                      Les modifications seront appliquées après actualisation
+                      {messages.settings.language.changesAppliedAfterReload}
                     </p>
                   </div>
                 </CardContent>
@@ -365,17 +365,17 @@ export default function Settings() {
             <TabsContent value="notifications">
               <Card className="max-w-3xl">
                 <CardHeader>
-                  <CardTitle>Notifications</CardTitle>
+                  <CardTitle>{messages.settings.notifications.title}</CardTitle>
                   <CardDescription>
-                    Gérez vos préférences de notifications
+                    {messages.settings.notifications.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1 flex-1">
-                      <Label htmlFor="notifications">Activer les notifications</Label>
+                      <Label htmlFor="notifications">{messages.settings.notifications.enableTitle}</Label>
                       <p className="text-sm text-muted-foreground">
-                        Recevoir des notifications sur l'activité de votre compte
+                        {messages.settings.notifications.enableDescription}
                       </p>
                     </div>
                     <Switch
@@ -383,7 +383,7 @@ export default function Settings() {
                       checked={notificationsEnabled}
                       onCheckedChange={(checked) => {
                         setNotificationsEnabled(checked);
-                        handleSaveSetting("Notifications");
+                        handleSaveSetting(messages.settings.notifications.enableTitle);
                       }}
                     />
                   </div>
@@ -392,9 +392,9 @@ export default function Settings() {
                   
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1 flex-1">
-                      <Label htmlFor="email-notifications">Notifications par email</Label>
+                      <Label htmlFor="email-notifications">{messages.settings.notifications.emailNotificationsTitle}</Label>
                       <p className="text-sm text-muted-foreground">
-                        Vous recevrez un e-mail lors de mises à jour importantes
+                        {messages.settings.notifications.emailNotificationsDescription}
                       </p>
                     </div>
                     <Switch
@@ -402,7 +402,7 @@ export default function Settings() {
                       checked={emailNotifications}
                       onCheckedChange={(checked) => {
                         setEmailNotifications(checked);
-                        handleSaveSetting("Notifications email");
+                        handleSaveSetting(messages.settings.notifications.emailNotificationsTitle);
                       }}
                       disabled={!notificationsEnabled}
                     />
@@ -412,9 +412,9 @@ export default function Settings() {
                   
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1 flex-1">
-                      <Label htmlFor="app-notifications">Notifications dans l'application</Label>
+                      <Label htmlFor="app-notifications">{messages.settings.notifications.appNotificationsTitle}</Label>
                       <p className="text-sm text-muted-foreground">
-                        Afficher les notifications directement dans l'interface
+                        {messages.settings.notifications.appNotificationsDescription}
                       </p>
                     </div>
                     <Switch
@@ -422,7 +422,7 @@ export default function Settings() {
                       checked={inAppNotifications}
                       onCheckedChange={(checked) => {
                         setInAppNotifications(checked);
-                        handleSaveSetting("Notifications in-app");
+                        handleSaveSetting(messages.settings.notifications.appNotificationsTitle);
                       }}
                       disabled={!notificationsEnabled}
                     />
@@ -435,17 +435,17 @@ export default function Settings() {
             <TabsContent value="data">
               <Card className="max-w-3xl">
                 <CardHeader>
-                  <CardTitle>Données & Historique</CardTitle>
+                  <CardTitle>{messages.settings.data.title}</CardTitle>
                   <CardDescription>
-                    Gérez vos données et votre historique
+                    {messages.settings.data.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1 flex-1">
-                      <Label htmlFor="auto-save">Sauvegarde automatique des versions</Label>
+                      <Label htmlFor="auto-save">{messages.settings.data.autoSaveVersionsTitle}</Label>
                       <p className="text-sm text-muted-foreground">
-                        Enregistrer automatiquement les versions de vos prompts
+                        {messages.settings.data.autoSaveVersionsDescription}
                       </p>
                     </div>
                     <Switch
@@ -453,7 +453,7 @@ export default function Settings() {
                       checked={autoSaveVersions}
                       onCheckedChange={(checked) => {
                         setAutoSaveVersions(checked);
-                        handleSaveSetting("Sauvegarde automatique");
+                        handleSaveSetting(messages.settings.data.autoSaveVersionsTitle);
                       }}
                     />
                   </div>
@@ -461,10 +461,10 @@ export default function Settings() {
                   <Separator />
                   
                   <div className="space-y-2">
-                    <Label htmlFor="versions-keep">Nombre de versions conservées</Label>
+                    <Label htmlFor="versions-keep">{messages.settings.data.versionsToKeepTitle}</Label>
                     <Select value={versionsToKeep} onValueChange={(value) => {
                       setVersionsToKeep(value);
-                      handleSaveSetting("Versions conservées");
+                      handleSaveSetting(messages.settings.data.versionsToKeepTitle);
                     }}>
                       <SelectTrigger id="versions-keep">
                         <SelectValue />
@@ -487,7 +487,7 @@ export default function Settings() {
                       onClick={handleExportData}
                     >
                       <Download className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">Exporter mes données</span>
+                      <span className="truncate">{messages.settings.data.exportTitle}</span>
                     </Button>
                     
                     <Button
@@ -496,7 +496,7 @@ export default function Settings() {
                       onClick={handleClearHistory}
                     >
                       <Trash2 className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">Effacer l'historique</span>
+                      <span className="truncate">{messages.settings.data.clearHistoryTitle}</span>
                     </Button>
                   </div>
                 </CardContent>
@@ -507,14 +507,14 @@ export default function Settings() {
             <TabsContent value="security">
               <Card className="max-w-3xl">
                 <CardHeader>
-                  <CardTitle>Sécurité & Compte</CardTitle>
+                  <CardTitle>{messages.settings.security.title}</CardTitle>
                   <CardDescription>
-                    Gérez la sécurité de votre compte
+                    {messages.settings.security.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
-                    <Label>Adresse e-mail</Label>
+                    <Label>{messages.settings.security.emailLabel}</Label>
                     <p className="text-sm font-mono bg-muted p-2 rounded">
                       {user?.email || "Non connecté"}
                     </p>
@@ -529,7 +529,7 @@ export default function Settings() {
                       onClick={() => toast({ title: messages.info.featureComingSoon })}
                     >
                       <Shield className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">Changer le mot de passe</span>
+                      <span className="truncate">{messages.settings.security.changePasswordButton}</span>
                     </Button>
                     
                     <Button
@@ -538,7 +538,7 @@ export default function Settings() {
                       onClick={() => toast({ title: messages.info.featureComingSoon })}
                     >
                       <Shield className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">Activer 2FA</span>
+                      <span className="truncate">{messages.settings.security.twoFactorButton}</span>
                     </Button>
                     
                     <Button
@@ -547,7 +547,7 @@ export default function Settings() {
                       onClick={handleSignOut}
                     >
                       <LogOut className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">Déconnexion</span>
+                      <span className="truncate">{messages.settings.security.signOutButton}</span>
                     </Button>
                   </div>
                   
@@ -564,10 +564,10 @@ export default function Settings() {
                       })}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Supprimer mon compte
+                      {messages.settings.data.deleteAccountTitle}
                     </Button>
                     <p className="text-xs text-muted-foreground mt-2 text-center">
-                      Cette action est irréversible. Toutes vos données seront supprimées.
+                      {messages.settings.data.deleteAccountDescription}
                     </p>
                   </div>
                 </CardContent>
@@ -578,15 +578,15 @@ export default function Settings() {
             <TabsContent value="about">
               <Card className="max-w-3xl">
                 <CardHeader>
-                  <CardTitle>À propos</CardTitle>
+                  <CardTitle>{messages.settings.about.title}</CardTitle>
                   <CardDescription>
-                    Informations sur l'application
+                    {messages.settings.about.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
-                    <Label>Version de l'application</Label>
-                    <p className="text-sm text-muted-foreground">v1.0.0</p>
+                    <Label>{messages.settings.about.versionTitle}</Label>
+                    <p className="text-sm text-muted-foreground">{messages.settings.about.versionNumber}</p>
                   </div>
                   
                   <Separator />
@@ -598,7 +598,7 @@ export default function Settings() {
                       onClick={() => navigate("/faq")}
                     >
                       <Info className="mr-2 h-4 w-4" />
-                      Aide & FAQ
+                      {messages.settings.about.viewFaqButton}
                     </Button>
                     
                     <Button
