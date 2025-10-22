@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useToastNotifier } from "@/hooks/useToastNotifier";
 import { useVariableDetection } from "@/hooks/useVariableDetection";
 import { messages } from "@/constants/messages";
@@ -9,6 +9,11 @@ interface UseVariableManagerOptions {
   initialVariables?: Variable[];
 }
 
+/**
+ * Hook to manage variables in a prompt
+ * Handles detection, creation, update, and deletion of variables
+ * Automatically synchronizes variables with content changes
+ */
 export function useVariableManager({ content, initialVariables = [] }: UseVariableManagerOptions) {
   const [variables, setVariables] = useState<Variable[]>(initialVariables);
   const { detectedNames } = useVariableDetection(content);
@@ -31,7 +36,11 @@ export function useVariableManager({ content, initialVariables = [] }: UseVariab
     }
   }, [detectedNames]);
 
-  const addVariablesFromContent = () => {
+  /**
+   * Detects and adds new variables from content
+   * Shows success notification with count of added variables
+   */
+  const addVariablesFromContent = useCallback(() => {
     const newVariables = detectedNames
       .filter(name => !variables.some(v => v.name === name))
       .map((name, index) => ({
@@ -51,22 +60,38 @@ export function useVariableManager({ content, initialVariables = [] }: UseVariab
     } else {
       notifyInfo(messages.info.noNewVariables);
     }
-  };
+  }, [detectedNames, variables, notifySuccess, notifyInfo]);
 
-  const updateVariable = (index: number, variable: Variable) => {
+  /**
+   * Updates a variable at a specific index
+   */
+  const updateVariable = useCallback((index: number, variable: Variable) => {
     const newVars = [...variables];
     newVars[index] = variable;
     setVariables(newVars);
-  };
+  }, [variables]);
 
-  const deleteVariable = (index: number) => {
+  /**
+   * Deletes a variable at a specific index
+   */
+  const deleteVariable = useCallback((index: number) => {
     setVariables(variables.filter((_, i) => i !== index));
-  };
+  }, [variables]);
+
+  /**
+   * Checks if there are undetected variables in content
+   */
+  const hasUndetectedVariables = useCallback(() => {
+    return detectedNames.some(name => !variables.some(v => v.name === name));
+  }, [detectedNames, variables]);
 
   return {
     variables,
+    setVariables,
+    detectedNames,
     addVariablesFromContent,
     updateVariable,
     deleteVariable,
+    hasUndetectedVariables,
   };
 }
