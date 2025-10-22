@@ -234,9 +234,16 @@ export function useUpdatePublicPermission() {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
       successToast("Niveau d'accès mis à jour");
     },
-    onError: (err, variables, context) => {
+    onError: (err: any, variables, context) => {
       queryClient.setQueryData(["prompts"], context?.previous);
-      errorToast(messages.labels.error, getSafeErrorMessage(err));
+      if (err.message === "PERMISSION_UPDATE_ON_PRIVATE_PROMPT") {
+        errorToast(
+          "Action impossible",
+          "Impossible de modifier le niveau d'accès d'un prompt privé. Activez d'abord le partage public."
+        );
+      } else {
+        errorToast(messages.labels.error, getSafeErrorMessage(err));
+      }
     },
   });
 }
