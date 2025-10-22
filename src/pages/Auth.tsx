@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,54 +13,28 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
 const Auth = () => {
-  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [pseudo, setPseudo] = useState("");
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const mode = searchParams.get("mode");
-    if (mode === "signup") {
-      setIsSignUp(true);
-    }
-  }, [searchParams]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Validate input
       const validatedData = authSchema.parse({
         email,
         password,
-        name: isSignUp ? (pseudo || email) : undefined,
       });
 
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email: validatedData.email,
-          password: validatedData.password,
-          options: {
-            data: { pseudo: validatedData.name || validatedData.email },
-            emailRedirectTo: `${window.location.origin}/`,
-          },
-        });
-        if (error) throw error;
-        toast.success("Compte créé avec succès !");
-        navigate("/");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: validatedData.email,
-          password: validatedData.password,
-        });
-        if (error) throw error;
-        toast.success("Connexion réussie !");
-        navigate("/");
-      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email: validatedData.email,
+        password: validatedData.password,
+      });
+      if (error) throw error;
+      toast.success("Connexion réussie !");
+      navigate("/");
     } catch (error: any) {
       toast.error(getSafeErrorMessage(error));
     } finally {
@@ -81,29 +55,14 @@ const Auth = () => {
             </div>
           </div>
           <CardTitle className="text-2xl text-center">
-            {isSignUp ? "Créer un compte" : "Connexion"}
+            Connexion
           </CardTitle>
           <CardDescription className="text-center">
-            {isSignUp
-              ? "Commencez à gérer vos prompts professionnellement"
-              : "Accédez à vos prompts"}
+            Accédez à vos prompts
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
-            {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="pseudo">Pseudo</Label>
-                <Input
-                  id="pseudo"
-                  type="text"
-                  placeholder="Votre pseudo"
-                  value={pseudo}
-                  onChange={(e) => setPseudo(e.target.value)}
-                  required={isSignUp}
-                />
-              </div>
-            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -129,19 +88,16 @@ const Auth = () => {
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSignUp ? "Créer mon compte" : "Se connecter"}
+              Se connecter
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
+            <Link
+              to="/signup"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              {isSignUp
-                ? "Déjà un compte ? Se connecter"
-                : "Pas de compte ? Créer un compte"}
-            </button>
+              Pas de compte ? Créer un compte
+            </Link>
           </div>
         </CardContent>
       </Card>
