@@ -30,15 +30,18 @@ export function useAddPromptShare(promptId: string) {
       email: string;
       permission: "READ" | "WRITE";
     }) => {
+      // Normaliser l'email : trim + lowercase pour cohérence avec la RPC
+      const normalizedEmail = email.trim().toLowerCase();
+      
       // Get user ID from email
-      const userData = await repository.getUserByEmail(email);
+      const userData = await repository.getUserByEmail(normalizedEmail);
       if (!userData) {
         throw new Error("USER_NOT_FOUND");
       }
 
       // Create share
       await repository.addShare(promptId, userData.id, permission);
-      return { email, permission };
+      return { email: normalizedEmail, permission };
     },
     onSuccess: ({ email, permission }) => {
       queryClient.invalidateQueries({ queryKey: ["prompt-shares", promptId] });
