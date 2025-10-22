@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -16,17 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Trash2 } from "lucide-react";
-import type { Tables } from "@/integrations/supabase/types";
-
-type PromptShare = Tables<"prompt_shares"> & {
-  shared_with_profile?: {
-    email: string | null;
-    name: string | null;
-  };
-};
+import { usePromptShares, useAddPromptShare, useDeletePromptShare } from "@/hooks/usePromptShares";
 
 interface SharePromptDialogProps {
   open: boolean;
@@ -43,157 +34,41 @@ export const SharePromptDialog = ({
 }: SharePromptDialogProps) => {
   const [email, setEmail] = useState("");
   const [permission, setPermission] = useState<"READ" | "WRITE">("READ");
-  const [isLoading, setIsLoading] = useState(false);
-  const [shares, setShares] = useState<PromptShare[]>([]);
-  const [loadingShares, setLoadingShares] = useState(false);
-  const { toast } = useToast();
 
-  const loadShares = async () => {
-    setLoadingShares(true);
-    try {
-      const { data: sharesData, error } = await supabase
-        .from("prompt_shares")
-        .select("*")
-        .eq("prompt_id", promptId);
+  // Use hooks from the repository layer
+  const { data: shares = [], isLoading: loadingShares, refetch } = usePromptShares(open ? promptId : undefined);
+  const { mutate: addShare, isPending: isAdding } = useAddPromptShare(promptId);
+  const { mutate: deleteShare } = useDeletePromptShare(promptId);
 
-      if (error) throw error;
-      
-      // Fetch profiles for each shared user
-      if (sharesData && sharesData.length > 0) {
-        const userIds = sharesData.map(s => s.shared_with_user_id);
-        const { data: profilesData } = await supabase
-          .from("profiles")
-          .select("id, email, name")
-          .in("id", userIds);
-
-        // Merge profiles with shares
-        const sharesWithProfiles = sharesData.map(share => ({
-          ...share,
-          shared_with_profile: profilesData?.find(p => p.id === share.shared_with_user_id)
-        }));
-        
-        setShares(sharesWithProfiles);
-      } else {
-        setShares([]);
-      }
-    } catch (error) {
-      console.error("Error loading shares:", error);
-    } finally {
-      setLoadingShares(false);
+  // Refetch shares when dialog opens
+  useEffect(() => {
+    if (open) {
+      refetch();
     }
-  };
+  }, [open, refetch]);
 
-  const handleShare = async () => {
+  const handleShare = () => {
     if (!email.trim()) {
-      toast({
-        title: "Email requis",
-        description: "Veuillez saisir une adresse email",
-        variant: "destructive",
-      });
       return;
     }
 
-    setIsLoading(true);
-    try {
-      // Get user ID from email
-      const { data: userData, error: userError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("email", email)
-        .maybeSingle();
-
-      if (userError) throw userError;
-      if (!userData) {
-        toast({
-          title: "Utilisateur introuvable",
-          description: "Aucun utilisateur trouvé avec cet email",
-          variant: "destructive",
-        });
-        return;
+    addShare(
+      { email, permission },
+      {
+        onSuccess: () => {
+          setEmail("");
+          setPermission("READ");
+        },
       }
-
-      // Get current user
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Non authentifié");
-
-      // Create share
-      const { error: shareError } = await supabase
-        .from("prompt_shares")
-        .insert({
-          prompt_id: promptId,
-          shared_with_user_id: userData.id,
-          permission,
-          shared_by: user.id,
-        });
-
-      if (shareError) {
-        if (shareError.code === "23505") {
-          toast({
-            title: "Déjà partagé",
-            description: "Ce prompt est déjà partagé avec cet utilisateur",
-            variant: "destructive",
-          });
-          return;
-        }
-        throw shareError;
-      }
-
-      toast({
-        title: "Prompt partagé",
-        description: `Le prompt a été partagé avec ${email} en ${permission === "READ" ? "lecture seule" : "lecture/écriture"}`,
-      });
-
-      setEmail("");
-      setPermission("READ");
-      await loadShares();
-    } catch (error) {
-      console.error("Error sharing prompt:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de partager le prompt",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    );
   };
 
-  const handleDeleteShare = async (shareId: string) => {
-    try {
-      const { error } = await supabase
-        .from("prompt_shares")
-        .delete()
-        .eq("id", shareId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Partage supprimé",
-        description: "L'accès au prompt a été retiré",
-      });
-
-      await loadShares();
-    } catch (error) {
-      console.error("Error deleting share:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le partage",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleOpenChange = async (newOpen: boolean) => {
-    onOpenChange(newOpen);
-    if (newOpen) {
-      await loadShares();
-    }
+  const handleDeleteShare = (shareId: string) => {
+    deleteShare(shareId);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Partager "{promptTitle}"</DialogTitle>
@@ -231,8 +106,8 @@ export const SharePromptDialog = ({
             </Select>
           </div>
 
-          <Button onClick={handleShare} disabled={isLoading} className="w-full">
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button onClick={handleShare} disabled={isAdding || !email.trim()} className="w-full">
+            {isAdding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Partager
           </Button>
 
