@@ -21,7 +21,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Trash2 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
-type PromptShare = Tables<"prompt_shares">;
+type PromptShare = Tables<"prompt_shares"> & {
+  shared_with_profile?: {
+    email: string | null;
+    name: string | null;
+  };
+};
 
 interface SharePromptDialogProps {
   open: boolean;
@@ -46,13 +51,31 @@ export const SharePromptDialog = ({
   const loadShares = async () => {
     setLoadingShares(true);
     try {
-      const { data, error } = await supabase
+      const { data: sharesData, error } = await supabase
         .from("prompt_shares")
         .select("*")
         .eq("prompt_id", promptId);
 
       if (error) throw error;
-      setShares(data || []);
+      
+      // Fetch profiles for each shared user
+      if (sharesData && sharesData.length > 0) {
+        const userIds = sharesData.map(s => s.shared_with_user_id);
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, email, name")
+          .in("id", userIds);
+
+        // Merge profiles with shares
+        const sharesWithProfiles = sharesData.map(share => ({
+          ...share,
+          shared_with_profile: profilesData?.find(p => p.id === share.shared_with_user_id)
+        }));
+        
+        setShares(sharesWithProfiles);
+      } else {
+        setShares([]);
+      }
     } catch (error) {
       console.error("Error loading shares:", error);
     } finally {
@@ -222,30 +245,36 @@ export const SharePromptDialog = ({
             <div className="space-y-2">
               <Label>Partagé avec</Label>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {shares.map((share) => (
-                  <div
-                    key={share.id}
-                    className="flex items-center justify-between p-2 border rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        {share.shared_with_user_id}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {share.permission === "READ"
-                          ? "Lecture seule"
-                          : "Lecture et modification"}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteShare(share.id)}
+                {shares.map((share) => {
+                  const userDisplay = share.shared_with_profile?.name || 
+                                     share.shared_with_profile?.email || 
+                                     share.shared_with_user_id;
+                  
+                  return (
+                    <div
+                      key={share.id}
+                      className="flex items-center justify-between p-2 border rounded-lg"
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">
+                          {userDisplay}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {share.permission === "READ"
+                            ? "Lecture seule"
+                            : "Lecture et modification"}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteShare(share.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : null}
