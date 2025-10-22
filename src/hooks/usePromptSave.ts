@@ -13,6 +13,7 @@ import { toast } from "sonner";
 interface UsePromptSaveOptions {
   isEditMode: boolean;
   onSuccess?: () => void;
+  promptId?: string;
 }
 
 interface PromptSaveData {
@@ -24,7 +25,7 @@ interface PromptSaveData {
   variables: Variable[];
 }
 
-export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSaveOptions & { promptId?: string } = { isEditMode: false }) {
+export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSaveOptions = { isEditMode: false }) {
   const navigate = useNavigate();
   const { notifyError } = useToastNotifier();
   

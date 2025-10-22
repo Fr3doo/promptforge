@@ -8,7 +8,6 @@ interface UseAutoSaveOptions {
   content: string;
   description: string;
   tags: string[];
-  visibility: "PRIVATE" | "SHARED";
   enabled: boolean;
   interval?: number; // millisecondes, default 30000 (30 secondes)
 }
@@ -19,18 +18,17 @@ export function useAutoSave({
   content,
   description,
   tags,
-  visibility,
   enabled,
   interval = 30000,
 }: UseAutoSaveOptions) {
   const { mutate: updatePrompt } = useUpdatePrompt();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const dataRef = useRef({ title, content, description, tags, visibility });
+  const dataRef = useRef({ title, content, description, tags });
 
   // Met à jour les refs à chaque changement
   useEffect(() => {
-    dataRef.current = { title, content, description, tags, visibility };
-  }, [title, content, description, tags, visibility]);
+    dataRef.current = { title, content, description, tags };
+  }, [title, content, description, tags]);
 
   useEffect(() => {
     if (!enabled || !promptId || !title.trim()) {
@@ -55,7 +53,6 @@ export function useAutoSave({
             content: data.content,
             description: data.description || null,
             tags: data.tags,
-            visibility: data.visibility,
             status: "DRAFT", // Marquer comme brouillon lors de l'auto-save
           },
         }, {

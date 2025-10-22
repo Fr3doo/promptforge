@@ -20,7 +20,6 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode, canE
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
-  const [visibility, setVisibility] = useState<"PRIVATE" | "SHARED">("PRIVATE");
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
   
   // Tag management
@@ -38,7 +37,6 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode, canE
       setTitle(prompt.title);
       setDescription(prompt.description || "");
       setContent(prompt.content);
-      setVisibility(prompt.visibility || "PRIVATE");
       setTags(prompt.tags || []);
     }
   }, [prompt]);
@@ -68,7 +66,7 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode, canE
       description,
       content,
       tags,
-      visibility,
+      visibility: "PRIVATE",
       variables,
     }, promptId);
   };
