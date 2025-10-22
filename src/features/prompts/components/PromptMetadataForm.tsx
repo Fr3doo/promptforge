@@ -20,6 +20,11 @@ interface PromptMetadataFormProps {
   onRemoveTag: (tag: string) => void;
   isEditMode?: boolean;
   disabled?: boolean;
+  errors?: {
+    title?: string;
+    description?: string;
+    tags?: string;
+  };
 }
 
 export const PromptMetadataForm = ({
@@ -34,6 +39,7 @@ export const PromptMetadataForm = ({
   onRemoveTag,
   isEditMode = false,
   disabled = false,
+  errors = {},
 }: PromptMetadataFormProps) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -63,10 +69,16 @@ export const PromptMetadataForm = ({
             placeholder="Ex: Résumé d'articles de blog"
             required
             aria-required="true"
-            aria-invalid={!title}
-            aria-describedby="title-help"
+            aria-invalid={!!errors.title}
+            aria-describedby={errors.title ? "title-error title-help" : "title-help"}
             disabled={disabled}
+            className={errors.title ? "border-destructive" : ""}
           />
+          {errors.title && (
+            <p id="title-error" className="text-sm text-destructive" role="alert">
+              {errors.title}
+            </p>
+          )}
           <p id="title-help" className="text-xs text-muted-foreground">Donnez un nom clair et descriptif à votre prompt</p>
         </div>
 
@@ -80,10 +92,16 @@ export const PromptMetadataForm = ({
             value={description}
             onChange={(e) => onDescriptionChange(e.target.value)}
             placeholder="Décrivez l'objectif et le contexte d'utilisation de ce prompt"
-            className="min-h-[80px]"
-            aria-describedby="description-help"
+            className={`min-h-[80px] ${errors.description ? "border-destructive" : ""}`}
+            aria-describedby={errors.description ? "description-error description-help" : "description-help"}
+            aria-invalid={!!errors.description}
             disabled={disabled}
           />
+          {errors.description && (
+            <p id="description-error" className="text-sm text-destructive" role="alert">
+              {errors.description}
+            </p>
+          )}
           <p id="description-help" className="text-xs text-muted-foreground">Ajoutez des détails pour retrouver facilement ce prompt plus tard</p>
         </div>
 
@@ -133,7 +151,15 @@ export const PromptMetadataForm = ({
                     Ajouter
                   </Button>
                 </div>
-                <p id="tags-help" className="text-xs text-muted-foreground">Organisez vos prompts avec des mots-clés. Appuyez sur Entrée pour ajouter.</p>
+                <p id="tags-help" className="text-xs text-muted-foreground">
+                  Organisez vos prompts avec des mots-clés. Appuyez sur Entrée pour ajouter.
+                  {tags.length > 0 && ` (${tags.length}/20)`}
+                </p>
+                {errors.tags && (
+                  <p className="text-sm text-destructive" role="alert">
+                    {errors.tags}
+                  </p>
+                )}
                 {tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2" role="list" aria-label="Tags sélectionnés">
                     {tags.map((tag) => (
@@ -143,6 +169,7 @@ export const PromptMetadataForm = ({
                           onClick={() => onRemoveTag(tag)}
                           className="ml-1 hover:text-destructive focus:outline-none focus:ring-2 focus:ring-destructive rounded"
                           aria-label={`Retirer le tag ${tag}`}
+                          disabled={disabled}
                         >
                           <X className="h-3 w-3" aria-hidden="true" />
                         </button>

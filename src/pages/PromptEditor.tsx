@@ -166,7 +166,8 @@ const PromptEditorPage = () => {
                 isLoading={form.isSaving}
                 loadingText="Enregistrement..."
                 className="gap-2"
-                disabled={!canEdit || hasConflict}
+                disabled={!canEdit || hasConflict || !form.isFormValid}
+                title={!form.isFormValid ? "Veuillez corriger les erreurs avant d'enregistrer" : ""}
               >
                 Enregistrer
               </LoadingButton>
@@ -198,6 +199,11 @@ const PromptEditorPage = () => {
           onRemoveTag={form.removeTag}
           isEditMode={isEditMode}
           disabled={!canEdit}
+          errors={{
+            title: form.validationErrors.title,
+            description: form.validationErrors.description,
+            tags: form.validationErrors.tags,
+          }}
         />
 
         {/* Tabs for Editor, Variables, and Versions */}
@@ -218,6 +224,9 @@ const PromptEditorPage = () => {
               onVariableUpdate={form.updateVariable}
               onVariableDelete={form.deleteVariable}
               disabled={!canEdit}
+              errors={{
+                content: form.validationErrors.content,
+              }}
             />
           </TabsContent>
 

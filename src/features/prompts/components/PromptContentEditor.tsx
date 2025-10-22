@@ -16,6 +16,9 @@ interface PromptContentEditorProps {
   onVariableUpdate: (index: number, variable: Variable) => void;
   onVariableDelete: (index: number) => void;
   disabled?: boolean;
+  errors?: {
+    content?: string;
+  };
 }
 
 export const PromptContentEditor = ({
@@ -28,6 +31,7 @@ export const PromptContentEditor = ({
   onVariableUpdate,
   onVariableDelete,
   disabled = false,
+  errors = {},
 }: PromptContentEditorProps) => {
   const [isVariablesOpen, setIsVariablesOpen] = useState(false);
 
@@ -75,18 +79,25 @@ export const PromptContentEditor = ({
             <br />
             <span className="text-xs">Exemple : "Résume cet article sur {'{{sujet}}'} en {'{{nombre_mots}}'} mots"</span>
           </p>
+          {errors.content && (
+            <p className="text-sm text-destructive" role="alert">
+              {errors.content}
+            </p>
+          )}
         </div>
-        <PromptEditor
-          content={content}
-          onChange={onContentChange}
-          onDetectVariables={onDetectVariables}
-          variables={variables}
-          variableValues={variableValues}
-          onVariableValueChange={(name, value) => 
-            onVariableValuesChange({ ...variableValues, [name]: value })
-          }
-          disabled={disabled}
-        />
+        <div className={errors.content ? "ring-2 ring-destructive rounded-md" : ""}>
+          <PromptEditor
+            content={content}
+            onChange={onContentChange}
+            onDetectVariables={onDetectVariables}
+            variables={variables}
+            variableValues={variableValues}
+            onVariableValueChange={(name, value) => 
+              onVariableValuesChange({ ...variableValues, [name]: value })
+            }
+            disabled={disabled}
+          />
+        </div>
       </div>
     </>
   );
