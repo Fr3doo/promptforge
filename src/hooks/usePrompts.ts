@@ -182,7 +182,10 @@ export function useToggleVisibility() {
     onMutate: async ({ id, currentVisibility, publicPermission }) => {
       await queryClient.cancelQueries({ queryKey: ["prompts"] });
       const previous = queryClient.getQueryData(["prompts"]);
-      const newVisibility = currentVisibility === "PRIVATE" ? "SHARED" : "PRIVATE";
+      const isPermissionOnlyUpdate = currentVisibility === "SHARED" && !!publicPermission;
+      const newVisibility = isPermissionOnlyUpdate 
+        ? "SHARED" 
+        : (currentVisibility === "PRIVATE" ? "SHARED" : "PRIVATE");
       
       queryClient.setQueryData(["prompts"], (old: Prompt[] | undefined) =>
         old ? old.map(p => p.id === id ? { 
