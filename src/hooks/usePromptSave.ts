@@ -4,9 +4,9 @@ import { promptSchema, variableSchema } from "@/lib/validation";
 import { messages } from "@/constants/messages";
 import { useCreatePrompt, useUpdatePrompt, usePrompt } from "@/hooks/usePrompts";
 import { useBulkUpsertVariables } from "@/hooks/useVariables";
-import { useCreateVersion } from "@/hooks/useVersions";
 import { useOptimisticLocking, type OptimisticLockError } from "@/hooks/useOptimisticLocking";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import type { PromptFormData, Variable } from "@/features/prompts/types";
 import { toast } from "sonner";
 
@@ -40,7 +40,6 @@ export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSave
   const { mutate: createPrompt, isPending: creating } = useCreatePrompt();
   const { mutate: updatePrompt, isPending: updating } = useUpdatePrompt();
   const { mutate: saveVariables } = useBulkUpsertVariables();
-  const { mutate: createInitialVersion } = useCreateVersion();
   const { checkForConflicts } = useOptimisticLocking();
   const { data: currentServerPrompt } = usePrompt(promptId);
   const { user } = useAuth();
@@ -157,40 +156,58 @@ export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSave
           status: "PUBLISHED",
           public_permission: "READ" as const,
         }, {
-          onSuccess: (newPrompt) => {
+          onSuccess: async (newPrompt) => {
             // Sauvegarder les variables d'abord
             handleVariableSave(newPrompt.id);
             
-            // Créer automatiquement la version initiale
-            createInitialVersion({
-              prompt_id: newPrompt.id,
-              content: newPrompt.content,
-              semver: "1.0.0",
-              message: "Version initiale",
-              variables: validatedVariables.map((v, index) => ({
-                name: v.name,
-                type: v.type,
-                required: v.required,
-                default_value: v.default_value || "",
-                help: v.help || "",
-                pattern: v.pattern || "",
-                options: v.options || [],
-                order_index: index,
-              })),
-            }, {
-              onSuccess: () => {
-                notifyPromptCreated(promptData.title);
-                onSuccess?.();
-                navigate(`/prompts?justCreated=${newPrompt.id}`);
-              },
-              onError: (error) => {
-                console.error("Erreur création version initiale:", error);
-                // Version initiale échouée mais le prompt est créé
-                notifyPromptCreated(promptData.title);
-                onSuccess?.();
-                navigate(`/prompts?justCreated=${newPrompt.id}`);
+            // Créer automatiquement la version initiale via edge function
+            // pour une meilleure gestion d'erreur et atomicité
+            try {
+              const { data: versionData, error: versionError } = await supabase.functions.invoke(
+                'create-initial-version',
+                {
+                  body: {
+                    prompt_id: newPrompt.id,
+                    content: newPrompt.content,
+                    semver: "1.0.0",
+                    message: "Version initiale",
+                    variables: validatedVariables.map((v, index) => ({
+                      name: v.name,
+                      type: v.type,
+                      required: v.required,
+                      default_value: v.default_value || "",
+                      help: v.help || "",
+                      pattern: v.pattern || "",
+                      options: v.options || [],
+                      order_index: index,
+                    })),
+                  }
+                }
+              );
+
+              if (versionError) {
+                console.error("Erreur création version initiale via edge function:", versionError);
+                // Ne pas bloquer l'utilisateur, juste notifier
+                toast.warning("Prompt créé", {
+                  description: "La version initiale n'a pas pu être créée. Vous pouvez créer une version manuellement.",
+                });
+              } else if (versionData?.skipped) {
+                console.log("Version initiale déjà existante");
+              } else {
+                console.log("Version initiale créée avec succès");
               }
-            });
+            } catch (error) {
+              console.error("Erreur lors de l'appel à create-initial-version:", error);
+              // Ne pas bloquer l'utilisateur
+              toast.warning("Prompt créé", {
+                description: "La version initiale n'a pas pu être créée. Vous pouvez créer une version manuellement.",
+              });
+            } finally {
+              // Toujours naviguer vers la liste, même en cas d'échec de version
+              notifyPromptCreated(promptData.title);
+              onSuccess?.();
+              navigate(`/prompts?justCreated=${newPrompt.id}`);
+            }
           },
           onError: (error: any) => {
             // Check error type for better messaging
