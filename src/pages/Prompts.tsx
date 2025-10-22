@@ -35,8 +35,8 @@ const Prompts = () => {
     });
   };
 
-  const handleToggleVisibility = (id: string, currentVisibility: "PRIVATE" | "SHARED") => {
-    toggleVisibility({ id, currentVisibility });
+  const handleToggleVisibility = async (id: string, currentVisibility: "PRIVATE" | "SHARED", permission: "READ" | "WRITE") => {
+    await toggleVisibility({ id, currentVisibility, publicPermission: permission });
   };
 
   if (!authLoading && !user) {

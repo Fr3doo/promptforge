@@ -169,15 +169,28 @@ export function useToggleVisibility() {
   const repository = usePromptRepository();
   
   return useMutation({
-    mutationFn: ({ id, currentVisibility }: { id: string; currentVisibility: "PRIVATE" | "SHARED" }) =>
-      repository.toggleVisibility(id, currentVisibility),
-    onMutate: async ({ id, currentVisibility }) => {
+    mutationFn: ({ 
+      id, 
+      currentVisibility, 
+      publicPermission 
+    }: { 
+      id: string; 
+      currentVisibility: "PRIVATE" | "SHARED";
+      publicPermission?: "READ" | "WRITE";
+    }) =>
+      repository.toggleVisibility(id, currentVisibility, publicPermission),
+    onMutate: async ({ id, currentVisibility, publicPermission }) => {
       await queryClient.cancelQueries({ queryKey: ["prompts"] });
       const previous = queryClient.getQueryData(["prompts"]);
       const newVisibility = currentVisibility === "PRIVATE" ? "SHARED" : "PRIVATE";
       
       queryClient.setQueryData(["prompts"], (old: Prompt[] | undefined) =>
-        old ? old.map(p => p.id === id ? { ...p, visibility: newVisibility, status: "PUBLISHED" as const } : p) : old
+        old ? old.map(p => p.id === id ? { 
+          ...p, 
+          visibility: newVisibility, 
+          status: "PUBLISHED" as const,
+          public_permission: publicPermission || p.public_permission 
+        } : p) : old
       );
       
       return { previous };

@@ -14,7 +14,7 @@ export interface PromptRepository {
   delete(id: string): Promise<void>;
   duplicate(userId: string, promptId: string, variableRepository: VariableRepository): Promise<Prompt>;
   toggleFavorite(id: string, currentState: boolean): Promise<void>;
-  toggleVisibility(id: string, currentVisibility: "PRIVATE" | "SHARED"): Promise<"PRIVATE" | "SHARED">;
+  toggleVisibility(id: string, currentVisibility: "PRIVATE" | "SHARED", publicPermission?: "READ" | "WRITE"): Promise<"PRIVATE" | "SHARED">;
 }
 
 export class SupabasePromptRepository implements PromptRepository {
@@ -163,15 +163,30 @@ export class SupabasePromptRepository implements PromptRepository {
     handleSupabaseError(result);
   }
 
-  async toggleVisibility(id: string, currentVisibility: "PRIVATE" | "SHARED"): Promise<"PRIVATE" | "SHARED"> {
+  async toggleVisibility(
+    id: string, 
+    currentVisibility: "PRIVATE" | "SHARED",
+    publicPermission?: "READ" | "WRITE"
+  ): Promise<"PRIVATE" | "SHARED"> {
     const newVisibility = currentVisibility === "PRIVATE" ? "SHARED" : "PRIVATE";
+    
+    const updateData: { 
+      visibility: "PRIVATE" | "SHARED"; 
+      status: "PUBLISHED";
+      public_permission?: "READ" | "WRITE";
+    } = {
+      visibility: newVisibility,
+      status: "PUBLISHED"
+    };
+
+    // Si on partage publiquement, on peut spécifier la permission
+    if (newVisibility === "SHARED" && publicPermission) {
+      updateData.public_permission = publicPermission;
+    }
     
     const result = await supabase
       .from("prompts")
-      .update({ 
-        visibility: newVisibility,
-        status: "PUBLISHED"
-      })
+      .update(updateData)
       .eq("id", id);
     
     handleSupabaseError(result);

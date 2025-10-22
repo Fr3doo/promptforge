@@ -125,6 +125,7 @@ export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSave
           is_favorite: false,
           version: "1.0.0",
           status: "PUBLISHED",
+          public_permission: "READ" as const,
         }, {
           onSuccess: (newPrompt) => {
             // Sauvegarder les variables d'abord

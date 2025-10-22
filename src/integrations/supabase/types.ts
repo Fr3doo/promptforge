@@ -119,6 +119,7 @@ export type Database = {
           id: string
           is_favorite: boolean | null
           owner_id: string
+          public_permission: Database["public"]["Enums"]["sharing_permission"]
           status: Database["public"]["Enums"]["prompt_status"] | null
           tags: string[] | null
           title: string
@@ -133,6 +134,7 @@ export type Database = {
           id?: string
           is_favorite?: boolean | null
           owner_id: string
+          public_permission?: Database["public"]["Enums"]["sharing_permission"]
           status?: Database["public"]["Enums"]["prompt_status"] | null
           tags?: string[] | null
           title: string
@@ -147,6 +149,7 @@ export type Database = {
           id?: string
           is_favorite?: boolean | null
           owner_id?: string
+          public_permission?: Database["public"]["Enums"]["sharing_permission"]
           status?: Database["public"]["Enums"]["prompt_status"] | null
           tags?: string[] | null
           title?: string

@@ -66,6 +66,7 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
         version: "1.0.0",
         visibility: "PRIVATE",
         status: "PUBLISHED",
+        public_permission: "READ" as const,
       },
       {
         onSuccess: () => {

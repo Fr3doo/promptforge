@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDashboard } from "@/hooks/useDashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PromptCard } from "@/features/prompts/components/PromptCard";
-import { useToggleFavorite } from "@/hooks/usePrompts";
+import { useToggleFavorite, useToggleVisibility } from "@/hooks/usePrompts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, Star, Share2, Clock } from "lucide-react";
 import { Header } from "@/components/Header";
@@ -14,6 +14,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { data: dashboardData, isLoading } = useDashboard();
   const { mutate: toggleFavorite } = useToggleFavorite();
+  const { mutateAsync: toggleVisibility } = useToggleVisibility();
 
   if (!authLoading && !user) {
     navigate("/auth");
@@ -99,7 +100,11 @@ const Dashboard = () => {
                   onToggleFavorite={(id, currentState) =>
                     toggleFavorite({ id, currentState })
                   }
+                  onToggleVisibility={async (id, currentVisibility, permission) => {
+                    await toggleVisibility({ id, currentVisibility, publicPermission: permission });
+                  }}
                   onClick={() => navigate(`/prompts/${prompt.id}`)}
+                  currentUserId={user?.id}
                 />
               ))}
             </div>
@@ -121,7 +126,11 @@ const Dashboard = () => {
                   onToggleFavorite={(id, currentState) =>
                     toggleFavorite({ id, currentState })
                   }
+                  onToggleVisibility={async (id, currentVisibility, permission) => {
+                    await toggleVisibility({ id, currentVisibility, publicPermission: permission });
+                  }}
                   onClick={() => navigate(`/prompts/${prompt.id}`)}
+                  currentUserId={user?.id}
                 />
               ))}
             </div>
@@ -143,7 +152,11 @@ const Dashboard = () => {
                   onToggleFavorite={(id, currentState) =>
                     toggleFavorite({ id, currentState })
                   }
+                  onToggleVisibility={async (id, currentVisibility, permission) => {
+                    await toggleVisibility({ id, currentVisibility, publicPermission: permission });
+                  }}
                   onClick={() => navigate(`/prompts/${prompt.id}`)}
+                  currentUserId={user?.id}
                 />
               ))}
             </div>

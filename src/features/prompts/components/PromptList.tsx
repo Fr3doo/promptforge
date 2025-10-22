@@ -11,7 +11,7 @@ interface PromptListProps {
   onToggleFavorite: (id: string, currentState: boolean) => void;
   onDelete?: (id: string) => void;
   onDuplicate?: (id: string) => void;
-  onToggleVisibility?: (id: string, currentVisibility: "PRIVATE" | "SHARED") => void;
+  onToggleVisibility?: (id: string, currentVisibility: "PRIVATE" | "SHARED", permission: "READ" | "WRITE") => Promise<void>;
   emptySearchState?: boolean;
   searchQuery?: string;
   currentUserId?: string;

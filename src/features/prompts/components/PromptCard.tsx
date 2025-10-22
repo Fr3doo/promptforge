@@ -17,6 +17,7 @@ import { FavoriteButton } from "./FavoriteButton";
 import { VisibilityBadge } from "./VisibilityBadge";
 import { PromptActionsMenu } from "./PromptActionsMenu";
 import { SharePromptDialog } from "./SharePromptDialog";
+import { PublicShareDialog } from "./PublicShareDialog";
 import type { Prompt } from "../types";
 
 interface PromptCardProps {
@@ -24,7 +25,7 @@ interface PromptCardProps {
   onToggleFavorite: (id: string, currentState: boolean) => void;
   onDelete?: (id: string) => void;
   onDuplicate?: (id: string) => void;
-  onToggleVisibility?: (id: string, currentVisibility: "PRIVATE" | "SHARED") => void;
+  onToggleVisibility?: (id: string, currentVisibility: "PRIVATE" | "SHARED", permission: "READ" | "WRITE") => Promise<void>;
   onClick: () => void;
   index?: number;
   currentUserId?: string;
@@ -42,6 +43,7 @@ export const PromptCard = ({
 }: PromptCardProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [publicShareDialogOpen, setPublicShareDialogOpen] = useState(false);
   const isOwner = currentUserId && prompt.owner_id === currentUserId;
   const isDraft = prompt.status === "DRAFT";
   const isShared = prompt.visibility === "SHARED";
@@ -50,6 +52,12 @@ export const PromptCard = ({
     if (onDelete) {
       onDelete(prompt.id);
       setShowDeleteDialog(false);
+    }
+  };
+
+  const handleToggleVisibility = async (permission: "READ" | "WRITE") => {
+    if (onToggleVisibility) {
+      await onToggleVisibility(prompt.id, prompt.visibility, permission);
     }
   };
 
@@ -91,7 +99,7 @@ export const PromptCard = ({
                     onEdit={onClick}
                     onDuplicate={onDuplicate ? () => onDuplicate(prompt.id) : undefined}
                     onManageSharing={() => setShowShareDialog(true)}
-                    onToggleVisibility={onToggleVisibility ? () => onToggleVisibility(prompt.id, prompt.visibility) : undefined}
+                    onToggleVisibility={onToggleVisibility ? () => setPublicShareDialogOpen(true) : undefined}
                     onDelete={() => setShowDeleteDialog(true)}
                   />
                 )}
@@ -132,6 +140,15 @@ export const PromptCard = ({
         onOpenChange={setShowShareDialog}
         promptId={prompt.id}
         promptTitle={prompt.title}
+      />
+
+      <PublicShareDialog
+        open={publicShareDialogOpen}
+        onOpenChange={setPublicShareDialogOpen}
+        promptTitle={prompt.title}
+        currentVisibility={prompt.visibility}
+        currentPermission={prompt.public_permission}
+        onConfirm={handleToggleVisibility}
       />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
