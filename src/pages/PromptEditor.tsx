@@ -108,7 +108,7 @@ const PromptEditorPage = () => {
     : null;
 
   // Avertissement de navigation non enregistrée
-  const { blocker } = useUnsavedChangesWarning({
+  const { confirmNavigation } = useUnsavedChangesWarning({
     hasUnsavedChanges: form.hasUnsavedChanges && !form.isSaving,
   });
 
@@ -145,7 +145,11 @@ const PromptEditorPage = () => {
       <div className="border-b border-border bg-card sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
-            <LoadingButton variant="ghost" onClick={() => navigate("/prompts")} className="gap-2">
+            <LoadingButton 
+              variant="ghost" 
+              onClick={() => confirmNavigation(() => navigate("/prompts"))} 
+              className="gap-2"
+            >
               <ArrowLeft className="h-4 w-4" />
               Retour
             </LoadingButton>
@@ -259,29 +263,6 @@ const PromptEditorPage = () => {
           </TabsContent>
         </Tabs>
       </main>
-
-      {/* Navigation Blocker Dialog */}
-      {blocker.state === "blocked" && (
-        <AlertDialog open={true}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Modifications non enregistrées</AlertDialogTitle>
-              <AlertDialogDescription>
-                Vous avez des modifications non enregistrées. Voulez-vous vraiment quitter cette page ?
-                Vos modifications seront perdues.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => blocker.reset?.()}>
-                Annuler
-              </AlertDialogCancel>
-              <AlertDialogAction onClick={() => blocker.proceed?.()}>
-                Quitter sans enregistrer
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
 
       {/* Diff Dialog */}
       {selectedVersion && (

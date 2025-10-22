@@ -1,5 +1,4 @@
 import { useEffect, useCallback } from "react";
-import { useBlocker } from "react-router-dom";
 
 interface UseUnsavedChangesWarningOptions {
   hasUnsavedChanges: boolean;
@@ -10,19 +9,13 @@ const DEFAULT_MESSAGE = "Vous avez des modifications non enregistrées. Voulez-v
 
 /**
  * Hook pour avertir l'utilisateur avant de quitter la page avec des modifications non enregistrées
- * Gère à la fois la fermeture du navigateur et la navigation interne (React Router)
+ * Gère à la fois la fermeture du navigateur et la navigation interne via confirmation
  */
 export function useUnsavedChangesWarning({
   hasUnsavedChanges,
   message = DEFAULT_MESSAGE,
 }: UseUnsavedChangesWarningOptions) {
   
-  // Bloquer la navigation interne React Router
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      hasUnsavedChanges && currentLocation.pathname !== nextLocation.pathname
-  );
-
   // Gérer la fermeture du navigateur / refresh
   const handleBeforeUnload = useCallback((e: BeforeUnloadEvent) => {
     if (hasUnsavedChanges) {
@@ -40,8 +33,20 @@ export function useUnsavedChangesWarning({
     };
   }, [handleBeforeUnload]);
 
+  // Pour la navigation interne : retourner une fonction de confirmation
+  const confirmNavigation = useCallback((callback: () => void) => {
+    if (hasUnsavedChanges) {
+      if (window.confirm(message)) {
+        callback();
+      }
+    } else {
+      callback();
+    }
+  }, [hasUnsavedChanges, message]);
+
   return {
-    blocker,
     hasUnsavedChanges,
+    shouldBlockNavigation: hasUnsavedChanges,
+    confirmNavigation,
   };
 }
