@@ -636,20 +636,20 @@ describe("usePromptForm - Integration Tests", () => {
         await result.current.handleSave();
       });
 
-      expect(mockSavePrompt).toHaveBeenCalledWith(
-        {
-          title: "Complete Prompt",
-          description: "Full description",
-          content: "Hello {{name}}, you are {{age}} years old",
-          visibility: "SHARED",
-          tags: ["react", "typescript"],
-          variables: expect.arrayContaining([
-            expect.objectContaining({ name: "name" }),
-            expect.objectContaining({ name: "age" }),
-          ]),
-        },
-        undefined
-      );
+    expect(mockSavePrompt).toHaveBeenCalledWith(
+      {
+        title: "Complete Prompt",
+        description: "Full description",
+        content: "Hello {{name}}, you are {{age}} years old",
+        visibility: "PRIVATE",
+        tags: ["react", "typescript"],
+        variables: expect.arrayContaining([
+          expect.objectContaining({ name: "name" }),
+          expect.objectContaining({ name: "age" }),
+        ]),
+      },
+      undefined
+    );
     });
   });
 
