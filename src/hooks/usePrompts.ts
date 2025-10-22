@@ -182,10 +182,7 @@ export function useToggleVisibility() {
     onMutate: async ({ id, currentVisibility, publicPermission }) => {
       await queryClient.cancelQueries({ queryKey: ["prompts"] });
       const previous = queryClient.getQueryData(["prompts"]);
-      const isPermissionOnlyUpdate = currentVisibility === "SHARED" && !!publicPermission;
-      const newVisibility = isPermissionOnlyUpdate 
-        ? "SHARED" 
-        : (currentVisibility === "PRIVATE" ? "SHARED" : "PRIVATE");
+      const newVisibility = currentVisibility === "PRIVATE" ? "SHARED" : "PRIVATE";
       
       queryClient.setQueryData(["prompts"], (old: Prompt[] | undefined) =>
         old ? old.map(p => p.id === id ? { 
@@ -193,8 +190,8 @@ export function useToggleVisibility() {
           visibility: newVisibility,
           // Only force PUBLISHED when going public, preserve status when returning to private
           ...(newVisibility === "SHARED" ? { status: "PUBLISHED" as const } : {}),
-          // Reset public_permission to null when going private, update it otherwise
-          public_permission: newVisibility === "PRIVATE" ? null : (publicPermission || p.public_permission)
+          // When going SHARED, set permission (fallback to READ); when PRIVATE, keep existing
+          public_permission: newVisibility === "SHARED" ? (publicPermission || "READ") : p.public_permission
         } : p) : old
       );
       
@@ -207,6 +204,35 @@ export function useToggleVisibility() {
       } else {
         successToast(messages.success.promptPrivate);
       }
+    },
+    onError: (err, variables, context) => {
+      queryClient.setQueryData(["prompts"], context?.previous);
+      errorToast(messages.labels.error, getSafeErrorMessage(err));
+    },
+  });
+}
+
+// Hook pour mettre à jour uniquement le niveau de permission publique
+export function useUpdatePublicPermission() {
+  const queryClient = useQueryClient();
+  const repository = usePromptRepository();
+  
+  return useMutation({
+    mutationFn: ({ id, permission }: { id: string; permission: "READ" | "WRITE" }) =>
+      repository.updatePublicPermission(id, permission),
+    onMutate: async ({ id, permission }) => {
+      await queryClient.cancelQueries({ queryKey: ["prompts"] });
+      const previous = queryClient.getQueryData(["prompts"]);
+      
+      queryClient.setQueryData(["prompts"], (old: Prompt[] | undefined) =>
+        old ? old.map(p => p.id === id ? { ...p, public_permission: permission } : p) : old
+      );
+      
+      return { previous };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["prompts"] });
+      successToast("Niveau d'accès mis à jour");
     },
     onError: (err, variables, context) => {
       queryClient.setQueryData(["prompts"], context?.previous);

@@ -101,7 +101,11 @@ const Dashboard = () => {
                     toggleFavorite({ id, currentState })
                   }
                   onToggleVisibility={async (id, currentVisibility, permission) => {
-                    await toggleVisibility({ id, currentVisibility, publicPermission: permission });
+                    if (permission !== undefined) {
+                      await toggleVisibility({ id, currentVisibility, publicPermission: permission });
+                    } else {
+                      await toggleVisibility({ id, currentVisibility });
+                    }
                   }}
                   onClick={() => navigate(`/prompts/${prompt.id}`)}
                   currentUserId={user?.id}
@@ -127,7 +131,11 @@ const Dashboard = () => {
                     toggleFavorite({ id, currentState })
                   }
                   onToggleVisibility={async (id, currentVisibility, permission) => {
-                    await toggleVisibility({ id, currentVisibility, publicPermission: permission });
+                    if (permission !== undefined) {
+                      await toggleVisibility({ id, currentVisibility, publicPermission: permission });
+                    } else {
+                      await toggleVisibility({ id, currentVisibility });
+                    }
                   }}
                   onClick={() => navigate(`/prompts/${prompt.id}`)}
                   currentUserId={user?.id}
@@ -153,7 +161,11 @@ const Dashboard = () => {
                     toggleFavorite({ id, currentState })
                   }
                   onToggleVisibility={async (id, currentVisibility, permission) => {
-                    await toggleVisibility({ id, currentVisibility, publicPermission: permission });
+                    if (permission !== undefined) {
+                      await toggleVisibility({ id, currentVisibility, publicPermission: permission });
+                    } else {
+                      await toggleVisibility({ id, currentVisibility });
+                    }
                   }}
                   onClick={() => navigate(`/prompts/${prompt.id}`)}
                   currentUserId={user?.id}

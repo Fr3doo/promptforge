@@ -25,6 +25,7 @@ interface PublicShareDialogProps {
   currentVisibility: "PRIVATE" | "SHARED";
   currentPermission: "READ" | "WRITE";
   onConfirm: (permission?: "READ" | "WRITE") => Promise<void>;
+  onUpdatePermission?: (permission: "READ" | "WRITE") => Promise<void>;
 }
 
 export const PublicShareDialog = ({
@@ -34,6 +35,7 @@ export const PublicShareDialog = ({
   currentVisibility,
   currentPermission,
   onConfirm,
+  onUpdatePermission,
 }: PublicShareDialogProps) => {
   const [permission, setPermission] = useState<"READ" | "WRITE">(currentPermission);
   const [isLoading, setIsLoading] = useState(false);
@@ -119,22 +121,41 @@ export const PublicShareDialog = ({
             Annuler
           </Button>
           {currentVisibility === "SHARED" && (
-            <Button 
-              variant="destructive" 
-              onClick={async () => {
-                setIsLoading(true);
-                try {
-                  await onConfirm(); // Ne pas passer de permission pour forcer le toggle vers PRIVATE
-                  onOpenChange(false);
-                } finally {
-                  setIsLoading(false);
-                }
-              }} 
-              disabled={isLoading}
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Rendre privé
-            </Button>
+            <>
+              {onUpdatePermission && (
+                <Button 
+                  onClick={async () => {
+                    setIsLoading(true);
+                    try {
+                      await onUpdatePermission(permission);
+                      onOpenChange(false);
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }} 
+                  disabled={isLoading || permission === currentPermission}
+                >
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Mettre à jour
+                </Button>
+              )}
+              <Button 
+                variant="destructive" 
+                onClick={async () => {
+                  setIsLoading(true);
+                  try {
+                    await onConfirm(); // Ne pas passer de permission pour forcer le toggle vers PRIVATE
+                    onOpenChange(false);
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }} 
+                disabled={isLoading}
+              >
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Rendre privé
+              </Button>
+            </>
           )}
           {currentVisibility === "PRIVATE" && (
             <Button onClick={handleConfirm} disabled={isLoading}>

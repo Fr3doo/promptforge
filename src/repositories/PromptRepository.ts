@@ -15,6 +15,7 @@ export interface PromptRepository {
   duplicate(userId: string, promptId: string, variableRepository: VariableRepository): Promise<Prompt>;
   toggleFavorite(id: string, currentState: boolean): Promise<void>;
   toggleVisibility(id: string, currentVisibility: "PRIVATE" | "SHARED", publicPermission?: "READ" | "WRITE"): Promise<"PRIVATE" | "SHARED">;
+  updatePublicPermission(id: string, permission: "READ" | "WRITE"): Promise<void>;
 }
 
 export class SupabasePromptRepository implements PromptRepository {
@@ -174,21 +175,17 @@ export class SupabasePromptRepository implements PromptRepository {
     const updateData: { 
       visibility: "PRIVATE" | "SHARED"; 
       status?: "PUBLISHED";
-      public_permission?: "READ" | "WRITE" | null;
+      public_permission?: "READ" | "WRITE";
     } = {
       visibility: newVisibility
     };
 
-    // Only force PUBLISHED status when going public, not when returning to private
+    // Only force PUBLISHED status and set permission when going public
     if (newVisibility === "SHARED") {
       updateData.status = "PUBLISHED";
-      if (publicPermission) {
-        updateData.public_permission = publicPermission;
-      }
-    } else {
-      // Reset public_permission to null when going private
-      updateData.public_permission = null;
+      updateData.public_permission = publicPermission || "READ";
     }
+    // When going PRIVATE, do NOT touch public_permission (avoid null constraint error)
     
     const result = await supabase
       .from("prompts")
@@ -197,5 +194,14 @@ export class SupabasePromptRepository implements PromptRepository {
     
     handleSupabaseError(result);
     return newVisibility;
+  }
+
+  async updatePublicPermission(id: string, permission: "READ" | "WRITE"): Promise<void> {
+    const result = await supabase
+      .from("prompts")
+      .update({ public_permission: permission })
+      .eq("id", id);
+    
+    handleSupabaseError(result);
   }
 }
