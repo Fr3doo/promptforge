@@ -253,6 +253,68 @@ La méthode `upsertMany` gère intelligemment :
 
 ### 1. Système de prompts
 
+#### Système de badges de visibilité (✨ v2.1)
+
+Le système de badges utilise **3 états distincts** pour indiquer le niveau de partage d'un prompt :
+
+```typescript
+export type SharingState = 
+  | "PRIVATE"         // Aucun partage (visible uniquement par le propriétaire)
+  | "PRIVATE_SHARED"  // Partagé avec N utilisateurs spécifiques
+  | "PUBLIC";         // Accessible à tous (visibilité = SHARED)
+```
+
+**Architecture** :
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                  Vue SQL optimisée                           │
+│  prompts_with_share_count (SECURITY INVOKER)                │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ SELECT p.*, COUNT(ps.id) as share_count               │ │
+│  │ FROM prompts p                                         │ │
+│  │ LEFT JOIN prompt_shares ps ON ps.prompt_id = p.id     │ │
+│  │ GROUP BY p.id                                          │ │
+│  └────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+                             ▼
+┌──────────────────────────────────────────────────────────────┐
+│              PromptRepository.fetchAll()                     │
+│  - 1 seule requête au lieu de N                             │
+│  - Types enrichis: Prompt & { share_count?: number }       │
+└──────────────────────────────────────────────────────────────┘
+                             ▼
+┌──────────────────────────────────────────────────────────────┐
+│                PromptCard (calcul local)                     │
+│  const sharingState =                                        │
+│    visibility === "SHARED"                                   │
+│      ? "PUBLIC"                                              │
+│      : share_count > 0                                       │
+│        ? "PRIVATE_SHARED"                                    │
+│        : "PRIVATE"                                           │
+└──────────────────────────────────────────────────────────────┘
+                             ▼
+┌──────────────────────────────────────────────────────────────┐
+│            VisibilityBadge (présentation)                    │
+│  - Badge avec icône (Lock/Users/Globe)                      │
+│  - Tooltip explicatif                                        │
+│  - Couleurs sémantiques (gris/bleu/vert)                   │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Avantages** :
+- ✅ **Performance** : 1 requête SQL au lieu de N requêtes individuelles
+- ✅ **Sécurité** : Vue avec `SECURITY INVOKER` → hérite des RLS policies
+- ✅ **UX** : Badges visuels clairs avec tooltips contextuels
+- ✅ **Tests** : Suite complète avec tests unitaires du calcul de `sharingState`
+
+**Fichiers concernés** :
+- `src/features/prompts/components/VisibilityBadge.tsx`
+- `src/features/prompts/components/PromptCard.tsx`
+- `src/repositories/PromptRepository.ts`
+- `src/features/prompts/types.ts` (type `Prompt` enrichi)
+- Migration SQL : `CREATE VIEW prompts_with_share_count`
+
 #### Composants
 
 ```
@@ -263,6 +325,7 @@ features/prompts/
 │   ├── PromptSearchBar.tsx     # Barre de recherche
 │   ├── PromptMetadataForm.tsx  # Formulaire de métadonnées
 │   ├── PromptContentEditor.tsx # Éditeur de contenu
+│   ├── VisibilityBadge.tsx     # Badge de visibilité (3 états)
 │   ├── CreateVersionDialog.tsx # Dialog de création de version
 │   ├── VersionTimeline.tsx     # Timeline des versions
 │   └── DiffViewer.tsx          # Comparaison de versions
