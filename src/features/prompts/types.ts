@@ -5,7 +5,7 @@ export type Variable = Tables<"variables">;
 
 export interface PromptFormData {
   title: string;
-  description: string;
+  description: string | null;
   content: string;
   visibility: "PRIVATE" | "SHARED";
   tags: string[];

@@ -1,9 +1,31 @@
 import { z } from 'zod';
 
+/**
+ * NORMALISATION DE LA DESCRIPTION
+ * ================================
+ * Décision : Utiliser `null` pour les descriptions vides plutôt que des chaînes vides.
+ * 
+ * Raisons :
+ * - Plus sémantique en base de données (absence de valeur vs valeur vide)
+ * - Réduit la taille des données stockées
+ * - Standard SQL/PostgreSQL pour les champs optionnels
+ * - Évite les conversions multiples dans le code
+ * 
+ * Implémentation :
+ * - Le schéma transforme automatiquement les chaînes vides en null
+ * - Les composants affichent "" pour null (via `description ?? ""`)
+ * - La sauvegarde envoie null directement sans conversion
+ */
+
 // Prompt validation schema
 export const promptSchema = z.object({
   title: z.string().trim().min(1, 'Le titre est requis').max(200, 'Le titre ne peut pas dépasser 200 caractères'),
-  description: z.string().trim().max(3000, 'La description ne peut pas dépasser 3000 caractères').optional().or(z.literal('')),
+  description: z.string()
+    .trim()
+    .max(3000, 'La description ne peut pas dépasser 3000 caractères')
+    .transform(val => val === '' ? null : val)
+    .nullable()
+    .optional(),
   content: z.string().trim().min(1, 'Le contenu est requis').max(200000, 'Le contenu ne peut pas dépasser 200000 caractères'),
   tags: z.array(z.string().trim().max(50, 'Chaque tag ne peut pas dépasser 50 caractères')).max(20, 'Vous ne pouvez pas avoir plus de 20 tags'),
   visibility: z.enum(['PRIVATE', 'SHARED'], { errorMap: () => ({ message: 'Visibilité invalide' }) }),

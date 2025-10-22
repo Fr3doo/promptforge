@@ -61,7 +61,7 @@ export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSave
 
       const promptData: PromptFormData = {
         title: validatedPromptData.title,
-        description: validatedPromptData.description || "",
+        description: validatedPromptData.description ?? null,
         content: validatedPromptData.content,
         tags: validatedPromptData.tags,
         visibility: validatedPromptData.visibility,
@@ -125,10 +125,7 @@ export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSave
         updatePrompt(
           { 
             id: promptId, 
-            updates: {
-              ...promptData,
-              description: promptData.description || null,
-            }
+            updates: promptData
           },
           {
             onSuccess: () => {
@@ -155,7 +152,6 @@ export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSave
         // Create new prompt
         createPrompt({
           ...promptData,
-          description: promptData.description || null,
           is_favorite: false,
           version: "1.0.0",
           status: "PUBLISHED",

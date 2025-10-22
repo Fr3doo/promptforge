@@ -61,7 +61,7 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode, canE
   useEffect(() => {
     if (prompt) {
       setTitle(prompt.title);
-      setDescription(prompt.description || "");
+      setDescription(prompt.description ?? "");
       setContent(prompt.content);
       setTags(prompt.tags || []);
     } else if (!isEditMode) {
@@ -159,7 +159,7 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode, canE
     } else if (prompt) {
       // En mode édition : comparer avec les valeurs initiales
       return title !== prompt.title ||
-             description !== (prompt.description || "") ||
+             description !== (prompt.description ?? "") ||
              content !== prompt.content ||
              JSON.stringify(tags) !== JSON.stringify(prompt.tags || []);
     }
