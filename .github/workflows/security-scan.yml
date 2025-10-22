@@ -1,0 +1,45 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  secret-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Historique complet pour gitleaks
+      
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }} # Optionnel
+      
+      - name: Verify .env is not committed
+        run: |
+          if git ls-files | grep -E '^\.env$'; then
+            echo "❌ ERROR: .env file is committed!"
+            echo "Please remove it: git rm --cached .env"
+            exit 1
+          fi
+          echo "✅ No .env file in repository"
+      
+      - name: Check for allowed env variables only
+        run: |
+          if [ -f .env.example ]; then
+            # Vérifier que seules les variables VITE_SUPABASE_* sont présentes
+            FORBIDDEN=$(grep -vE '^(VITE_SUPABASE_|#|$)' .env.example || true)
+            if [ -n "$FORBIDDEN" ]; then
+              echo "❌ ERROR: Forbidden variables in .env.example:"
+              echo "$FORBIDDEN"
+              exit 1
+            fi
+          fi
+          echo "✅ .env.example contains only allowed variables"

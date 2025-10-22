@@ -87,6 +87,35 @@ src/
 │       └── types.ts
 ```
 
+## 🔒 Sécurité
+
+### Variables d'environnement
+
+- ✅ **Toujours** utiliser `.env.example` avec des valeurs factices
+- ❌ **Jamais** committer `.env` ou des secrets réels
+- ✅ Les secrets sensibles vont dans **Lovable Cloud Secrets**
+
+### Avant de commit
+
+Vérifiez que vous n'avez pas accidentellement ajouté de secrets :
+
+```bash
+# Vérifier qu'aucun secret n'est staged
+git diff --cached | grep -i "api.*key\|secret\|password\|token"
+
+# Si quelque chose est détecté, annuler le staging
+git reset HEAD <fichier>
+```
+
+### CI/CD
+
+Le workflow `.github/workflows/security-scan.yml` scanne automatiquement :
+- ✅ Fuites de secrets avec **Gitleaks**
+- ✅ Présence de `.env` dans le repo
+- ✅ Variables interdites dans `.env.example`
+
+**La CI échouera** si un secret est détecté. C'est voulu ! 🛡️
+
 ## 🐛 Reporter un bug
 
 Inclure:

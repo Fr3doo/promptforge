@@ -52,6 +52,33 @@ npm install
 npm run dev
 ```
 
+## ⚙️ Configuration
+
+### Variables d'environnement
+
+1. **Copier le fichier d'exemple** :
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Récupérer vos clés Supabase** :
+   - Ouvrir le dashboard Lovable Cloud : `Paramètres > Backend`
+   - Copier les valeurs dans votre `.env` local
+
+3. **⚠️ Sécurité importante** :
+   - ✅ Les clés `VITE_SUPABASE_*` sont **publiques** (anon key)
+   - ❌ **Ne JAMAIS** ajouter de secrets dans `.env` (service role, API keys tierces)
+   - ✅ Utiliser **Lovable Cloud Secrets** pour les vrais secrets
+
+### Secrets sensibles (API keys tierces, etc.)
+
+Les secrets sensibles doivent être ajoutés via **Lovable Cloud Secrets** :
+1. Dashboard Lovable > `Settings > Secrets`
+2. Ajouter votre secret (ex: `OPENAI_API_KEY`)
+3. Il sera automatiquement disponible dans vos Edge Functions via `Deno.env.get('OPENAI_API_KEY')`
+
+📖 Voir [API Keys & Secrets Guide](https://docs.lovable.dev/features/cloud/secrets)
+
 ## 📖 Documentation
 
 ### Guides principaux
