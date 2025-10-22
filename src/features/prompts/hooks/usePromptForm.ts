@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { useTagManager } from "@/hooks/useTagManager";
 import { useVariableManager } from "@/hooks/useVariableManager";
 import { usePromptSave } from "@/hooks/usePromptSave";
 import { errorToast } from "@/lib/toastUtils";
@@ -38,12 +37,10 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode, canE
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [visibility] = useState<"PRIVATE" | "SHARED">("PRIVATE");
-  
-  // Tag management
-  const { tags, setTags, tagInput, setTagInput, addTag, removeTag } = useTagManager();
   
   // Variable management
   const { variables, addVariablesFromContent, updateVariable, deleteVariable } = useVariableManager({
@@ -182,8 +179,7 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode, canE
     content,
     setContent,
     tags,
-    tagInput,
-    setTagInput,
+    setTags,
     variables,
     variableValues,
     setVariableValues,
@@ -191,8 +187,6 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode, canE
     
     // Actions
     handleSave,
-    addTag,
-    removeTag,
     detectVariables: addVariablesFromContent,
     updateVariable,
     deleteVariable,

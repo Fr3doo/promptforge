@@ -162,85 +162,17 @@ describe("usePromptForm - Integration Tests", () => {
   });
 
   describe("Tag Management", () => {
-    it("should add a tag", () => {
+    it("should manage tags via setTags", () => {
       const { result } = renderHook(
         () => usePromptForm({ isEditMode: false }),
         { wrapper: createWrapper() }
       );
 
       act(() => {
-        result.current.setTagInput("newtag");
-        result.current.addTag();
+        result.current.setTags(["tag1", "tag2"]);
       });
 
-      expect(result.current.tags).toContain("newtag");
-      expect(result.current.tagInput).toBe("");
-    });
-
-    it("should not add duplicate tags", () => {
-      const { result } = renderHook(
-        () => usePromptForm({ isEditMode: false }),
-        { wrapper: createWrapper() }
-      );
-
-      act(() => {
-        result.current.setTagInput("tag1");
-        result.current.addTag();
-        result.current.setTagInput("tag1");
-        result.current.addTag();
-      });
-
-      expect(result.current.tags.filter((t) => t === "tag1")).toHaveLength(1);
-    });
-
-    it("should remove a tag", () => {
-      const { result } = renderHook(
-        () => usePromptForm({ isEditMode: false }),
-        { wrapper: createWrapper() }
-      );
-
-      act(() => {
-        result.current.setTagInput("tag1");
-        result.current.addTag();
-        result.current.setTagInput("tag2");
-        result.current.addTag();
-      });
-
-      expect(result.current.tags).toHaveLength(2);
-
-      act(() => {
-        result.current.removeTag("tag1");
-      });
-
-      expect(result.current.tags).toEqual(["tag2"]);
-    });
-
-    it("should trim whitespace when adding tags", () => {
-      const { result } = renderHook(
-        () => usePromptForm({ isEditMode: false }),
-        { wrapper: createWrapper() }
-      );
-
-      act(() => {
-        result.current.setTagInput("  tag with spaces  ");
-        result.current.addTag();
-      });
-
-      expect(result.current.tags).toContain("tag with spaces");
-    });
-
-    it("should not add empty tags", () => {
-      const { result } = renderHook(
-        () => usePromptForm({ isEditMode: false }),
-        { wrapper: createWrapper() }
-      );
-
-      act(() => {
-        result.current.setTagInput("   ");
-        result.current.addTag();
-      });
-
-      expect(result.current.tags).toHaveLength(0);
+      expect(result.current.tags).toEqual(["tag1", "tag2"]);
     });
   });
 
@@ -574,10 +506,7 @@ describe("usePromptForm - Integration Tests", () => {
       act(() => {
         result.current.setTitle("Tagged Prompt");
         result.current.setContent("Content");
-        result.current.setTagInput("tag1");
-        result.current.addTag();
-        result.current.setTagInput("tag2");
-        result.current.addTag();
+        result.current.setTags(["tag1", "tag2"]);
       });
 
       await act(async () => {
@@ -612,10 +541,7 @@ describe("usePromptForm - Integration Tests", () => {
         result.current.setTitle("Complete Prompt");
         result.current.setDescription("Full description");
         result.current.setContent("Hello {{name}}, you are {{age}} years old");
-        result.current.setTagInput("react");
-        result.current.addTag();
-        result.current.setTagInput("typescript");
-        result.current.addTag();
+        result.current.setTags(["react", "typescript"]);
       });
 
       await waitFor(() => {
@@ -712,8 +638,7 @@ describe("usePromptForm - Integration Tests", () => {
       act(() => {
         result.current.setTitle("Updated Title");
         result.current.setContent("New content with {{newVar}}");
-        result.current.setTagInput("newtag");
-        result.current.addTag();
+        result.current.setTags(["newtag"]);
       });
 
       await waitFor(() => {
@@ -870,10 +795,8 @@ describe("usePromptForm - Integration Tests", () => {
         result.current.setContent("Content");
         
         // Add 21 tags
-        for (let i = 1; i <= 21; i++) {
-          result.current.setTagInput(`tag${i}`);
-          result.current.addTag();
-        }
+        const tags = Array.from({ length: 21 }, (_, i) => `tag${i + 1}`);
+        result.current.setTags(tags);
       });
 
       await waitFor(() => {
@@ -883,20 +806,17 @@ describe("usePromptForm - Integration Tests", () => {
       });
     });
 
-    it("should not add duplicate tags", () => {
-      const { result } = renderHook(
+    it("should set tags directly", () => {
+      const { result} = renderHook(
         () => usePromptForm({ isEditMode: false }),
         { wrapper: createWrapper() }
       );
 
       act(() => {
-        result.current.setTagInput("duplicate");
-        result.current.addTag();
-        result.current.setTagInput("duplicate");
-        result.current.addTag();
+        result.current.setTags(["tag1", "tag2"]);
       });
 
-      expect(result.current.tags.filter(t => t === "duplicate")).toHaveLength(1);
+      expect(result.current.tags).toEqual(["tag1", "tag2"]);
     });
 
     it("should validate form is valid with correct data", async () => {
@@ -909,8 +829,7 @@ describe("usePromptForm - Integration Tests", () => {
         result.current.setTitle("Valid Title");
         result.current.setDescription("Valid description under 3000 chars");
         result.current.setContent("Valid content");
-        result.current.setTagInput("tag1");
-        result.current.addTag();
+        result.current.setTags(["tag1"]);
       });
 
       await waitFor(() => {
@@ -1028,8 +947,7 @@ describe("usePromptForm - Integration Tests", () => {
       act(() => {
         result.current.setTitle("Title");
         result.current.setContent("Content");
-        result.current.setTagInput(longTag);
-        result.current.addTag();
+        result.current.setTags([longTag]);
       });
 
       await waitFor(() => {

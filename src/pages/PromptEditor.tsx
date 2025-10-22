@@ -192,11 +192,8 @@ const PromptEditorPage = () => {
           onTitleChange={form.setTitle}
           description={form.description}
           onDescriptionChange={form.setDescription}
-          tags={form.tags}
-          tagInput={form.tagInput}
-          onTagInputChange={form.setTagInput}
-          onAddTag={form.addTag}
-          onRemoveTag={form.removeTag}
+          initialTags={form.tags}
+          onTagsChange={form.setTags}
           isEditMode={isEditMode}
           disabled={!canEdit}
           errors={{

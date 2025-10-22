@@ -1,24 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Plus, X, Lock, Globe, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, X, ChevronDown, ChevronUp } from "lucide-react";
 import { messages } from "@/constants/messages";
+import { useTagManager } from "@/hooks/useTagManager";
 
 interface PromptMetadataFormProps {
   title: string;
   onTitleChange: (title: string) => void;
   description: string;
   onDescriptionChange: (description: string) => void;
-  tags: string[];
-  tagInput: string;
-  onTagInputChange: (input: string) => void;
-  onAddTag: () => void;
-  onRemoveTag: (tag: string) => void;
+  initialTags?: string[];
+  onTagsChange: (tags: string[]) => void;
   isEditMode?: boolean;
   disabled?: boolean;
   errors?: {
@@ -33,16 +30,30 @@ export const PromptMetadataForm = ({
   onTitleChange,
   description,
   onDescriptionChange,
-  tags,
-  tagInput,
-  onTagInputChange,
-  onAddTag,
-  onRemoveTag,
+  initialTags = [],
+  onTagsChange,
   isEditMode = false,
   disabled = false,
   errors = {},
 }: PromptMetadataFormProps) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  
+  // Use dedicated tag manager
+  const {
+    tags,
+    tagInput,
+    setTagInput,
+    addTag,
+    removeTag,
+    tagError,
+    clearTagError,
+    maxTags,
+  } = useTagManager(initialTags);
+
+  // Notify parent of tag changes
+  useEffect(() => {
+    onTagsChange(tags);
+  }, [tags, onTagsChange]);
 
   return (
     <div className="space-y-6">
@@ -132,19 +143,24 @@ export const PromptMetadataForm = ({
                   <Input
                     id="prompt-tags"
                     value={tagInput}
-                    onChange={(e) => onTagInputChange(e.target.value)}
+                    onChange={(e) => {
+                      setTagInput(e.target.value);
+                      clearTagError();
+                    }}
                     placeholder={messages.placeholders.tagInput}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
-                        onAddTag();
+                        addTag();
                       }
                     }}
                     aria-describedby="tags-help"
+                    aria-invalid={!!(tagError || errors.tags)}
                     disabled={disabled}
+                    className={tagError || errors.tags ? "border-destructive" : ""}
                   />
                   <Button 
-                    onClick={onAddTag} 
+                    onClick={addTag} 
                     variant="outline" 
                     className="gap-2 shrink-0"
                     aria-label="Ajouter un tag"
@@ -156,11 +172,11 @@ export const PromptMetadataForm = ({
                 </div>
                 <p id="tags-help" className="text-xs text-muted-foreground">
                   Organisez vos prompts avec des mots-clés. Appuyez sur Entrée pour ajouter.
-                  {tags.length > 0 && ` (${tags.length}/20)`}
+                  {tags.length > 0 && ` (${tags.length}/${maxTags})`}
                 </p>
-                {errors.tags && (
+                {(tagError || errors.tags) && (
                   <p className="text-sm text-destructive" role="alert">
-                    {errors.tags}
+                    {tagError || errors.tags}
                   </p>
                 )}
                 {tags.length > 0 && (
@@ -169,7 +185,7 @@ export const PromptMetadataForm = ({
                       <Badge key={tag} variant="secondary" className="gap-1" role="listitem">
                         {tag}
                         <button
-                          onClick={() => onRemoveTag(tag)}
+                          onClick={() => removeTag(tag)}
                           className="ml-1 hover:text-destructive focus:outline-none focus:ring-2 focus:ring-destructive rounded"
                           aria-label={`Retirer le tag ${tag}`}
                           disabled={disabled}
