@@ -74,15 +74,28 @@ Si l'une de ces étapes échoue, nous devons garantir :
 
 #### Côté Client (usePromptSave)
 
+**Important :** Le client Supabase gère automatiquement l'ajout du JWT. Aucun header manuel n'est nécessaire.
+
 ```typescript
 try {
+  // Le SDK Supabase ajoute automatiquement le token si l'utilisateur est connecté
+  // Pas besoin de passer manuellement le header Authorization
   const { data, error } = await supabase.functions.invoke(
     'create-initial-version',
-    { body: { ... } }
+    { 
+      body: { 
+        prompt_id, 
+        content, 
+        semver, 
+        message, 
+        variables 
+      } 
+      // Pas de headers: { Authorization: ... } - géré par le SDK
+    }
   );
 
   if (error) {
-    // Erreur edge function
+    // Erreur edge function (auth, permissions, création)
     toast.warning("Prompt créé", {
       description: "La version initiale n'a pas pu être créée. " +
                    "Vous pouvez créer une version manuellement."
@@ -109,9 +122,27 @@ try {
 
 #### Côté Serveur (Edge Function)
 
+**Validation stricte du JWT :** L'edge function rejette explicitement les valeurs invalides.
+
 ```typescript
-// Erreur d'authentification
-if (!user) {
+// Extraction et validation stricte du JWT
+const authHeader = req.headers.get('Authorization') || '';
+const jwt = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader.trim();
+
+// Rejeter les valeurs invalides (vide, "undefined", "null")
+if (!jwt || jwt === '' || jwt === 'undefined' || jwt === 'null') {
+  console.error('Invalid or missing JWT token:', { 
+    headerPresent: !!authHeader, 
+    jwtValue: jwt 
+  });
+  return Response(401, { error: "Non authentifié" });
+}
+
+// Vérifier l'authentification avec le JWT
+const { data: { user }, error: authError } = await supabaseClient.auth.getUser(jwt);
+
+if (authError || !user) {
+  console.error('Authentication error:', authError);
   return Response(401, { error: "Non authentifié" });
 }
 
@@ -120,7 +151,7 @@ if (prompt.owner_id !== user.id) {
   return Response(403, { error: "Non autorisé" });
 }
 
-// Version déjà existante
+// Version déjà existante (idempotence)
 if (existingVersion) {
   return Response(200, { success: true, skipped: true });
 }
@@ -301,6 +332,14 @@ await supabase
 - [Atomicité et Transactions](https://supabase.com/docs/guides/database/transactions)
 
 ## Changelog
+
+### Version 1.1 (Correction Régression)
+- ✅ Suppression des headers Authorization manuels côté client
+- ✅ Confiance au SDK Supabase pour gérer l'authentification automatiquement
+- ✅ Validation stricte du JWT côté edge function (rejet de '', 'undefined', 'null')
+- ✅ Tests supplémentaires : session absente, succès avec token valide
+- ✅ Logging amélioré pour le debugging des problèmes d'auth
+- ✅ Documentation mise à jour avec les meilleures pratiques
 
 ### Version 1.0 (Tâche 27)
 - ✅ Migration de createInitialVersion vers edge function

@@ -163,9 +163,7 @@ export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSave
             // Créer automatiquement la version initiale via edge function
             // pour une meilleure gestion d'erreur et atomicité
             try {
-              // Récupérer la session pour passer le token d'authentification
-              const { data: { session } } = await supabase.auth.getSession();
-              
+              // Le client Supabase ajoute automatiquement le JWT si l'utilisateur est connecté
               const { data: versionData, error: versionError } = await supabase.functions.invoke(
                 'create-initial-version',
                 {
@@ -184,9 +182,6 @@ export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSave
                       options: v.options || [],
                       order_index: index,
                     })),
-                  },
-                  headers: {
-                    Authorization: `Bearer ${session?.access_token}`,
                   },
                 }
               );

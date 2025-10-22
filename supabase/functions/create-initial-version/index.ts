@@ -32,7 +32,22 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization') || '';
-    const jwt = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+    const jwt = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader.trim();
+
+    // Validation stricte du JWT pour rejeter les valeurs invalides
+    if (!jwt || jwt === '' || jwt === 'undefined' || jwt === 'null') {
+      console.error('Invalid or missing JWT token:', { 
+        headerPresent: !!authHeader, 
+        jwtValue: jwt 
+      });
+      return new Response(
+        JSON.stringify({ success: false, error: 'Non authentifié' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -43,18 +58,6 @@ Deno.serve(async (req) => {
         },
       }
     );
-
-    // Verify user is authenticated
-    if (!jwt) {
-      console.error('Missing Authorization header');
-      return new Response(
-        JSON.stringify({ success: false, error: 'Non authentifié' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
 
     const {
       data: { user },

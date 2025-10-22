@@ -602,4 +602,169 @@ describe("usePromptSave - Initial Version Workflow", () => {
       });
     });
   });
+
+  describe("Scénario 7: Session Absente lors de l'Invocation", () => {
+    it("should handle missing session gracefully and allow SDK to manage auth", async () => {
+      // Mock session absente (utilisateur non connecté ou session expirée)
+      const mockGetSession = vi.fn().mockResolvedValue({
+        data: { session: null },
+        error: null,
+      });
+
+      vi.spyOn(supabaseModule.supabase.auth, "getSession").mockImplementation(
+        mockGetSession
+      );
+
+      // Mock edge function qui retourne une erreur d'auth (401)
+      const mockEdgeFunctionInvoke = vi.fn().mockResolvedValue({
+        data: null,
+        error: { message: "Non authentifié" },
+      });
+
+      vi.spyOn(supabaseModule.supabase.functions, "invoke").mockImplementation(
+        mockEdgeFunctionInvoke
+      );
+
+      mockCreatePrompt.mockImplementation((data, { onSuccess }) => {
+        onSuccess?.({
+          id: "no-session-prompt",
+          ...data,
+          version: "1.0.0",
+        });
+      });
+
+      const { result } = renderHook(() => usePromptSave({ isEditMode: false }), {
+        wrapper: createWrapper(),
+      });
+
+      const promptData = {
+        title: "No Session Test",
+        description: null,
+        content: "Test content",
+        tags: [],
+        visibility: "PRIVATE" as const,
+        variables: [],
+      };
+
+      await act(async () => {
+        await result.current.savePrompt(promptData);
+      });
+
+      // Le prompt est créé malgré l'absence de session
+      expect(mockCreatePrompt).toHaveBeenCalled();
+
+      // L'invocation se fait sans header manuel
+      await waitFor(() => {
+        expect(mockEdgeFunctionInvoke).toHaveBeenCalledWith(
+          "create-initial-version",
+          expect.objectContaining({
+            body: expect.any(Object),
+            // Pas de headers personnalisés - le SDK gère l'auth
+          })
+        );
+      });
+
+      // Toast warning car la version n'a pas pu être créée
+      await waitFor(() => {
+        expect(mockToastWarning).toHaveBeenCalledWith(
+          "Prompt créé",
+          expect.objectContaining({
+            description: expect.stringContaining("version initiale"),
+          })
+        );
+      });
+
+      // Notification de succès et navigation quand même
+      await waitFor(() => {
+        expect(mockNotifyPromptCreated).toHaveBeenCalled();
+        expect(mockNavigate).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe("Scénario 8: Succès Complet avec Token Valide", () => {
+    it("should create prompt with initial version when user is authenticated", async () => {
+      // Mock session valide
+      const mockGetSession = vi.fn().mockResolvedValue({
+        data: {
+          session: {
+            access_token: "valid-jwt-token",
+            user: { id: "user-123" },
+          },
+        },
+        error: null,
+      });
+
+      vi.spyOn(supabaseModule.supabase.auth, "getSession").mockImplementation(
+        mockGetSession
+      );
+
+      // Mock edge function succès
+      const mockEdgeFunctionInvoke = vi.fn().mockResolvedValue({
+        data: {
+          success: true,
+          version: {
+            id: "version-success",
+            semver: "1.0.0",
+            content: "Success content",
+          },
+        },
+        error: null,
+      });
+
+      vi.spyOn(supabaseModule.supabase.functions, "invoke").mockImplementation(
+        mockEdgeFunctionInvoke
+      );
+
+      mockCreatePrompt.mockImplementation((data, { onSuccess }) => {
+        onSuccess?.({
+          id: "auth-success-prompt",
+          ...data,
+          version: "1.0.0",
+        });
+      });
+
+      const { result } = renderHook(() => usePromptSave({ isEditMode: false }), {
+        wrapper: createWrapper(),
+      });
+
+      const promptData = {
+        title: "Authenticated Success",
+        description: null,
+        content: "Content with auth",
+        tags: ["auth"],
+        visibility: "PRIVATE" as const,
+        variables: [],
+      };
+
+      await act(async () => {
+        await result.current.savePrompt(promptData);
+      });
+
+      // Prompt créé
+      expect(mockCreatePrompt).toHaveBeenCalled();
+
+      // Edge function appelée (SDK ajoute le token automatiquement)
+      await waitFor(() => {
+        expect(mockEdgeFunctionInvoke).toHaveBeenCalledWith(
+          "create-initial-version",
+          expect.objectContaining({
+            body: expect.objectContaining({
+              prompt_id: "auth-success-prompt",
+              semver: "1.0.0",
+            }),
+          })
+        );
+      });
+
+      // Pas de toast warning (succès)
+      expect(mockToastWarning).not.toHaveBeenCalled();
+
+      // Notification et navigation
+      await waitFor(() => {
+        expect(mockNotifyPromptCreated).toHaveBeenCalledWith("Authenticated Success");
+        expect(mockNavigate).toHaveBeenCalledWith("/prompts?justCreated=auth-success-prompt");
+      });
+    });
+  });
 });
