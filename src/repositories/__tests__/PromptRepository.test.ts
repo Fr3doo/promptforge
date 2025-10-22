@@ -41,6 +41,7 @@ describe("SupabasePromptRepository", () => {
           owner_id: "user-123",
           created_at: "2024-01-01T00:00:00Z",
           updated_at: "2024-01-02T00:00:00Z",
+          public_permission: "READ",
         },
         {
           id: "prompt-2",
@@ -55,6 +56,7 @@ describe("SupabasePromptRepository", () => {
           owner_id: "user-123",
           created_at: "2024-01-01T00:00:00Z",
           updated_at: "2024-01-01T00:00:00Z",
+          public_permission: "READ",
         },
       ];
 
@@ -114,6 +116,7 @@ describe("SupabasePromptRepository", () => {
         owner_id: "user-123",
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
+        public_permission: "READ",
       };
 
       const mockSingle = vi.fn().mockResolvedValue({
@@ -180,6 +183,7 @@ describe("SupabasePromptRepository", () => {
         version: "1.0.0",
         status: "PUBLISHED" as const,
         is_favorite: false,
+        public_permission: "READ" as const,
       };
 
       const createdPrompt: Prompt = {
@@ -188,6 +192,7 @@ describe("SupabasePromptRepository", () => {
         owner_id: mockUser.id,
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
+        public_permission: "READ",
       };
 
       const mockSingle = vi.fn().mockResolvedValue({
@@ -227,6 +232,7 @@ describe("SupabasePromptRepository", () => {
         version: "1.0.0",
         status: "PUBLISHED" as const,
         is_favorite: false,
+        public_permission: "READ" as const,
       };
 
       await expect(repository.create("", newPromptData)).rejects.toThrow("ID utilisateur requis");
@@ -242,6 +248,7 @@ describe("SupabasePromptRepository", () => {
         version: "1.0.0",
         status: "PUBLISHED" as const,
         is_favorite: false,
+        public_permission: "READ" as const,
       };
 
       const createdPrompt: Prompt = {
@@ -250,6 +257,7 @@ describe("SupabasePromptRepository", () => {
         owner_id: mockUser.id,
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
+        public_permission: "READ",
       };
 
       const mockSingle = vi.fn().mockResolvedValue({
@@ -304,6 +312,7 @@ describe("SupabasePromptRepository", () => {
         version: "1.0.0",
         status: "PUBLISHED" as const,
         is_favorite: false,
+        public_permission: "READ" as const,
       };
 
       await expect(repository.create(mockUser.id, newPromptData)).rejects.toThrow(mockError);
@@ -330,6 +339,7 @@ describe("SupabasePromptRepository", () => {
         owner_id: "user-123",
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-02T00:00:00Z",
+        public_permission: "READ",
       };
 
       const mockSingle = vi.fn().mockResolvedValue({
@@ -458,6 +468,7 @@ describe("SupabasePromptRepository", () => {
         owner_id: "user-123",
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
+        public_permission: "READ",
       };
 
       const duplicatedPrompt: Prompt = {
@@ -473,6 +484,7 @@ describe("SupabasePromptRepository", () => {
         owner_id: mockUser.id,
         created_at: "2024-01-02T00:00:00Z",
         updated_at: "2024-01-02T00:00:00Z",
+        public_permission: "READ",
       };
 
       const originalVariables = [
@@ -606,6 +618,7 @@ describe("SupabasePromptRepository", () => {
         owner_id: mockUser.id,
         created_at: "2024-01-02T00:00:00Z",
         updated_at: "2024-01-02T00:00:00Z",
+        public_permission: "READ",
       };
 
       // Mock VariableRepository to return no variables
@@ -662,6 +675,7 @@ describe("SupabasePromptRepository", () => {
         owner_id: "user-123",
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
+        public_permission: "READ",
       };
 
       const duplicatedPrompt: Prompt = {

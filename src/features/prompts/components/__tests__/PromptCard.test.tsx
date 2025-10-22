@@ -15,6 +15,7 @@ const mockPrompt = {
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   owner_id: "user-1",
+  public_permission: "READ" as const,
 };
 
 describe("PromptCard", () => {

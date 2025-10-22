@@ -92,6 +92,7 @@ describe("usePromptForm - Integration Tests", () => {
         is_favorite: false,
         created_at: "2024-01-01",
         updated_at: "2024-01-01",
+        public_permission: "READ" as const,
       };
 
       const { result } = renderHook(
@@ -122,6 +123,7 @@ describe("usePromptForm - Integration Tests", () => {
         is_favorite: false,
         created_at: "2024-01-01",
         updated_at: "2024-01-01",
+        public_permission: "READ" as const,
       };
 
       const { result } = renderHook(
@@ -487,6 +489,7 @@ describe("usePromptForm - Integration Tests", () => {
         is_favorite: false,
         created_at: "2024-01-01",
         updated_at: "2024-01-01",
+        public_permission: "READ" as const,
       };
 
       const { result } = renderHook(
@@ -676,6 +679,7 @@ describe("usePromptForm - Integration Tests", () => {
         is_favorite: false,
         created_at: "2024-01-01",
         updated_at: "2024-01-01",
+        public_permission: "READ" as const,
       };
 
       const mockVariables: Variable[] = [
