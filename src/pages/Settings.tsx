@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
@@ -20,11 +22,14 @@ export default function Settings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   
   // Appearance settings
   const [darkMode, setDarkMode] = useState(false);
   const [systemTheme, setSystemTheme] = useState(true);
   const [fontSize, setFontSize] = useState("medium");
+  const [pseudo, setPseudo] = useState("");
+  const [isPseudoLoading, setIsPseudoLoading] = useState(false);
   
   // Language settings
   const [language, setLanguage] = useState("fr");
@@ -38,6 +43,26 @@ export default function Settings() {
   // Data settings
   const [autoSaveVersions, setAutoSaveVersions] = useState(true);
   const [versionsToKeep, setVersionsToKeep] = useState("10");
+
+  // Fetch user profile
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      
+      if (error) throw error;
+      if (data?.pseudo) {
+        setPseudo(data.pseudo);
+      }
+      return data;
+    },
+    enabled: !!user?.id,
+  });
 
   const handleSignOut = async () => {
     try {
@@ -75,6 +100,62 @@ export default function Settings() {
       title: messages.actions.settingSavedTitle,
       description: messages.success.settingSaved(setting),
     });
+  };
+
+  const handleUpdatePseudo = async () => {
+    if (!user?.id || !pseudo.trim()) return;
+    
+    // Validation
+    const trimmedPseudo = pseudo.trim();
+    if (trimmedPseudo.length < 2 || trimmedPseudo.length > 50) {
+      toast({
+        title: "Erreur",
+        description: "Le pseudo doit contenir entre 2 et 50 caractères",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_-]{2,50}$/.test(trimmedPseudo)) {
+      toast({
+        title: "Erreur",
+        description: "Le pseudo ne peut contenir que des lettres, chiffres, tirets et underscores",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsPseudoLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ pseudo: trimmedPseudo })
+        .eq('id', user.id);
+      
+      if (error) {
+        // Check for unique constraint violation
+        if (error.code === '23505') {
+          throw new Error("Ce pseudo est déjà utilisé");
+        }
+        throw error;
+      }
+      
+      toast({
+        title: "Pseudo mis à jour",
+        description: "Votre pseudo a été modifié avec succès",
+      });
+
+      // Invalidate queries to refresh profile data across the app
+      queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: error instanceof Error ? error.message : "Impossible de mettre à jour le pseudo",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPseudoLoading(false);
+    }
   };
 
   return (
@@ -192,6 +273,32 @@ export default function Settings() {
                         <SelectItem value="large">Grande</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pseudo">Pseudo</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="pseudo"
+                        type="text"
+                        value={pseudo}
+                        onChange={(e) => setPseudo(e.target.value)}
+                        placeholder="Votre pseudo"
+                        className="flex-1"
+                        maxLength={50}
+                      />
+                      <Button 
+                        onClick={handleUpdatePseudo}
+                        disabled={isPseudoLoading || !pseudo.trim()}
+                      >
+                        {isPseudoLoading ? "Sauvegarde..." : "Sauvegarder"}
+                      </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Ce pseudo sera affiché à la place de votre adresse email
+                    </p>
                   </div>
                 </CardContent>
               </Card>
