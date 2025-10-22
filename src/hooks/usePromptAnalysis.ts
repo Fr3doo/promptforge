@@ -31,7 +31,10 @@ export function usePromptAnalysis() {
       captureException(error, 'Erreur lors de l\'analyse du prompt', {
         promptContentLength: promptContent.length,
       });
-      errorToast(messages.labels.error, error.message || messages.errors.analysis.failed);
+      
+      // Extract specific error message from edge function response
+      const errorMessage = error.message || messages.errors.analysis.failed;
+      errorToast(messages.labels.error, errorMessage);
       setResult(null);
     } finally {
       setIsAnalyzing(false);

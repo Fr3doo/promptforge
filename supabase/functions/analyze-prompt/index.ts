@@ -83,8 +83,8 @@ function validateAIResponse(structured: any): void {
         throw new Error('Trop d\'objectifs (max 20)');
       }
       structured.metadata.objectifs.forEach((obj: any) => {
-        if (typeof obj === 'string' && obj.length > 200) {
-          throw new Error('Objectif trop long (max 200 caractères)');
+        if (typeof obj === 'string' && obj.length > 500) {
+          throw new Error('Objectif trop long (max 500 caractères)');
         }
       });
     }
@@ -176,13 +176,15 @@ function generateMarkdown(data: any, originalPrompt: string): string {
 }
 
 // === AI PROMPTS (CONFIGURATION) ===
-const SYSTEM_PROMPT = `Tu es un expert en ingénierie de prompts. Analyse et structure les prompts en extrayant sections, variables et métadonnées.`;
+const SYSTEM_PROMPT = `Tu es un expert en ingénierie de prompts. Analyse et structure les prompts en extrayant sections, variables et métadonnées.
+
+IMPORTANT : Pour les objectifs, sois concis et précis (maximum ~400 caractères par objectif). Privilégie la clarté et l'essentiel plutôt que l'exhaustivité.`;
 
 const buildUserPrompt = (content: string) => `Analyse ce prompt :
 
 ${content}
 
-Extrait : sections (contexte, rôle, instructions), variables {{nom}}, métadonnées (rôle, objectifs, étapes, critères).`;
+Extrait : sections (contexte, rôle, instructions), variables {{nom}}, métadonnées (rôle, objectifs concis, étapes, critères).`;
 
 // === LOVABLE AI TOOL SCHEMA (CONFIGURATION) ===
 const STRUCTURE_TOOL = {
