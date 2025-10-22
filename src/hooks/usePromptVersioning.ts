@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useCreateVersion, useRestoreVersion } from "./useVersions";
-import { bumpVersion, type VersionBump } from "@/lib/semver";
+import { bumpVersion, isValidSemVer, type VersionBump } from "@/lib/semver";
 import { useOptimisticLocking } from "./useOptimisticLocking";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
@@ -31,7 +31,18 @@ export function usePromptVersioning(
   const handleCreateVersion = async () => {
     if (!prompt || !currentContent) return;
 
-    const newSemver = bumpVersion(prompt.version || "1.0.0", versionType);
+    const currentVersion = prompt.version || "1.0.0";
+
+    // Valider strictement la version actuelle
+    if (!isValidSemVer(currentVersion)) {
+      toast.error(
+        "Version invalide",
+        { description: `La version actuelle "${currentVersion}" n'est pas une version sémantique valide (format attendu: X.Y.Z).` }
+      );
+      return;
+    }
+
+    const newSemver = bumpVersion(currentVersion, versionType);
 
     // Vérifier si une version avec ce numéro existe déjà
     const versionExists = await checkVersionExists(prompt.id, newSemver);
