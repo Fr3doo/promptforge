@@ -136,7 +136,7 @@ export const Header = () => {
                 Se connecter
               </Button>
               <Button 
-                onClick={() => navigate("/auth")}
+                onClick={() => navigate("/auth?mode=signup")}
                 size="sm"
                 className="text-xs sm:text-sm"
               >
