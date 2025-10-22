@@ -1,6 +1,6 @@
 import type { Tables } from "@/integrations/supabase/types";
 
-export type Prompt = Tables<"prompts">;
+export type Prompt = Tables<"prompts"> & { share_count?: number };
 export type Variable = Tables<"variables">;
 
 export interface PromptFormData {

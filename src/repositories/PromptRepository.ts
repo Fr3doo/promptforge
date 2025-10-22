@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import type { VariableRepository } from "./VariableRepository";
 
-export type Prompt = Tables<"prompts">;
+export type Prompt = Tables<"prompts"> & { share_count?: number };
 
 export interface PromptRepository {
   fetchAll(): Promise<Prompt[]>;
@@ -24,7 +24,7 @@ export class SupabasePromptRepository implements PromptRepository {
     if (!user) throw new Error("Utilisateur non authentifié");
     
     const result = await supabase
-      .from("prompts")
+      .from("prompts_with_share_count")
       .select("*")
       .order("updated_at", { ascending: false });
     
@@ -37,7 +37,7 @@ export class SupabasePromptRepository implements PromptRepository {
     if (!user) throw new Error("Utilisateur non authentifié");
     
     const result = await supabase
-      .from("prompts")
+      .from("prompts_with_share_count")
       .select("*")
       .eq("owner_id", user.id)
       .order("updated_at", { ascending: false });

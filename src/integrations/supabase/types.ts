@@ -77,6 +77,13 @@ export type Database = {
             referencedRelation: "prompts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "prompt_shares_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts_with_share_count"
+            referencedColumns: ["id"]
+          },
         ]
       }
       prompt_usage: {
@@ -110,6 +117,13 @@ export type Database = {
             columns: ["prompt_id"]
             isOneToOne: false
             referencedRelation: "prompts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_usage_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts_with_share_count"
             referencedColumns: ["id"]
           },
         ]
@@ -224,6 +238,13 @@ export type Database = {
             referencedRelation: "prompts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "variable_sets_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts_with_share_count"
+            referencedColumns: ["id"]
+          },
         ]
       }
       variables: {
@@ -274,6 +295,13 @@ export type Database = {
             referencedRelation: "prompts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "variables_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts_with_share_count"
+            referencedColumns: ["id"]
+          },
         ]
       }
       versions: {
@@ -312,11 +340,46 @@ export type Database = {
             referencedRelation: "prompts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "versions_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts_with_share_count"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      prompts_with_share_count: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          is_favorite: boolean | null
+          owner_id: string | null
+          public_permission:
+            | Database["public"]["Enums"]["sharing_permission"]
+            | null
+          share_count: number | null
+          status: Database["public"]["Enums"]["prompt_status"] | null
+          tags: string[] | null
+          title: string | null
+          updated_at: string | null
+          version: string | null
+          visibility: Database["public"]["Enums"]["visibility"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompts_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_user_id_by_email: { Args: { user_email: string }; Returns: string }

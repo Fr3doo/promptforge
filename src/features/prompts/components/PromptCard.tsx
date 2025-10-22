@@ -20,7 +20,6 @@ import { SharePromptDialog } from "./SharePromptDialog";
 import { PublicShareDialog } from "./PublicShareDialog";
 import type { Prompt } from "../types";
 import { useUpdatePublicPermission } from "@/hooks/usePrompts";
-import { usePromptShares } from "@/hooks/usePromptShares";
 
 interface PromptCardProps {
   prompt: Prompt;
@@ -47,13 +46,12 @@ export const PromptCard = ({
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [publicShareDialogOpen, setPublicShareDialogOpen] = useState(false);
   const { mutateAsync: updatePublicPermission } = useUpdatePublicPermission();
-  const { data: shares } = usePromptShares(prompt.id);
   const isOwner = currentUserId && prompt.owner_id === currentUserId;
   const isDraft = prompt.status === "DRAFT";
   const isShared = prompt.visibility === "SHARED";
   
-  // Calculer le véritable état de partage
-  const shareCount = shares?.length || 0;
+  // Calculer le véritable état de partage en utilisant share_count de la vue SQL
+  const shareCount = prompt.share_count || 0;
   const sharingState: SharingState = 
     prompt.visibility === "SHARED" 
       ? "PUBLIC" 
