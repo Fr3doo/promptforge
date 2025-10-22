@@ -22,6 +22,13 @@ export const messages = {
     save: {
       failed: "Erreur de sauvegarde",
       unexpected: "Une erreur inattendue s'est produite",
+      network: "Erreur de connexion lors de la sauvegarde",
+      validation: "Les données ne sont pas valides",
+    },
+    network: {
+      generic: "Erreur de connexion",
+      timeout: "Délai d'attente dépassé",
+      unavailable: "Service temporairement indisponible",
     },
     update: {
       failed: "Erreur de mise à jour",

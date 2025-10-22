@@ -27,7 +27,15 @@ interface PromptSaveData {
 
 export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSaveOptions = { isEditMode: false }) {
   const navigate = useNavigate();
-  const { notifyError } = useToastNotifier();
+  const { 
+    notifyError, 
+    notifyPromptCreated, 
+    notifyPromptUpdated,
+    notifyValidationError,
+    notifyNetworkError,
+    notifyServerError,
+    notifyPermissionError,
+  } = useToastNotifier();
   
   const { mutate: createPrompt, isPending: creating } = useCreatePrompt();
   const { mutate: updatePrompt, isPending: updating } = useUpdatePrompt();
@@ -85,9 +93,7 @@ export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSave
                                    currentServerPrompt.public_permission === "WRITE";
           
           if (!isOwner && !isPublicWritable) {
-            toast.error("Modification non autorisée", {
-              description: "Ce prompt est en lecture seule. Vous ne pouvez pas le modifier.",
-            });
+            notifyPermissionError("ce prompt");
             return;
           }
 
@@ -127,8 +133,21 @@ export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSave
           {
             onSuccess: () => {
               handleVariableSave(promptId);
+              notifyPromptUpdated(promptData.title);
               onSuccess?.();
               navigate("/prompts");
+            },
+            onError: (error: any) => {
+              // Check error type for better messaging
+              if (error?.message?.includes("network") || error?.message?.includes("fetch")) {
+                notifyNetworkError("mettre à jour le prompt", () => {
+                  savePrompt(data, promptId);
+                });
+              } else if (error?.code === "PGRST116" || error?.message?.includes("permission")) {
+                notifyPermissionError("ce prompt");
+              } else {
+                notifyServerError("mise à jour du prompt");
+              }
             },
           }
         );
@@ -164,23 +183,47 @@ export function usePromptSave({ isEditMode, onSuccess, promptId }: UsePromptSave
               })),
             }, {
               onSuccess: () => {
+                notifyPromptCreated(promptData.title);
                 onSuccess?.();
-                // Redirect with query param to show share dialog
                 navigate(`/prompts?justCreated=${newPrompt.id}`);
               },
               onError: (error) => {
                 console.error("Erreur création version initiale:", error);
-                // Continuer quand même vers /prompts avec le prompt créé
+                // Version initiale échouée mais le prompt est créé
+                notifyPromptCreated(promptData.title);
                 onSuccess?.();
                 navigate(`/prompts?justCreated=${newPrompt.id}`);
               }
             });
           },
+          onError: (error: any) => {
+            // Check error type for better messaging
+            if (error?.message?.includes("network") || error?.message?.includes("fetch")) {
+              notifyNetworkError("créer le prompt", () => {
+                savePrompt(data);
+              });
+            } else if (error?.code === "23505") {
+              notifyError("Erreur de création", "Un prompt avec ce titre existe déjà");
+            } else {
+              notifyServerError("création du prompt");
+            }
+          },
         });
       }
     } catch (error: any) {
+      // Validation errors
       if (error?.errors?.[0]?.message) {
-        notifyError(messages.errors.validation.failed, error.errors[0].message);
+        const validationError = error.errors[0];
+        const field = validationError.path?.[0] || "Champ";
+        notifyValidationError(
+          field.toString(),
+          validationError.message
+        );
+      } else if (error?.name === "ZodError") {
+        notifyError(
+          messages.errors.validation.failed,
+          "Veuillez vérifier les données saisies"
+        );
       } else {
         notifyError(messages.errors.save.failed, messages.errors.save.unexpected);
       }

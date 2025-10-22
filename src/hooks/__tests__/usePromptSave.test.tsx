@@ -83,6 +83,13 @@ describe('usePromptSave', () => {
         dismiss: vi.fn(),
         update: vi.fn(),
       })),
+      notifyPromptCreated: vi.fn(),
+      notifyPromptUpdated: vi.fn(),
+      notifyValidationError: vi.fn(),
+      notifyNetworkError: vi.fn(),
+      notifyServerError: vi.fn(),
+      notifyPermissionError: vi.fn(),
+      notifyConflictError: vi.fn(),
     });
 
     vi.spyOn(useAuthHook, 'useAuth').mockImplementation(mockUser as any);
