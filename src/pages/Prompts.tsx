@@ -90,14 +90,15 @@ const Prompts = () => {
       
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <h1 className="text-2xl font-bold">Mes Prompts</h1>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <Drawer open={analyzerOpen} onOpenChange={setAnalyzerOpen}>
                 <DrawerTrigger asChild>
-                  <Button variant="outline" className="gap-2">
+                  <Button variant="outline" className="gap-2 w-full sm:w-auto justify-center">
                     <Sparkles className="h-4 w-4" />
-                    Analyser un prompt
+                    <span className="hidden sm:inline">Analyser un prompt</span>
+                    <span className="sm:hidden">Analyser</span>
                   </Button>
                 </DrawerTrigger>
                 <DrawerContent className="max-h-[95vh]">
@@ -112,7 +113,7 @@ const Prompts = () => {
                   </div>
                 </DrawerContent>
               </Drawer>
-              <Button onClick={() => navigate("/prompts/new")} className="gap-2">
+              <Button onClick={() => navigate("/prompts/new")} className="gap-2 w-full sm:w-auto justify-center">
                 <Plus className="h-4 w-4" />
                 Nouveau prompt
               </Button>
