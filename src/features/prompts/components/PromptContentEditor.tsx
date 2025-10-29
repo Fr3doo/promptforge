@@ -41,17 +41,18 @@ export const PromptContentEditor = ({
       {/* Editor Section */}
       <div className="space-y-4">
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <h2 className="text-2xl font-bold">{messages.editor.promptContent}</h2>
-            <div className="flex items-center gap-2">
-              <Button onClick={onDetectVariables} variant="outline" className="gap-2" disabled={disabled}>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+              <Button onClick={onDetectVariables} variant="outline" className="gap-2 w-full sm:w-auto justify-center" disabled={disabled}>
                 <Sparkles className="h-4 w-4" />
-                {messages.editor.detectVariables}
+                <span className="hidden sm:inline">{messages.editor.detectVariables}</span>
+                <span className="sm:hidden">Détecter</span>
               </Button>
               {variables.length > 0 && (
                 <Sheet open={isVariablesOpen} onOpenChange={setIsVariablesOpen} modal={false}>
                   <SheetTrigger asChild>
-                    <Button variant="outline" className="gap-2" disabled={disabled}>
+                    <Button variant="outline" className="gap-2 w-full sm:w-auto justify-center" disabled={disabled}>
                       <Edit3 className="h-4 w-4" />
                       {messages.editor.variables} ({variables.length})
                     </Button>
