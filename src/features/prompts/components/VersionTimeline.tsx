@@ -99,9 +99,9 @@ export function VersionTimeline({
                   title={isCurrent ? "La version courante ne peut pas être supprimée" : ""}
                 />
                 
-                <div className="flex-1 flex items-start justify-between">
+                <div className="flex-1 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant={isCurrent ? "default" : "secondary"} className="font-mono">
                       v{version.semver}
                     </Badge>
@@ -116,12 +116,12 @@ export function VersionTimeline({
                   </CardTitle>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => onViewDiff(version.id)}
-                    className="gap-2"
+                    className="gap-2 flex-1 sm:flex-none"
                   >
                     <Eye className="h-3 w-3" />
                     Diff
@@ -131,7 +131,7 @@ export function VersionTimeline({
                     variant="secondary"
                     onClick={() => onRestore(version.id)}
                     disabled={isRestoring}
-                    className="gap-2"
+                    className="gap-2 flex-1 sm:flex-none"
                   >
                     <RotateCcw className="h-3 w-3" />
                     Restaurer
