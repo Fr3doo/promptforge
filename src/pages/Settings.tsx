@@ -182,7 +182,7 @@ export default function Settings() {
           </div>
 
           <Tabs defaultValue="appearance" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 gap-1 h-auto p-1">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 h-auto p-1">
               <TabsTrigger value="appearance" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
                 <Sun className="h-4 w-4 flex-shrink-0" />
                 <span className="hidden md:inline text-sm">{messages.settings.tabs.appearance}</span>
@@ -279,7 +279,7 @@ export default function Settings() {
 
                   <div className="space-y-2">
                     <Label htmlFor="pseudo">{messages.settings.profile.pseudoLabel}</Label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Input
                         id="pseudo"
                         type="text"
@@ -292,6 +292,7 @@ export default function Settings() {
                       <Button 
                         onClick={handleUpdatePseudo}
                         disabled={isPseudoLoading || !pseudo.trim()}
+                        className="w-full sm:w-auto"
                       >
                         {isPseudoLoading ? messages.settings.profile.savingButton : messages.settings.profile.saveButton}
                       </Button>

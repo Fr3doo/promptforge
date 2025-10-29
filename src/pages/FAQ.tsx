@@ -76,7 +76,7 @@ const FAQ = () => {
                 />
               </div>
               <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full sm:w-auto">
-                <TabsList className="w-full sm:w-auto flex-wrap h-auto">
+                <TabsList className="w-full sm:w-auto flex-wrap h-auto gap-1">
                   {categories.map(cat => (
                     <TabsTrigger key={cat} value={cat} className="flex-1 sm:flex-none">
                       {cat === "all" ? "Toutes" : cat}
@@ -91,7 +91,7 @@ const FAQ = () => {
                 <AccordionItem 
                   key={index} 
                   value={`item-${index}`}
-                  className="border border-border rounded-lg px-6 bg-card"
+                  className="border border-border rounded-lg px-4 sm:px-6 bg-card"
                 >
                   <AccordionTrigger className="hover:no-underline">
                     <div className="flex items-start gap-3 text-left">

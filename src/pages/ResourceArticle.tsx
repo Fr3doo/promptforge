@@ -88,8 +88,8 @@ const ResourceArticle = () => {
               </div>
             </div>
 
-            <Card className="p-8">
-              <div className="prose prose-slate dark:prose-invert max-w-none">
+            <Card className="p-4 sm:p-6 md:p-8">
+              <div className="prose prose-slate dark:prose-invert max-w-none prose-img:max-w-full prose-pre:max-w-full prose-pre:overflow-x-auto">
                 <ReactMarkdown>{article.content}</ReactMarkdown>
               </div>
             </Card>

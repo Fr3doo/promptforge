@@ -232,7 +232,7 @@ const PromptEditorPage = () => {
 
 
           <TabsContent value="versions" className="mt-6 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <h3 className="text-lg font-semibold">Historique des versions</h3>

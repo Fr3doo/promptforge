@@ -138,7 +138,7 @@ export const PromptCard = ({
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground">
               <VisibilityBadge sharingState={sharingState} shareCount={shareCount} />
               <span>v{prompt.version}</span>
               {!isOwner && (

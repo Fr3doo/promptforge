@@ -127,19 +127,19 @@ const Prompts = () => {
         {showShareBanner && justCreatedPrompt && (
           <Alert className="border-primary bg-primary/5">
             <Share2 className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between gap-4">
+            <AlertDescription className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex-1">
                 <p className="font-medium">{messages.shareBanner.promptCreated}</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {messages.shareBanner.shareQuestion(justCreatedPrompt.title)}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Button
                   variant="default"
                   size="sm"
                   onClick={handleOpenShareDialog}
-                  className="gap-2"
+                  className="gap-2 flex-1 sm:flex-none"
                 >
                   <Share2 className="h-4 w-4" />
                   {messages.buttons.shareNow}

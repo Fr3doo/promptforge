@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Lightbulb, Target, Code } from "lucide-react";
 import { promptingMethods, type PromptingMethod } from "@/data/promptingMethods";
 import { SEO } from "@/components/SEO";
@@ -104,6 +105,22 @@ const PromptingMethods = () => {
                 >
                   Avancé
                 </Button>
+              </div>
+
+              {/* Mobile Navigation Dropdown */}
+              <div className="lg:hidden w-full px-4">
+                <Select value={selectedMethod} onValueChange={scrollToMethod}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Sélectionner une méthode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredMethods.map((method) => (
+                      <SelectItem key={method.id} value={method.id}>
+                        {method.icon} {method.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

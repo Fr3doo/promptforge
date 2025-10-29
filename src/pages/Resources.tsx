@@ -72,7 +72,7 @@ const Resources = () => {
                 />
               </div>
               <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full sm:w-auto">
-                <TabsList className="w-full sm:w-auto flex-wrap h-auto">
+                <TabsList className="w-full sm:w-auto flex-wrap h-auto gap-1">
                   {categories.map(cat => (
                     <TabsTrigger key={cat} value={cat} className="flex-1 sm:flex-none">
                       {cat === "all" ? "Tous" : cat}
