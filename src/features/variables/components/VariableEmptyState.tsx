@@ -8,11 +8,18 @@ interface VariableEmptyStateProps {
 export const VariableEmptyState = ({
   message = messages.variables.emptyState,
 }: VariableEmptyStateProps) => {
+  const showCodeExample = message === messages.variables.emptyState;
+  
   return (
     <Card className="p-8 text-center border-dashed">
       <p className="text-muted-foreground">
-        {message}{" "}
-        <code className="font-mono bg-muted px-1 rounded">{"{{nom}}"}</code>
+        {message}
+        {showCodeExample && (
+          <>
+            {" "}
+            <code className="font-mono bg-muted px-1 rounded">{"{{nom}}"}</code>
+          </>
+        )}
       </p>
     </Card>
   );

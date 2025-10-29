@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { PromptEditor } from "@/components/PromptEditor";
 import { VariableConfigPanel } from "@/features/variables/components/VariableConfigPanel";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Sparkles, Edit3 } from "lucide-react";
+import { Edit3 } from "lucide-react";
 import type { Variable } from "../types";
 import { messages } from "@/constants/messages";
 
@@ -44,35 +44,30 @@ export const PromptContentEditor = ({
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <h2 className="text-2xl font-bold">{messages.editor.promptContent}</h2>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-              <Button onClick={onDetectVariables} variant="outline" className="gap-2 w-full sm:w-auto justify-center" disabled={disabled}>
-                <Sparkles className="h-4 w-4" />
-                {messages.editor.detectVariables}
-              </Button>
-              {variables.length > 0 && (
-                <Sheet open={isVariablesOpen} onOpenChange={setIsVariablesOpen} modal={false}>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" className="gap-2 w-full sm:w-auto justify-center" disabled={disabled}>
-                      <Edit3 className="h-4 w-4" />
-                      {messages.editor.variables} ({variables.length})
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="w-[46rem] overflow-y-auto">
-                    <SheetHeader>
-                      <SheetTitle>{messages.editor.variableConfig}</SheetTitle>
-                      <SheetDescription>
-                        {messages.placeholders.defaultConfigDescription}
-                      </SheetDescription>
-                    </SheetHeader>
-                    <div className="mt-6">
-                      <VariableConfigPanel
-                        variables={variables}
-                        onVariableUpdate={onVariableUpdate}
-                        onVariableDelete={onVariableDelete}
-                      />
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              )}
+              <Sheet open={isVariablesOpen} onOpenChange={setIsVariablesOpen} modal={false}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="gap-2 w-full sm:w-auto justify-center" disabled={disabled}>
+                    <Edit3 className="h-4 w-4" />
+                    {messages.editor.variablesButton(variables.length)}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[46rem] overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle>{messages.editor.variableConfig}</SheetTitle>
+                    <SheetDescription>
+                      {messages.placeholders.defaultConfigDescription}
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="mt-6">
+                    <VariableConfigPanel
+                      variables={variables}
+                      onVariableUpdate={onVariableUpdate}
+                      onVariableDelete={onVariableDelete}
+                      onDetectVariables={onDetectVariables}
+                    />
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
           <p className="text-sm text-muted-foreground">

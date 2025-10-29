@@ -453,9 +453,11 @@ export const messages = {
     preview: "Aperçu",
     previewPlaceholder: "L'aperçu s'affichera ici...",
     detectVariables: "Détecter variables",
+    detectVariablesAuto: "Détecter automatiquement",
     variableValues: "Valeurs des variables",
     promptContent: "Contenu du prompt",
     variables: "Variables",
+    variablesButton: (count: number) => count > 0 ? `Variables (${count})` : "Variables",
     variableConfig: "Configuration des variables",
     variableConfigInstructions: "Utilisez {{variable}} dans votre prompt. Exemples :\n• {{nom}} - texte simple\n• {{age}} - nombre\n• {{actif}} - booléen",
   },
@@ -484,6 +486,7 @@ export const messages = {
   variables: {
     emptyState: 'Aucune variable détectée. Utilisez le bouton "Détecter variables" ou ajoutez des variables manuellement avec la syntaxe',
     emptyStateWithInstructions: 'Commencez par ajouter des variables avec la syntaxe {{variable}} dans votre prompt, puis utilisez le bouton "Détecter variables".',
+    emptyStateWithButton: "Écrivez vos variables avec {{nom}} dans votre prompt, puis cliquez sur le bouton ci-dessus pour les détecter automatiquement.",
     typeLabels: {
       STRING: "Texte",
       NUMBER: "Nombre",
