@@ -41,7 +41,7 @@ export const Header = () => {
           {user ? (
             <>
               {/* Desktop Navigation */}
-              <nav className="hidden md:flex items-center gap-6">
+              <nav className="hidden md:flex items-center gap-4 lg:gap-6 md:ml-6 lg:ml-8">
                 <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
                   {messages.navigation.dashboard}
                 </Link>
