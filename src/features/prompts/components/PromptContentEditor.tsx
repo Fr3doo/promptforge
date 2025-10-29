@@ -51,7 +51,7 @@ export const PromptContentEditor = ({
                     {messages.editor.variablesButton(variables.length)}
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[46rem] overflow-y-auto">
+                <SheetContent side="right" className="w-full sm:w-[90vw] sm:max-w-[600px] lg:w-[46rem] overflow-y-auto">
                   <SheetHeader>
                     <SheetTitle>{messages.editor.variableConfig}</SheetTitle>
                     <SheetDescription>
