@@ -46,8 +46,7 @@ export const PromptContentEditor = ({
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
               <Button onClick={onDetectVariables} variant="outline" className="gap-2 w-full sm:w-auto justify-center" disabled={disabled}>
                 <Sparkles className="h-4 w-4" />
-                <span className="hidden sm:inline">{messages.editor.detectVariables}</span>
-                <span className="sm:hidden">Détecter</span>
+                {messages.editor.detectVariables}
               </Button>
               {variables.length > 0 && (
                 <Sheet open={isVariablesOpen} onOpenChange={setIsVariablesOpen} modal={false}>
