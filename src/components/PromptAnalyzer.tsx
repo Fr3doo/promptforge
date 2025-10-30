@@ -277,7 +277,7 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
                   result.variables.map((v, i) => (
                     <Card key={i}>
                       <CardHeader className="pb-3">
-                        <CardTitle className="text-base font-mono">
+                        <CardTitle className="text-base font-mono break-all">
                           {`{{${v.name}}}`}
                         </CardTitle>
                       </CardHeader>
@@ -290,7 +290,7 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
                             </code>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">{v.description}</p>
+                        <p className="text-sm text-muted-foreground break-words">{v.description}</p>
                         {v.options && v.options.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {v.options.map((opt, j) => (
@@ -307,9 +307,9 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
               </TabsContent>
 
               <TabsContent value="template" className="space-y-4">
-                <div className="relative">
-                  <pre className="p-4 pt-12 sm:pt-4 bg-muted rounded-lg text-sm overflow-x-auto">
-                    <code>{result.prompt_template}</code>
+                <div className="relative w-full overflow-hidden">
+                  <pre className="p-4 pt-12 sm:pt-4 bg-muted rounded-lg text-sm overflow-x-auto max-w-full">
+                    <code className="block">{result.prompt_template}</code>
                   </pre>
                   <Button
                     size="sm"

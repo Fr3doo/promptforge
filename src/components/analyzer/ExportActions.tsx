@@ -30,9 +30,11 @@ export function ExportActions({ jsonData, markdownData, filename }: ExportAction
     <div className="grid gap-4">
       <div className="space-y-2">
         <h3 className="font-semibold">JSON</h3>
-        <pre className="p-4 bg-muted rounded-lg text-xs overflow-x-auto max-h-64">
-          <code>{JSON.stringify(jsonData, null, 2)}</code>
-        </pre>
+        <div className="w-full overflow-hidden rounded-lg">
+          <pre className="p-4 bg-muted text-xs overflow-x-auto max-h-64 max-w-full">
+            <code className="block">{JSON.stringify(jsonData, null, 2)}</code>
+          </pre>
+        </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <Button
             size="sm"
@@ -61,9 +63,11 @@ export function ExportActions({ jsonData, markdownData, filename }: ExportAction
 
       <div className="space-y-2">
         <h3 className="font-semibold">Markdown</h3>
-        <pre className="p-4 bg-muted rounded-lg text-xs overflow-x-auto max-h-64">
-          <code>{markdownData}</code>
-        </pre>
+        <div className="w-full overflow-hidden rounded-lg">
+          <pre className="p-4 bg-muted text-xs overflow-x-auto max-h-64 max-w-full">
+            <code className="block">{markdownData}</code>
+          </pre>
+        </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <Button
             size="sm"

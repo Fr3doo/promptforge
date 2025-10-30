@@ -25,7 +25,7 @@ export function MetadataView({ metadata }: MetadataViewProps) {
         <h3 className="font-semibold mb-2">Objectifs</h3>
         <ul className="list-disc list-inside space-y-1">
           {metadata.objectifs.map((obj, i) => (
-            <li key={i} className="text-sm text-muted-foreground">{obj}</li>
+            <li key={i} className="text-sm text-muted-foreground break-words">{obj}</li>
           ))}
         </ul>
       </div>
@@ -37,7 +37,7 @@ export function MetadataView({ metadata }: MetadataViewProps) {
             <h3 className="font-semibold mb-2">Étapes</h3>
             <ol className="list-decimal list-inside space-y-1">
               {metadata.etapes.map((step, i) => (
-                <li key={i} className="text-sm text-muted-foreground">{step}</li>
+                <li key={i} className="text-sm text-muted-foreground break-words">{step}</li>
               ))}
             </ol>
           </div>
@@ -51,7 +51,7 @@ export function MetadataView({ metadata }: MetadataViewProps) {
             <h3 className="font-semibold mb-2">Critères de qualité</h3>
             <ul className="list-disc list-inside space-y-1">
               {metadata.criteres.map((crit, i) => (
-                <li key={i} className="text-sm text-muted-foreground">{crit}</li>
+                <li key={i} className="text-sm text-muted-foreground break-words">{crit}</li>
               ))}
             </ul>
           </div>
