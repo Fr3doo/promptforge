@@ -1,296 +1,111 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { usePrompt } from "@/hooks/usePrompts";
-import { useVariables } from "@/hooks/useVariables";
-import { useVersions, useDeleteVersions } from "@/hooks/useVersions";
 import { useAuth } from "@/hooks/useAuth";
-import { useUnsavedChangesWarning } from "@/hooks/useUnsavedChangesWarning";
-import { usePromptForm } from "@/features/prompts/hooks/usePromptForm";
 import { useAutoSave } from "@/features/prompts/hooks/useAutoSave";
-import { usePromptVersioning } from "@/hooks/usePromptVersioning";
-import { usePromptPermission } from "@/hooks/usePromptPermission";
-import { useConflictDetection } from "@/hooks/useConflictDetection";
-import { PromptMetadataForm } from "@/features/prompts/components/PromptMetadataForm";
-import { ConflictAlert } from "@/components/ConflictAlert";
-import { PromptContentEditor } from "@/features/prompts/components/PromptContentEditor";
-import { VersionTimeline } from "@/features/prompts/components/VersionTimeline";
-import { CreateVersionDialog } from "@/features/prompts/components/CreateVersionDialog";
-import { DiffViewer } from "@/features/prompts/components/DiffViewer";
-import { LoadingButton } from "@/components/LoadingButton";
+import { PromptEditorProvider, usePromptEditorContext } from "@/features/prompts/contexts/PromptEditorContext";
+import { PromptEditorHeader } from "@/features/prompts/components/editor/PromptEditorHeader";
+import { ConflictAlertContainer } from "@/features/prompts/components/editor/ConflictAlertContainer";
+import { PromptEditorMetadata } from "@/features/prompts/components/editor/PromptEditorMetadata";
+import { PromptEditorContent as PromptContentEditorWrapper } from "@/features/prompts/components/editor/PromptEditorContent";
+import { PromptEditorVersions } from "@/features/prompts/components/editor/PromptEditorVersions";
 import { SaveProgress } from "@/components/SaveProgress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, AlertCircle, Eye } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
-const PromptEditorPage = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
-  const isEditMode = !!id;
-
-  // Queries
-  const { data: prompt, isLoading: loadingPrompt, refetch: refetchPrompt } = usePrompt(id);
-  const { data: existingVariables = [], isLoading: loadingVariables, refetch: refetchVariables } = useVariables(id);
-  const { data: versions = [] } = useVersions(id);
-
-  // Permissions
-  const { canEdit: canEditFromPermission, canCreateVersion, permission, isOwner } = usePromptPermission(id);
+/**
+ * Internal component that uses the context
+ * Separated to allow context consumption
+ */
+function PromptEditorMainContent() {
+  const { isEditMode, form, versions, promptId } = usePromptEditorContext();
   
-  // En mode création, l'utilisateur peut toujours éditer
-  const canEdit = !isEditMode || canEditFromPermission;
-
-  // Détection des conflits d'édition concurrente
-  const { hasConflict, serverUpdatedAt, resetConflict } = useConflictDetection(
-    id,
-    prompt?.updated_at,
-    canEdit // Ne vérifier que si l'utilisateur peut éditer
-  );
-
-  const handleRefreshPrompt = () => {
-    refetchPrompt(); // Recharger le prompt depuis le serveur
-    refetchVariables(); // Recharger les variables
-    resetConflict(); // Réinitialiser l'état de conflit
-  };
-
-  // Form hook with all logic
-  const form = usePromptForm({
-    prompt,
-    existingVariables,
-    isEditMode,
-    canEdit,
-  });
-
-  // Versioning
-  const [diffOpen, setDiffOpen] = useState(false);
-  const [selectedVersionForDiff, setSelectedVersionForDiff] = useState<string | null>(null);
-
-  const {
-    versionMessage,
-    setVersionMessage,
-    versionType,
-    setVersionType,
-    handleCreateVersion,
-    handleRestoreVersion,
-    isCreating,
-    isRestoring,
-    hasUnsavedChanges,
-  } = usePromptVersioning(prompt, existingVariables, form.content);
-
-  const deleteVersionsMutation = useDeleteVersions();
-
-  const handleDeleteVersions = (versionIds: string[]) => {
-    if (!id) return;
-    deleteVersionsMutation.mutate({ 
-      versionIds, 
-      promptId: id,
-      currentVersion: prompt?.version
-    });
-  };
-
-  const handleViewDiff = (versionId: string) => {
-    setSelectedVersionForDiff(versionId);
-    setDiffOpen(true);
-  };
-
-  const selectedVersion = versions.find(v => v.id === selectedVersionForDiff);
-  const selectedVersionIndex = versions.findIndex(v => v.id === selectedVersionForDiff);
-  const previousVersion = selectedVersionIndex < versions.length - 1 
-    ? versions[selectedVersionIndex + 1] 
-    : null;
-
-  // Avertissement de navigation non enregistrée
-  const { confirmNavigation } = useUnsavedChangesWarning({
-    hasUnsavedChanges: form.hasUnsavedChanges && !form.isSaving,
-  });
-
-  // Auto-save hook (seulement en mode édition)
+  // Auto-save hook (only in edit mode)
   useAutoSave({
-    promptId: id,
+    promptId,
     title: form.title,
     content: form.content,
     description: form.description,
     tags: form.tags,
-    enabled: isEditMode && !!id,
-    interval: 30000, // 30 secondes
+    enabled: isEditMode && !!promptId,
+    interval: 30000, // 30 seconds
   });
+  
+  return (
+    <>
+      <PromptEditorHeader />
+      
+      <main className="container mx-auto px-4 py-8 space-y-8 max-w-7xl">
+        <ConflictAlertContainer />
+        
+        <PromptEditorMetadata />
+        
+        <Tabs defaultValue="editor" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="editor">Éditeur</TabsTrigger>
+            <TabsTrigger value="versions">Versions ({versions.length})</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="editor" className="mt-6">
+            <PromptContentEditorWrapper />
+          </TabsContent>
+          
+          <TabsContent value="versions">
+            <PromptEditorVersions />
+          </TabsContent>
+        </Tabs>
+      </main>
+      
+      <SaveProgress isSaving={form.isSaving} />
+    </>
+  );
+}
 
+/**
+ * Orchestrator component for prompt editor page
+ * Handles authentication and wraps children in context provider
+ */
+const PromptEditorPage = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  
   // Redirect if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth");
     }
   }, [user, authLoading, navigate]);
+  
+  return (
+    <PromptEditorProvider promptId={id}>
+      <PromptEditorLoadingWrapper />
+    </PromptEditorProvider>
+  );
+};
 
-  if (loadingPrompt || loadingVariables) {
+/**
+ * Loading wrapper that consumes context for loading states
+ */
+function PromptEditorLoadingWrapper() {
+  const { isLoadingPrompt, isLoadingVariables } = usePromptEditorContext();
+  
+  if (isLoadingPrompt || isLoadingVariables) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
-
+  
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
-      <div className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <LoadingButton 
-              variant="ghost" 
-              onClick={() => confirmNavigation(() => navigate("/prompts"))} 
-              className="gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Retour
-            </LoadingButton>
-            
-            <div className="flex items-center gap-3">
-              {!canEdit && permission && (
-                <Badge variant="secondary" className="gap-1.5">
-                  <Eye className="h-3 w-3" />
-                  Mode lecture seule
-                </Badge>
-              )}
-              <LoadingButton
-                onClick={() => form.handleSave(id, hasConflict)}
-                isLoading={form.isSaving}
-                loadingText="Enregistrement..."
-                className="gap-2"
-                disabled={!canEdit || hasConflict || !form.isFormValid}
-                title={!form.isFormValid ? "Veuillez corriger les erreurs avant d'enregistrer" : ""}
-              >
-                Enregistrer
-              </LoadingButton>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <main className="container mx-auto px-4 py-8 space-y-8 max-w-7xl">
-        {/* Conflict Alert */}
-        {hasConflict && serverUpdatedAt && (
-          <ConflictAlert 
-            serverUpdatedAt={serverUpdatedAt}
-            onRefresh={handleRefreshPrompt}
-            onDismiss={resetConflict}
-          />
-        )}
-
-        {/* Metadata Section */}
-        <PromptMetadataForm
-          title={form.title}
-          onTitleChange={form.setTitle}
-          description={form.description}
-          onDescriptionChange={form.setDescription}
-          initialTags={form.tags}
-          onTagsChange={form.setTags}
-          isEditMode={isEditMode}
-          disabled={!canEdit}
-          errors={{
-            title: form.validationErrors.title,
-            description: form.validationErrors.description,
-            tags: form.validationErrors.tags,
-          }}
-        />
-
-        {/* Tabs for Editor, Variables, and Versions */}
-        <Tabs defaultValue="editor" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="editor">Éditeur</TabsTrigger>
-            <TabsTrigger value="versions">Versions ({versions.length})</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="editor" className="mt-6">
-            <PromptContentEditor
-              content={form.content}
-              onContentChange={form.setContent}
-              variables={form.variables}
-              variableValues={form.variableValues}
-              onVariableValuesChange={form.setVariableValues}
-              onDetectVariables={form.detectVariables}
-              onVariableUpdate={form.updateVariable}
-              onVariableDelete={form.deleteVariable}
-              disabled={!canEdit}
-              errors={{
-                content: form.validationErrors.content,
-              }}
-            />
-          </TabsContent>
-
-
-          <TabsContent value="versions" className="mt-6 space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-lg font-semibold">Historique des versions</h3>
-                  {hasUnsavedChanges && (
-                    <Badge variant="secondary" className="gap-1.5">
-                      <AlertCircle className="h-3 w-3" />
-                      Modifications non sauvegardées
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Suivez l'évolution de votre prompt avec SemVer
-                </p>
-              </div>
-              <CreateVersionDialog
-                currentVersion={prompt?.version || "1.0.0"}
-                versionMessage={versionMessage}
-                versionType={versionType}
-                onMessageChange={setVersionMessage}
-                onTypeChange={setVersionType}
-                onConfirm={handleCreateVersion}
-                isCreating={isCreating}
-                hasUnsavedChanges={hasUnsavedChanges}
-                disabled={!canCreateVersion}
-              />
-            </div>
-
-            <VersionTimeline
-              versions={versions}
-              currentVersion={prompt?.version || "1.0.0"}
-              onRestore={handleRestoreVersion}
-              onViewDiff={handleViewDiff}
-              onDelete={handleDeleteVersions}
-              isRestoring={isRestoring}
-              isDeleting={deleteVersionsMutation.isPending}
-            />
-          </TabsContent>
-        </Tabs>
-      </main>
-
-      {/* Diff Dialog */}
-      {selectedVersion && (
-        <DiffViewer
-          isOpen={diffOpen}
-          onClose={() => setDiffOpen(false)}
-          oldContent={previousVersion?.content || ""}
-          newContent={selectedVersion.content}
-          oldVersion={previousVersion?.semver || "Version précédente"}
-          newVersion={selectedVersion.semver}
-        />
-      )}
-
-      {/* Save Progress Indicator */}
-      <SaveProgress isSaving={form.isSaving} />
-      
+      <PromptEditorMainContent />
       <Footer />
     </div>
   );
-};
+}
 
 export default PromptEditorPage;
