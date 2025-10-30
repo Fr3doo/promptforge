@@ -31,7 +31,7 @@ export function ExportActions({ jsonData, markdownData, filename }: ExportAction
       <div className="space-y-2">
         <h3 className="font-semibold">JSON</h3>
         <div className="w-full overflow-hidden rounded-lg">
-          <pre className="p-4 bg-muted text-xs overflow-x-auto max-h-64 max-w-full">
+          <pre className="p-4 bg-muted text-xs max-h-80 overflow-y-auto whitespace-pre-wrap break-words">
             <code className="block">{JSON.stringify(jsonData, null, 2)}</code>
           </pre>
         </div>
@@ -64,7 +64,7 @@ export function ExportActions({ jsonData, markdownData, filename }: ExportAction
       <div className="space-y-2">
         <h3 className="font-semibold">Markdown</h3>
         <div className="w-full overflow-hidden rounded-lg">
-          <pre className="p-4 bg-muted text-xs overflow-x-auto max-h-64 max-w-full">
+          <pre className="p-4 bg-muted text-xs max-h-80 overflow-y-auto whitespace-pre-wrap break-words">
             <code className="block">{markdownData}</code>
           </pre>
         </div>

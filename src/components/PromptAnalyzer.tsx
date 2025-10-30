@@ -23,7 +23,7 @@ import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { promptSchema } from "@/lib/validation";
 import { messages } from "@/constants/messages";
 import { captureException } from "@/lib/logger";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useBreakpoint } from "@/hooks/use-breakpoint";
 
 interface PromptAnalyzerProps {
   onClose?: () => void;
@@ -32,7 +32,7 @@ interface PromptAnalyzerProps {
 export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
   const [promptContent, setPromptContent] = useState("");
   const { result, isAnalyzing, analyze, reset } = usePromptAnalysis();
-  const isMobile = useIsMobile();
+  const breakpoint = useBreakpoint();
   const { mutate: createPrompt, isPending: isSaving } = useCreatePrompt();
   const { mutate: saveVariables } = useBulkUpsertVariables();
   const { mutate: createInitialVersion } = useCreateVersion();
@@ -260,7 +260,7 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
             </div>
           </CardHeader>
           <CardContent>
-            {isMobile ? (
+            {breakpoint === 'mobile' ? (
               <Accordion type="single" collapsible defaultValue="metadata" className="w-full">
                 <AccordionItem value="metadata">
                   <AccordionTrigger className="text-base font-semibold">
@@ -347,19 +347,101 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
+            ) : breakpoint === 'tablet' ? (
+              <Accordion type="single" collapsible defaultValue="metadata" className="w-full">
+                <AccordionItem value="metadata">
+                  <AccordionTrigger className="text-base font-semibold">
+                    {messages.analyzer.tabs.metadata}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <MetadataView metadata={result.metadata} />
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="variables">
+                  <AccordionTrigger className="text-base font-semibold">
+                    {messages.analyzer.tabs.variables} ({result.variables.length})
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3">
+                    {result.variables.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">{messages.analyzer.noVariables}</p>
+                    ) : (
+                      result.variables.map((v, i) => (
+                        <Card key={i}>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-base font-mono break-all">
+                              {`{{${v.name}}}`}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-2">
+                            <div className="flex items-center gap-2 flex-wrap text-sm">
+                              <Badge variant="outline">{v.type}</Badge>
+                              {v.default_value && (
+                                <code className="text-xs bg-muted px-2 py-1 rounded truncate max-w-[200px]" title={v.default_value}>
+                                  {v.default_value}
+                                </code>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground break-words">{v.description}</p>
+                            {v.options && v.options.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {v.options.map((opt, j) => (
+                                  <Badge key={j} variant="secondary" className="text-xs">
+                                    {opt}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="template">
+                  <AccordionTrigger className="text-base font-semibold">
+                    Template structuré
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="relative w-full">
+                      <pre className="p-4 bg-muted rounded-lg text-sm max-h-[500px] overflow-y-auto whitespace-pre-wrap break-words">
+                        <code className="block">{result.prompt_template}</code>
+                      </pre>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-3 w-full gap-2"
+                        onClick={copyTemplate}
+                      >
+                        <Copy className="h-3 w-3" />
+                        Copier le template
+                      </Button>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="export">
+                  <AccordionTrigger className="text-base font-semibold">
+                    {messages.analyzer.tabs.export}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <ExportActions
+                      jsonData={result.exports.json}
+                      markdownData={result.exports.markdown}
+                      filename="prompt-structure"
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             ) : (
               <Tabs defaultValue="metadata">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="metadata">{messages.analyzer.tabs.metadata}</TabsTrigger>
                   <TabsTrigger value="variables">
-                    <span className="hidden sm:inline">{messages.analyzer.tabs.variables}</span>
-                    <span className="sm:hidden">Vars</span>
-                    <span className="ml-1">({result.variables.length})</span>
+                    {messages.analyzer.tabs.variables} ({result.variables.length})
                   </TabsTrigger>
-                  <TabsTrigger value="template">
-                    <span className="hidden sm:inline">{messages.analyzer.tabs.structured}</span>
-                    <span className="sm:hidden">Tpl</span>
-                  </TabsTrigger>
+                  <TabsTrigger value="template">{messages.analyzer.tabs.structured}</TabsTrigger>
                   <TabsTrigger value="export">{messages.analyzer.tabs.export}</TabsTrigger>
                 </TabsList>
 
@@ -404,8 +486,8 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
                 </TabsContent>
 
                 <TabsContent value="template" className="space-y-4">
-                  <div className="relative w-full overflow-hidden">
-                    <pre className="p-4 pt-12 sm:pt-4 bg-muted rounded-lg text-sm overflow-x-auto max-w-full">
+                  <div className="relative w-full">
+                    <pre className="p-4 pt-12 bg-muted rounded-lg text-sm max-h-[500px] overflow-y-auto whitespace-pre-wrap break-words">
                       <code className="block">{result.prompt_template}</code>
                     </pre>
                     <Button
@@ -415,8 +497,7 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
                       onClick={copyTemplate}
                     >
                       <Copy className="h-3 w-3" />
-                      <span className="hidden sm:inline">{messages.copy.copyAction}</span>
-                      <span className="sm:hidden">Copier</span>
+                      {messages.copy.copyAction}
                     </Button>
                   </div>
                 </TabsContent>
