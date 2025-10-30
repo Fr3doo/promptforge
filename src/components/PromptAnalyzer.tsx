@@ -192,13 +192,13 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
             {messages.analyzer.subtitle}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="p-4 sm:p-6 space-y-4">
           <Textarea
             placeholder={messages.placeholders.analyzerPrompt}
             value={promptContent}
             onChange={(e) => setPromptContent(e.target.value)}
-            rows={10}
-            className="font-mono text-sm"
+            rows={8}
+            className="font-mono text-sm min-h-[200px] sm:min-h-[280px]"
           />
           <Button 
             onClick={() => analyze(promptContent)} 
@@ -214,17 +214,17 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
       {result && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <CardTitle>{messages.analyzer.results}</CardTitle>
                 <CardDescription>{messages.analyzer.structuredPrompt}</CardDescription>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleNewAnalysis}
-                  className="gap-2"
+                  className="gap-2 w-full sm:w-auto"
                 >
                   <RotateCcw className="h-4 w-4" />
                   {messages.analyzer.newAnalysis}
@@ -233,7 +233,7 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
                   size="sm"
                   onClick={handleSavePrompt}
                   disabled={isSaving}
-                  className="gap-2"
+                  className="gap-2 w-full sm:w-auto"
                 >
                   {isSaving ? (
                     <>
@@ -252,10 +252,17 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="metadata">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1">
                 <TabsTrigger value="metadata">{messages.analyzer.tabs.metadata}</TabsTrigger>
-                <TabsTrigger value="variables">{messages.analyzer.tabs.variables} ({result.variables.length})</TabsTrigger>
-                <TabsTrigger value="template">{messages.analyzer.tabs.structured}</TabsTrigger>
+                <TabsTrigger value="variables">
+                  <span className="hidden sm:inline">{messages.analyzer.tabs.variables}</span>
+                  <span className="sm:hidden">Vars</span>
+                  <span className="ml-1">({result.variables.length})</span>
+                </TabsTrigger>
+                <TabsTrigger value="template">
+                  <span className="hidden sm:inline">{messages.analyzer.tabs.structured}</span>
+                  <span className="sm:hidden">Tpl</span>
+                </TabsTrigger>
                 <TabsTrigger value="export">{messages.analyzer.tabs.export}</TabsTrigger>
               </TabsList>
 
@@ -275,10 +282,10 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-2 flex-wrap text-sm">
                           <Badge variant="outline">{v.type}</Badge>
                           {v.default_value && (
-                            <code className="text-xs bg-muted px-2 py-1 rounded">
+                            <code className="text-xs bg-muted px-2 py-1 rounded truncate max-w-[200px]" title={v.default_value}>
                               {v.default_value}
                             </code>
                           )}
@@ -301,7 +308,7 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
 
               <TabsContent value="template" className="space-y-4">
                 <div className="relative">
-                  <pre className="p-4 bg-muted rounded-lg text-sm overflow-x-auto">
+                  <pre className="p-4 pt-12 sm:pt-4 bg-muted rounded-lg text-sm overflow-x-auto">
                     <code>{result.prompt_template}</code>
                   </pre>
                   <Button
@@ -311,7 +318,8 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
                     onClick={copyTemplate}
                   >
                     <Copy className="h-3 w-3" />
-                    {messages.copy.copyAction}
+                    <span className="hidden sm:inline">{messages.copy.copyAction}</span>
+                    <span className="sm:hidden">Copier</span>
                   </Button>
                 </div>
               </TabsContent>

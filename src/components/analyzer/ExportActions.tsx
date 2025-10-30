@@ -33,11 +33,11 @@ export function ExportActions({ jsonData, markdownData, filename }: ExportAction
         <pre className="p-4 bg-muted rounded-lg text-xs overflow-x-auto max-h-64">
           <code>{JSON.stringify(jsonData, null, 2)}</code>
         </pre>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button
             size="sm"
             variant="outline"
-            className="gap-2"
+            className="gap-2 flex-1 sm:flex-none"
             onClick={() => copyToClipboard(JSON.stringify(jsonData, null, 2), "JSON")}
           >
             <Copy className="h-3 w-3" />
@@ -46,7 +46,7 @@ export function ExportActions({ jsonData, markdownData, filename }: ExportAction
           <Button
             size="sm"
             variant="outline"
-            className="gap-2"
+            className="gap-2 flex-1 sm:flex-none"
             onClick={() => downloadFile(
               JSON.stringify(jsonData, null, 2),
               `${filename}.json`,
@@ -64,11 +64,11 @@ export function ExportActions({ jsonData, markdownData, filename }: ExportAction
         <pre className="p-4 bg-muted rounded-lg text-xs overflow-x-auto max-h-64">
           <code>{markdownData}</code>
         </pre>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button
             size="sm"
             variant="outline"
-            className="gap-2"
+            className="gap-2 flex-1 sm:flex-none"
             onClick={() => copyToClipboard(markdownData, "Markdown")}
           >
             <Copy className="h-3 w-3" />
@@ -77,7 +77,7 @@ export function ExportActions({ jsonData, markdownData, filename }: ExportAction
           <Button
             size="sm"
             variant="outline"
-            className="gap-2"
+            className="gap-2 flex-1 sm:flex-none"
             onClick={() => downloadFile(markdownData, `${filename}.md`, 'text/markdown')}
           >
             <Download className="h-3 w-3" />
