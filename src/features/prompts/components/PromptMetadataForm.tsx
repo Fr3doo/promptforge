@@ -119,6 +119,23 @@ export const PromptMetadataForm = ({
           </p>
         </div>
 
+        {/* Affichage des tags existants en lecture seule */}
+        {tags.length > 0 && (
+          <div className="space-y-2">
+            <Label>Tags</Label>
+            <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+              {tags.map((tag) => (
+                <Badge key={tag} variant="secondary">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Modifiez les tags dans la section "Options avancées" ci-dessous
+            </p>
+          </div>
+        )}
+
         {/* Options avancées */}
         <div className="border-t pt-4">
           <Button
