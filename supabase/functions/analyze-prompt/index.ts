@@ -212,10 +212,11 @@ Identifie mentalement :
   • Options si type ENUM
 
 Étape 2.3 : Catégories (CRITIQUE)
-→ Analyse le domaine du prompt (ex: "Éducation", "Marketing", "Technique", "Créatif")
+→ Analyse le domaine du prompt (ex: "Education", "Marketing", "Technique", "Creatif")
 → Propose 1-3 catégories pertinentes et précises
-→ **RÈGLE ABSOLUE : TOUJOURS fournir au moins 1 catégorie, même générique (ex: "Général", "Assistance", "Analyse")**
-→ Si le prompt est vraiment trop vague, utilise "Non classifié" comme dernier recours
+→ **FORMAT OBLIGATOIRE : PascalCase SANS ESPACES (ex: "DeveloppementWeb", "IntelligenceArtificielle")**
+→ **RÈGLE ABSOLUE : TOUJOURS fournir au moins 1 catégorie, même générique (ex: "General", "Assistance", "Analyse")**
+→ Si le prompt est vraiment trop vague, utilise "NonClassifie" comme dernier recours
 
 Étape 2.4 : Reconstruction du Template
 → Réorganise le prompt de manière claire et structurée
@@ -248,18 +249,33 @@ Avant de renvoyer la structure, vérifie mentalement :
 
 === EXEMPLES DE CATÉGORIES PERTINENTES ===
 
-- Domaine : "Marketing", "Éducation", "Technique", "Santé", "Finance", "Créatif"
-- Type de tâche : "Génération de texte", "Analyse", "Résumé", "Traduction", "Code"
-- Cas d'usage : "Service client", "Rédaction", "Tutoriel", "Documentation"
-- Si vraiment générique : "Assistance générale", "Non spécifique"
+**FORMAT : PascalCase SANS espaces, éviter les accents et caractères spéciaux**
+
+- Domaine : "Marketing", "Education", "Technique", "Sante", "Finance", "Creatif"
+- Type de tâche : "GenerationTexte", "Analyse", "Resume", "Traduction", "Code"
+- Cas d'usage : "ServiceClient", "Redaction", "Tutoriel", "Documentation"
+- Si vraiment générique : "AssistanceGenerale", "NonSpecifique"
+
+**INTERDIT :**
+❌ "Génération de texte" (espaces)
+❌ "AI/ML" (caractère spécial /)
+❌ "C++" (caractère spécial +)
+❌ "Développement" (accent é)
+
+**AUTORISÉ :**
+✅ "GenerationTexte"
+✅ "AI-ML" (tiret OK)
+✅ "CPlusPlus"
+✅ "Developpement"
 
 === RÈGLES CRITIQUES ===
 
 1. **JAMAIS laisser metadata.categories vide** → toujours au moins 1 catégorie
 2. Objectifs concis (max 400 caractères par objectif)
 3. Rôle précis (max 500 caractères)
-4. Variables nommées en snake_case ou camelCase (a-z, A-Z, 0-9, _, -)
-5. Types ENUM uniquement si options clairement définies
+4. Catégories en PascalCase SANS espaces (ex: "DeveloppementWeb", "AnalyseDonnees")
+5. Variables nommées en snake_case ou camelCase (a-z, A-Z, 0-9, _, -)
+6. Types ENUM uniquement si options clairement définies
 
 Applique maintenant ce workflow sur le prompt utilisateur.`;
 
