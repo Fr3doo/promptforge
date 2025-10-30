@@ -1,14 +1,6 @@
 import { useState, useCallback } from "react";
 import { z } from "zod";
-
-const MAX_TAGS = 20;
-const MAX_TAG_LENGTH = 50;
-
-const tagSchema = z.string()
-  .trim()
-  .min(1, "Le tag ne peut pas être vide")
-  .max(MAX_TAG_LENGTH, `Le tag ne peut pas dépasser ${MAX_TAG_LENGTH} caractères`)
-  .regex(/^[a-zA-Z0-9\s\-_]+$/, "Le tag ne peut contenir que des lettres, chiffres, espaces, tirets et underscores");
+import { TAG_CONSTRAINTS, tagSchema } from "@/lib/tagValidation";
 
 export function useTagManager(initialTags: string[] = []) {
   const [tags, setTags] = useState<string[]>(initialTags);
@@ -24,8 +16,8 @@ export function useTagManager(initialTags: string[] = []) {
     }
 
     // Validation: nombre maximum de tags
-    if (tags.length >= MAX_TAGS) {
-      setTagError(`Vous ne pouvez pas avoir plus de ${MAX_TAGS} tags`);
+    if (tags.length >= TAG_CONSTRAINTS.MAX_COUNT) {
+      setTagError(`Vous ne pouvez pas avoir plus de ${TAG_CONSTRAINTS.MAX_COUNT} tags`);
       return;
     }
 
@@ -66,7 +58,7 @@ export function useTagManager(initialTags: string[] = []) {
     removeTag,
     tagError,
     clearTagError,
-    maxTags: MAX_TAGS,
-    maxTagLength: MAX_TAG_LENGTH,
+    maxTags: TAG_CONSTRAINTS.MAX_COUNT,
+    maxTagLength: TAG_CONSTRAINTS.MAX_LENGTH,
   };
 }

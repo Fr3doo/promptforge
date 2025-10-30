@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { successToast, errorToast } from "@/lib/toastUtils";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { promptSchema } from "@/lib/validation";
+import { sanitizeAITags } from "@/lib/tagValidation";
 import { messages } from "@/constants/messages";
 import { captureException } from "@/lib/logger";
 import { useBreakpoint } from "@/hooks/use-breakpoint";
@@ -48,6 +49,20 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
     if (!result) return;
 
     try {
+      // 🛡️ SÉCURISATION : Nettoyer les tags de l'IA AVANT validation
+      const sanitizedTags = sanitizeAITags(result.metadata.categories);
+      
+      // Log pour monitoring (Murphy's Law : toujours tracer)
+      if (sanitizedTags.length !== result.metadata.categories?.length) {
+        console.warn(
+          `[PromptAnalyzer] Tags nettoyés: ${result.metadata.categories?.length} → ${sanitizedTags.length}`,
+          { 
+            original: result.metadata.categories,
+            sanitized: sanitizedTags 
+          }
+        );
+      }
+
       // Construire la description à partir des métadonnées
       let description = "";
       
@@ -70,14 +85,12 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
       if (!description && result.metadata.role) {
         description = result.metadata.role;
       }
-
-      const categories = result.metadata.categories || [];
       
       const promptData = {
         title: result.metadata.objectifs?.[0] || "Prompt analysé",
         content: result.exports.json.original,
         description: description.trim(),
-        tags: categories,
+        tags: sanitizedTags,
         is_favorite: false,
         version: "1.0.0",
         visibility: "PRIVATE" as const,

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { tagsArraySchema } from '@/lib/tagValidation';
 
 /**
  * NORMALISATION DE LA DESCRIPTION
@@ -27,7 +28,7 @@ export const promptSchema = z.object({
     .nullable()
     .optional(),
   content: z.string().trim().min(1, 'Le contenu est requis').max(200000, 'Le contenu ne peut pas dépasser 200000 caractères'),
-  tags: z.array(z.string().trim().max(50, 'Chaque tag ne peut pas dépasser 50 caractères')).max(20, 'Vous ne pouvez pas avoir plus de 20 tags'),
+  tags: tagsArraySchema,
   visibility: z.enum(['PRIVATE', 'SHARED'], { errorMap: () => ({ message: 'Visibilité invalide' }) }),
 });
 

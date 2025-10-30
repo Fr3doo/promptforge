@@ -104,9 +104,19 @@ function validateAIResponse(structured: any): void {
       if (structured.metadata.categories.length > 20) {
         throw new Error('Trop de catégories (max 20)');
       }
-      structured.metadata.categories.forEach((cat: any) => {
-        if (typeof cat === 'string' && cat.length > 50) {
-          throw new Error('Catégorie trop longue (max 50 caractères)');
+      structured.metadata.categories.forEach((cat: any, index: number) => {
+        if (typeof cat !== 'string') {
+          throw new Error(`Catégorie ${index}: doit être une chaîne`);
+        }
+        if (cat.trim().length === 0) {
+          throw new Error(`Catégorie ${index}: ne peut pas être vide`);
+        }
+        if (cat.length > 50) {
+          throw new Error(`Catégorie "${cat}": trop longue (max 50 caractères)`);
+        }
+        // Validation du format (même regex que frontend)
+        if (!/^[a-zA-Z0-9\s\-_]+$/.test(cat)) {
+          throw new Error(`Catégorie "${cat}": format invalide (seuls lettres, chiffres, espaces, tirets et underscores autorisés)`);
         }
       });
     }
