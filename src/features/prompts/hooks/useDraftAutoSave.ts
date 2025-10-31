@@ -1,8 +1,6 @@
 import { useEffect, useRef } from "react";
 import { logDebug } from "@/lib/logger";
-
-const DRAFT_KEY = "prompt_draft_new";
-const AUTOSAVE_INTERVAL = 5000; // 5 secondes
+import { TIMING, STORAGE_KEYS } from "@/constants/application-config";
 
 interface DraftData {
   title: string;
@@ -54,7 +52,7 @@ export function useDraftAutoSave({
       if (data.title.trim() || data.content.trim() || data.description.trim() || data.tags.length > 0) {
         saveDraft(data);
       }
-    }, AUTOSAVE_INTERVAL);
+    }, TIMING.AUTOSAVE_INTERVAL);
 
     // Cleanup
     return () => {
@@ -76,7 +74,7 @@ export function saveDraft(data: Omit<DraftData, "timestamp">): void {
       ...data,
       timestamp: Date.now(),
     };
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
+    localStorage.setItem(STORAGE_KEYS.DRAFT_NEW_PROMPT, JSON.stringify(draftData));
     logDebug("Brouillon sauvegardé localement", { timestamp: draftData.timestamp });
   } catch (error) {
     // Silencieux en cas d'erreur (quota localStorage dépassé, etc.)
@@ -89,7 +87,7 @@ export function saveDraft(data: Omit<DraftData, "timestamp">): void {
  */
 export function loadDraft(): DraftData | null {
   try {
-    const stored = localStorage.getItem(DRAFT_KEY);
+    const stored = localStorage.getItem(STORAGE_KEYS.DRAFT_NEW_PROMPT);
     if (!stored) return null;
 
     const data = JSON.parse(stored) as DraftData;
@@ -106,7 +104,7 @@ export function loadDraft(): DraftData | null {
  */
 export function clearDraft(): void {
   try {
-    localStorage.removeItem(DRAFT_KEY);
+    localStorage.removeItem(STORAGE_KEYS.DRAFT_NEW_PROMPT);
     logDebug("Brouillon supprimé de localStorage");
   } catch (error) {
     console.warn("Impossible de supprimer le brouillon:", error);
@@ -118,7 +116,7 @@ export function clearDraft(): void {
  */
 export function hasDraft(): boolean {
   try {
-    return localStorage.getItem(DRAFT_KEY) !== null;
+    return localStorage.getItem(STORAGE_KEYS.DRAFT_NEW_PROMPT) !== null;
   } catch {
     return false;
   }

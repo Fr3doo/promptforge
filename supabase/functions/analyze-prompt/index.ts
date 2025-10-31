@@ -1,6 +1,37 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// ============================================
+// VALIDATION LIMITS (synchronized with frontend)
+// Référence: src/constants/validation-limits.ts
+// ============================================
+const PROMPT_LIMITS = {
+  CONTENT_AI_ANALYSIS: { MAX: 50000 },
+} as const;
+
+const VARIABLE_LIMITS = {
+  MAX_COUNT: 50,
+  NAME: { MAX: 100 },
+  DESCRIPTION: { MAX: 500 },
+  DEFAULT_VALUE: { MAX: 1000 },
+  OPTIONS: {
+    MAX_COUNT: 50,
+    MAX_LENGTH: 100,
+  },
+} as const;
+
+const AI_METADATA_LIMITS = {
+  ROLE: { MAX: 500 },
+  OBJECTIVES: { MAX_COUNT: 20, MAX_LENGTH: 500 },
+  STEPS: { MAX_COUNT: 50, MAX_LENGTH: 500 },
+  CATEGORIES: { MAX_COUNT: 20, MAX_LENGTH: 50 },
+  SECTIONS: { MAX_LENGTH: 10000 },
+  TEMPLATE: { MAX_LENGTH: 100000 },
+} as const;
+
+const VARIABLE_NAME_AI_REGEX = /^[a-zA-Z0-9_-]+$/;
+const CATEGORY_AI_REGEX = /^[a-zA-Z0-9\s\-_]+$/;
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -17,8 +48,8 @@ function validateInput(promptContent: unknown): string {
     throw new Error('Le prompt ne peut pas être vide');
   }
   
-  if (trimmed.length > 50000) {
-    throw new Error('Le prompt ne peut pas dépasser 50000 caractères');
+  if (trimmed.length > PROMPT_LIMITS.CONTENT_AI_ANALYSIS.MAX) {
+    throw new Error(`Le prompt ne peut pas dépasser ${PROMPT_LIMITS.CONTENT_AI_ANALYSIS.MAX} caractères`);
   }
   
   return trimmed;
@@ -32,8 +63,8 @@ function validateAIResponse(structured: any): void {
       throw new Error('Variables doit être un tableau');
     }
     
-    if (structured.variables.length > 50) {
-      throw new Error('Nombre maximum de variables dépassé (50)');
+    if (structured.variables.length > VARIABLE_LIMITS.MAX_COUNT) {
+      throw new Error(`Nombre maximum de variables dépassé (${VARIABLE_LIMITS.MAX_COUNT})`);
     }
     
     // Validate each variable
@@ -42,30 +73,29 @@ function validateAIResponse(structured: any): void {
         throw new Error(`Variable ${index}: nom requis`);
       }
       
-      if (v.name.length > 100) {
-        throw new Error(`Variable ${v.name}: nom trop long (max 100 caractères)`);
+      if (v.name.length > VARIABLE_LIMITS.NAME.MAX) {
+        throw new Error(`Variable ${v.name}: nom trop long (max ${VARIABLE_LIMITS.NAME.MAX} caractères)`);
       }
       
-      // Variable names must be alphanumeric with underscores/hyphens
-      if (!/^[a-zA-Z0-9_-]+$/.test(v.name)) {
+      if (!VARIABLE_NAME_AI_REGEX.test(v.name)) {
         throw new Error(`Variable ${v.name}: caractères invalides (seulement a-z, A-Z, 0-9, _, -)`);
       }
       
-      if (v.description && v.description.length > 500) {
-        throw new Error(`Variable ${v.name}: description trop longue (max 500 caractères)`);
+      if (v.description && v.description.length > VARIABLE_LIMITS.DESCRIPTION.MAX) {
+        throw new Error(`Variable ${v.name}: description trop longue (max ${VARIABLE_LIMITS.DESCRIPTION.MAX} caractères)`);
       }
       
-      if (v.default_value && v.default_value.length > 1000) {
-        throw new Error(`Variable ${v.name}: valeur par défaut trop longue (max 1000 caractères)`);
+      if (v.default_value && v.default_value.length > VARIABLE_LIMITS.DEFAULT_VALUE.MAX) {
+        throw new Error(`Variable ${v.name}: valeur par défaut trop longue (max ${VARIABLE_LIMITS.DEFAULT_VALUE.MAX} caractères)`);
       }
       
       if (v.options && Array.isArray(v.options)) {
-        if (v.options.length > 50) {
-          throw new Error(`Variable ${v.name}: trop d'options (max 50)`);
+        if (v.options.length > VARIABLE_LIMITS.OPTIONS.MAX_COUNT) {
+          throw new Error(`Variable ${v.name}: trop d'options (max ${VARIABLE_LIMITS.OPTIONS.MAX_COUNT})`);
         }
         v.options.forEach((opt: any) => {
-          if (typeof opt === 'string' && opt.length > 100) {
-            throw new Error(`Variable ${v.name}: option trop longue (max 100 caractères)`);
+          if (typeof opt === 'string' && opt.length > VARIABLE_LIMITS.OPTIONS.MAX_LENGTH) {
+            throw new Error(`Variable ${v.name}: option trop longue (max ${VARIABLE_LIMITS.OPTIONS.MAX_LENGTH} caractères)`);
           }
         });
       }
@@ -74,35 +104,35 @@ function validateAIResponse(structured: any): void {
   
   // Validate metadata
   if (structured.metadata) {
-    if (structured.metadata.role && structured.metadata.role.length > 500) {
-      throw new Error('Rôle trop long (max 500 caractères)');
+    if (structured.metadata.role && structured.metadata.role.length > AI_METADATA_LIMITS.ROLE.MAX) {
+      throw new Error(`Rôle trop long (max ${AI_METADATA_LIMITS.ROLE.MAX} caractères)`);
     }
     
     if (structured.metadata.objectifs && Array.isArray(structured.metadata.objectifs)) {
-      if (structured.metadata.objectifs.length > 20) {
-        throw new Error('Trop d\'objectifs (max 20)');
+      if (structured.metadata.objectifs.length > AI_METADATA_LIMITS.OBJECTIVES.MAX_COUNT) {
+        throw new Error(`Trop d'objectifs (max ${AI_METADATA_LIMITS.OBJECTIVES.MAX_COUNT})`);
       }
       structured.metadata.objectifs.forEach((obj: any) => {
-        if (typeof obj === 'string' && obj.length > 500) {
-          throw new Error('Objectif trop long (max 500 caractères)');
+        if (typeof obj === 'string' && obj.length > AI_METADATA_LIMITS.OBJECTIVES.MAX_LENGTH) {
+          throw new Error(`Objectif trop long (max ${AI_METADATA_LIMITS.OBJECTIVES.MAX_LENGTH} caractères)`);
         }
       });
     }
     
     if (structured.metadata.etapes && Array.isArray(structured.metadata.etapes)) {
-      if (structured.metadata.etapes.length > 50) {
-        throw new Error('Trop d\'étapes (max 50)');
+      if (structured.metadata.etapes.length > AI_METADATA_LIMITS.STEPS.MAX_COUNT) {
+        throw new Error(`Trop d'étapes (max ${AI_METADATA_LIMITS.STEPS.MAX_COUNT})`);
       }
       structured.metadata.etapes.forEach((etape: any) => {
-        if (typeof etape === 'string' && etape.length > 500) {
-          throw new Error('Étape trop longue (max 500 caractères)');
+        if (typeof etape === 'string' && etape.length > AI_METADATA_LIMITS.STEPS.MAX_LENGTH) {
+          throw new Error(`Étape trop longue (max ${AI_METADATA_LIMITS.STEPS.MAX_LENGTH} caractères)`);
         }
       });
     }
     
     if (structured.metadata.categories && Array.isArray(structured.metadata.categories)) {
-      if (structured.metadata.categories.length > 20) {
-        throw new Error('Trop de catégories (max 20)');
+      if (structured.metadata.categories.length > AI_METADATA_LIMITS.CATEGORIES.MAX_COUNT) {
+        throw new Error(`Trop de catégories (max ${AI_METADATA_LIMITS.CATEGORIES.MAX_COUNT})`);
       }
       structured.metadata.categories.forEach((cat: any, index: number) => {
         if (typeof cat !== 'string') {
@@ -111,11 +141,10 @@ function validateAIResponse(structured: any): void {
         if (cat.trim().length === 0) {
           throw new Error(`Catégorie ${index}: ne peut pas être vide`);
         }
-        if (cat.length > 50) {
-          throw new Error(`Catégorie "${cat}": trop longue (max 50 caractères)`);
+        if (cat.length > AI_METADATA_LIMITS.CATEGORIES.MAX_LENGTH) {
+          throw new Error(`Catégorie "${cat}": trop longue (max ${AI_METADATA_LIMITS.CATEGORIES.MAX_LENGTH} caractères)`);
         }
-        // Validation du format (même regex que frontend)
-        if (!/^[a-zA-Z0-9\s\-_]+$/.test(cat)) {
+        if (!CATEGORY_AI_REGEX.test(cat)) {
           throw new Error(`Catégorie "${cat}": format invalide (seuls lettres, chiffres, espaces, tirets et underscores autorisés)`);
         }
       });
@@ -125,15 +154,15 @@ function validateAIResponse(structured: any): void {
   // Validate sections
   if (structured.sections) {
     Object.values(structured.sections).forEach((section: any) => {
-      if (typeof section === 'string' && section.length > 10000) {
-        throw new Error('Section trop longue (max 10000 caractères)');
+      if (typeof section === 'string' && section.length > AI_METADATA_LIMITS.SECTIONS.MAX_LENGTH) {
+        throw new Error(`Section trop longue (max ${AI_METADATA_LIMITS.SECTIONS.MAX_LENGTH} caractères)`);
       }
     });
   }
   
   // Validate prompt template
-  if (structured.prompt_template && structured.prompt_template.length > 100000) {
-    throw new Error('Template trop long (max 100000 caractères)');
+  if (structured.prompt_template && structured.prompt_template.length > AI_METADATA_LIMITS.TEMPLATE.MAX_LENGTH) {
+    throw new Error(`Template trop long (max ${AI_METADATA_LIMITS.TEMPLATE.MAX_LENGTH} caractères)`);
   }
 }
 

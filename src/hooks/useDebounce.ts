@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
+import { TIMING } from "@/constants/application-config";
 
-export function useDebounce<T>(value: T, delay: number = 300): T {
+export function useDebounce<T>(
+  value: T, 
+  delay: number = TIMING.DEBOUNCE_DELAY
+): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {

@@ -1,5 +1,12 @@
 import { z } from 'zod';
 import { tagsArraySchema } from '@/lib/tagValidation';
+import { 
+  PROMPT_LIMITS, 
+  VARIABLE_LIMITS, 
+  VARIABLE_SET_LIMITS, 
+  AUTH_LIMITS 
+} from '@/constants/validation-limits';
+import { VARIABLE_NAME_REGEX } from '@/constants/regex-patterns';
 
 /**
  * NORMALISATION DE LA DESCRIPTION
@@ -20,14 +27,20 @@ import { tagsArraySchema } from '@/lib/tagValidation';
 
 // Prompt validation schema
 export const promptSchema = z.object({
-  title: z.string().trim().min(1, 'Le titre est requis').max(200, 'Le titre ne peut pas dépasser 200 caractères'),
+  title: z.string()
+    .trim()
+    .min(PROMPT_LIMITS.TITLE.MIN, 'Le titre est requis')
+    .max(PROMPT_LIMITS.TITLE.MAX, `Le titre ne peut pas dépasser ${PROMPT_LIMITS.TITLE.MAX} caractères`),
   description: z.string()
     .trim()
-    .max(3000, 'La description ne peut pas dépasser 3000 caractères')
+    .max(PROMPT_LIMITS.DESCRIPTION.MAX, `La description ne peut pas dépasser ${PROMPT_LIMITS.DESCRIPTION.MAX} caractères`)
     .transform(val => val === '' ? null : val)
     .nullable()
     .optional(),
-  content: z.string().trim().min(1, 'Le contenu est requis').max(200000, 'Le contenu ne peut pas dépasser 200000 caractères'),
+  content: z.string()
+    .trim()
+    .min(PROMPT_LIMITS.CONTENT.MIN, 'Le contenu est requis')
+    .max(PROMPT_LIMITS.CONTENT.MAX, `Le contenu ne peut pas dépasser ${PROMPT_LIMITS.CONTENT.MAX} caractères`),
   tags: tagsArraySchema,
   visibility: z.enum(['PRIVATE', 'SHARED'], { errorMap: () => ({ message: 'Visibilité invalide' }) }),
 });
@@ -36,20 +49,26 @@ export const promptSchema = z.object({
 export const variableSchema = z.object({
   name: z.string()
     .trim()
-    .min(1, 'Le nom de la variable est requis')
-    .max(100, 'Le nom ne peut pas dépasser 100 caractères')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Le nom ne peut contenir que des lettres, chiffres et underscores'),
+    .min(VARIABLE_LIMITS.NAME.MIN, 'Le nom de la variable est requis')
+    .max(VARIABLE_LIMITS.NAME.MAX, `Le nom ne peut pas dépasser ${VARIABLE_LIMITS.NAME.MAX} caractères`)
+    .regex(VARIABLE_NAME_REGEX, 'Le nom ne peut contenir que des lettres, chiffres et underscores'),
   type: z.enum(['STRING', 'NUMBER', 'BOOLEAN', 'ENUM', 'DATE', 'MULTISTRING'], {
     errorMap: () => ({ message: 'Type de variable invalide' })
   }),
   required: z.boolean(),
-  default_value: z.string().max(1000, 'La valeur par défaut ne peut pas dépasser 1000 caractères').optional().or(z.literal('')),
-  help: z.string().max(500, 'Le texte d\'aide ne peut pas dépasser 500 caractères').optional().or(z.literal('')),
+  default_value: z.string()
+    .max(VARIABLE_LIMITS.DEFAULT_VALUE.MAX, `La valeur par défaut ne peut pas dépasser ${VARIABLE_LIMITS.DEFAULT_VALUE.MAX} caractères`)
+    .optional()
+    .or(z.literal('')),
+  help: z.string()
+    .max(VARIABLE_LIMITS.DESCRIPTION.MAX, `Le texte d'aide ne peut pas dépasser ${VARIABLE_LIMITS.DESCRIPTION.MAX} caractères`)
+    .optional()
+    .or(z.literal('')),
   pattern: z.string()
-    .max(200, 'Le pattern ne peut pas dépasser 200 caractères')
+    .max(VARIABLE_LIMITS.PATTERN.MAX, `Le pattern ne peut pas dépasser ${VARIABLE_LIMITS.PATTERN.MAX} caractères`)
     .refine(
       (val) => {
-        if (!val) return true; // Empty is valid
+        if (!val) return true;
         try {
           new RegExp(val);
           return true;
@@ -66,15 +85,29 @@ export const variableSchema = z.object({
 
 // Variable set validation schema
 export const variableSetSchema = z.object({
-  name: z.string().trim().min(1, 'Le nom est requis').max(200, 'Le nom ne peut pas dépasser 200 caractères'),
-  values: z.record(z.string().max(5000, 'Chaque valeur ne peut pas dépasser 5000 caractères')),
+  name: z.string()
+    .trim()
+    .min(VARIABLE_SET_LIMITS.NAME.MIN, 'Le nom est requis')
+    .max(VARIABLE_SET_LIMITS.NAME.MAX, `Le nom ne peut pas dépasser ${VARIABLE_SET_LIMITS.NAME.MAX} caractères`),
+  values: z.record(
+    z.string().max(VARIABLE_SET_LIMITS.VALUE.MAX, `Chaque valeur ne peut pas dépasser ${VARIABLE_SET_LIMITS.VALUE.MAX} caractères`)
+  ),
 });
 
 // Auth validation schema
 export const authSchema = z.object({
-  email: z.string().trim().email('Email invalide').max(255, 'L\'email ne peut pas dépasser 255 caractères'),
-  password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères').max(100, 'Le mot de passe ne peut pas dépasser 100 caractères'),
-  name: z.string().trim().min(1, 'Le nom est requis').max(100, 'Le nom ne peut pas dépasser 100 caractères').optional(),
+  email: z.string()
+    .trim()
+    .email('Email invalide')
+    .max(AUTH_LIMITS.EMAIL.MAX, `L'email ne peut pas dépasser ${AUTH_LIMITS.EMAIL.MAX} caractères`),
+  password: z.string()
+    .min(AUTH_LIMITS.PASSWORD.MIN, `Le mot de passe doit contenir au moins ${AUTH_LIMITS.PASSWORD.MIN} caractères`)
+    .max(AUTH_LIMITS.PASSWORD.MAX, `Le mot de passe ne peut pas dépasser ${AUTH_LIMITS.PASSWORD.MAX} caractères`),
+  name: z.string()
+    .trim()
+    .min(1, 'Le nom est requis')
+    .max(AUTH_LIMITS.PSEUDO.MAX, `Le nom ne peut pas dépasser ${AUTH_LIMITS.PSEUDO.MAX} caractères`)
+    .optional(),
 });
 
 export type PromptInput = z.infer<typeof promptSchema>;

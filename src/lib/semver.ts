@@ -1,3 +1,5 @@
+import { SEMVER_REGEX } from '@/constants/regex-patterns';
+
 export type VersionBump = "major" | "minor" | "patch";
 
 export function parseVersion(version: string): { major: number; minor: number; patch: number } {
@@ -34,6 +36,5 @@ export function compareVersions(v1: string, v2: string): number {
 }
 
 export function isValidSemVer(version: string): boolean {
-  const semverRegex = /^\d+\.\d+\.\d+$/;
-  return semverRegex.test(version);
+  return SEMVER_REGEX.test(version);
 }
