@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Plus, X, ChevronDown, ChevronUp } from "lucide-react";
 import { messages } from "@/constants/messages";
 import { useTagManager } from "@/hooks/useTagManager";
+import { PROMPT_LIMITS } from "@/constants/validation-limits";
 
 interface PromptMetadataFormProps {
   title: string;
@@ -115,7 +116,7 @@ export const PromptMetadataForm = ({
             </p>
           )}
           <p id="description-help" className="text-xs text-muted-foreground">
-            Ajoutez des détails pour retrouver facilement ce prompt plus tard ({description.length}/3000)
+            Ajoutez des détails pour retrouver facilement ce prompt plus tard ({description.length}/{PROMPT_LIMITS.DESCRIPTION.MAX})
           </p>
         </div>
 

@@ -1,10 +1,11 @@
 import { toast } from "@/hooks/use-toast";
+import { TIMING } from "@/constants/application-config";
 
 export const successToast = (title: string, description?: string) => {
   toast({
     title: `✅ ${title}`,
     description,
-    duration: 3000,
+    duration: TIMING.TOAST_DURATION,
   });
 };
 
@@ -13,7 +14,7 @@ export const errorToast = (title: string, description?: string) => {
     title: `❌ ${title}`,
     description,
     variant: "destructive",
-    duration: 5000,
+    duration: TIMING.TOAST_DURATION + 2000, // 5000ms pour les erreurs (plus visibles)
   });
 };
 
@@ -21,7 +22,7 @@ export const infoToast = (title: string, description?: string) => {
   toast({
     title: `ℹ️ ${title}`,
     description,
-    duration: 4000,
+    duration: TIMING.TOAST_DURATION + 1000, // 4000ms pour les infos
   });
 };
 
@@ -29,7 +30,7 @@ export const warningToast = (title: string, description?: string) => {
   toast({
     title: `⚠️ ${title}`,
     description,
-    duration: 4000,
+    duration: TIMING.TOAST_DURATION + 1000, // 4000ms pour les warnings
   });
 };
 

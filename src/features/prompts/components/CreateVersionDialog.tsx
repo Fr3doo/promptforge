@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { GitBranch, Loader2 } from "lucide-react";
 import { bumpVersion, type VersionBump } from "@/lib/semver";
 import { messages } from "@/constants/messages";
+import { AI_METADATA_LIMITS } from "@/constants/validation-limits";
 
 interface CreateVersionDialogProps {
   currentVersion: string;
@@ -107,7 +108,7 @@ export function CreateVersionDialog({
               placeholder={messages.placeholders.versionMessage}
               value={versionMessage}
               onChange={(e) => onMessageChange(e.target.value)}
-              maxLength={500}
+              maxLength={AI_METADATA_LIMITS.ROLE.MAX}
             />
           </div>
 
