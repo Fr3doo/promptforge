@@ -4,6 +4,7 @@ import { successToast, errorToast } from "@/lib/toastUtils";
 import { messages } from "@/constants/messages";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 import { logDebug, logError, logInfo } from "@/lib/logger";
+import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
 
 type Version = Tables<"versions">;
 type VersionInsert = TablesInsert<"versions">;
@@ -51,6 +52,8 @@ export function useCreateVersion() {
 
       return data;
     },
+    retry: shouldRetryMutation,
+    retryDelay: getRetryDelay,
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["versions", variables.prompt_id] });
       queryClient.invalidateQueries({ queryKey: ["prompts", variables.prompt_id] });
@@ -143,6 +146,8 @@ export function useDeleteVersions() {
       logInfo("Versions supprimées", { count: versionIds.length, promptId });
       return { promptId };
     },
+    retry: shouldRetryMutation,
+    retryDelay: getRetryDelay,
     onSuccess: (_, { promptId }) => {
       queryClient.invalidateQueries({ queryKey: ["versions", promptId] });
       queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
@@ -198,6 +203,8 @@ export function useRestoreVersion() {
 
       return data.version;
     },
+    retry: shouldRetryMutation,
+    retryDelay: getRetryDelay,
     onSuccess: (version, { promptId }) => {
       logInfo("Restauration réussie", { semver: version.semver, promptId });
       

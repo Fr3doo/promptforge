@@ -5,6 +5,7 @@ import { messages } from "@/constants/messages";
 import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
 import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
 import { useAuth } from "@/hooks/useAuth";
+import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
 import type { Prompt } from "@/repositories/PromptRepository";
 
 // Hook de lecture - liste complète (tous les prompts accessibles)
@@ -65,6 +66,8 @@ export function useCreatePrompt() {
       if (!user) throw new Error("Non authentifié");
       return repository.create(user.id, promptData);
     },
+    retry: shouldRetryMutation,
+    retryDelay: getRetryDelay,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
       successToast(messages.success.promptCreated);
@@ -83,6 +86,8 @@ export function useUpdatePrompt() {
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Prompt> }) =>
       repository.update(id, updates),
+    retry: shouldRetryMutation,
+    retryDelay: getRetryDelay,
     onMutate: async ({ id, updates }) => {
       // Optimistic update
       await queryClient.cancelQueries({ queryKey: ["prompts", id] });
@@ -113,6 +118,8 @@ export function useDeletePrompt() {
   
   return useMutation({
     mutationFn: (id: string) => repository.delete(id),
+    retry: shouldRetryMutation,
+    retryDelay: getRetryDelay,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
       successToast(messages.success.promptDeleted);
@@ -131,6 +138,8 @@ export function useToggleFavorite() {
   return useMutation({
     mutationFn: ({ id, currentState }: { id: string; currentState: boolean }) =>
       repository.toggleFavorite(id, currentState),
+    retry: shouldRetryMutation,
+    retryDelay: getRetryDelay,
     onMutate: async ({ id, currentState }) => {
       await queryClient.cancelQueries({ queryKey: ["prompts"] });
       const previous = queryClient.getQueryData(["prompts"]);
@@ -163,6 +172,8 @@ export function useDuplicatePrompt() {
       if (!user) throw new Error("Non authentifié");
       return repository.duplicate(user.id, promptId, variableRepository);
     },
+    retry: shouldRetryMutation,
+    retryDelay: getRetryDelay,
     onSuccess: (newPrompt) => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
       successToast(messages.success.promptDuplicated);
@@ -190,6 +201,8 @@ export function useToggleVisibility() {
       publicPermission?: "READ" | "WRITE";
     }) =>
       repository.toggleVisibility(id, currentVisibility, publicPermission),
+    retry: shouldRetryMutation,
+    retryDelay: getRetryDelay,
     onMutate: async ({ id, currentVisibility, publicPermission }) => {
       await queryClient.cancelQueries({ queryKey: ["prompts"] });
       const previous = queryClient.getQueryData(["prompts"]);

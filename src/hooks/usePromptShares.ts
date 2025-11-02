@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePromptShareRepository } from "@/contexts/PromptShareRepositoryContext";
 import { successToast, errorToast } from "@/lib/toastUtils";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
+import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
 
 // Hook to fetch shares for a prompt
 export function usePromptShares(promptId: string | undefined) {
@@ -43,6 +44,8 @@ export function useAddPromptShare(promptId: string) {
       await repository.addShare(promptId, userData.id, permission);
       return { email: normalizedEmail, permission };
     },
+    retry: shouldRetryMutation,
+    retryDelay: getRetryDelay,
     onSuccess: ({ email, permission }) => {
       queryClient.invalidateQueries({ queryKey: ["prompt-shares", promptId] });
       successToast(
@@ -89,6 +92,8 @@ export function useUpdatePromptShare(promptId: string) {
     mutationFn: async ({ shareId, permission }: { shareId: string; permission: "READ" | "WRITE" }) => {
       await repository.updateSharePermission(shareId, permission);
     },
+    retry: shouldRetryMutation,
+    retryDelay: getRetryDelay,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompt-shares", promptId] });
       successToast("Permission mise à jour", "Le niveau d'accès a été modifié avec succès");
@@ -114,6 +119,8 @@ export function useDeletePromptShare(promptId: string) {
 
   return useMutation({
     mutationFn: (shareId: string) => repository.deleteShare(shareId),
+    retry: shouldRetryMutation,
+    retryDelay: getRetryDelay,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompt-shares", promptId] });
       successToast("Partage supprimé", "L'accès au prompt a été retiré");

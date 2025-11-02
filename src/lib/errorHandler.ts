@@ -1,6 +1,9 @@
 import { messages } from "@/constants/messages";
 import { logError } from "@/lib/logger";
 
+// Export retry utilities for error handling
+export { isRetryableError } from './network';
+
 /**
  * Handles Supabase query results by throwing errors if present
  * Centralizes error handling to follow DRY principle
