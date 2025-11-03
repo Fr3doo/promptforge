@@ -10,6 +10,35 @@
 
 ---
 
+## 🧭 Sommaire
+- [🚀 Objectif du projet](#-objectif-du-projet)
+- [🧰 Stack technologique](#-stack-technologique)
+- [⚡ Démarrage rapide](#-démarrage-rapide)
+- [🔧 Installation](#-installation)
+- [🌱 Variables d'environnement](#-variables-denvironnement)
+- [▶️ Lancement](#-lancement)
+- [📦 Utilisation](#-utilisation)
+- [⚙️ Utilisation avancée](#-utilisation-avancée)
+- [🔌 Injection de dépendances](#-injection-de-dépendances)
+- [📈 Collecte de métriques](#-collecte-de-métriques)
+- [❗ Gestion des erreurs](#-gestion-des-erreurs)
+- [📝 Formats d'entrée](#-formats-dentrée)
+- [📊 Contraintes de performance](#-contraintes-de-performance)
+- [🧠 Architecture](#-architecture)
+- [📁 Structure du projet](#-structure-du-projet)
+- [🖥️ Compatibilité Windows](#-compatibilité-windows)
+- [🛠️ Fichiers de configuration](#-fichiers-de-configuration)
+- [🔄 Workflows CI/CD](#-workflows-cicd)
+- [🧪 Tests](#-tests)
+- [🔍 Qualité du code](#-qualité-du-code)
+- [✅ Quality Gates](#-quality-gates)
+- [🤝 Contribuer](#-contribuer)
+- [📚 Documentation liée](#-documentation-liée)
+- [🚀 Publication d’une release](#-publication-dune-release)
+- [🛡️ Licence](#-licence)
+
+---
+
 ## 🚀 Objectif du projet
 PromptForge fournit une interface web moderne pour industrialiser la gestion des prompts IA : création assistée, détection automatique des variables, historisation SemVer, partage sécurisé et analyse d’usage pour les équipes produit et data science. Pour une vue d’ensemble détaillée, consultez [ARCHITECTURE.md](./ARCHITECTURE.md) et [docs/SHARING_GUIDE.md](./docs/SHARING_GUIDE.md).
 
@@ -72,6 +101,17 @@ nvm use 20
 npm install
 ```
 > 💡 **Mini-tâche recommandée :** ajouter un fichier `.nvmrc` pour verrouiller la version Node.
+
+## 🌱 Variables d'environnement
+| Variable | Description | Obligatoire | Exemple |
+| --- | --- | --- | --- |
+| `VITE_SUPABASE_URL` | URL du projet Supabase utilisé par le frontend | ✅ | `https://xyzcompany.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | Clé publique pour les appels client | ✅ | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
+| `VITE_SUPABASE_SERVICE_ROLE` | Clé service (usage Edge Functions) | ⚠️ | À stocker côté serveur uniquement |
+| `VITE_OPENAI_API_KEY` | Clé OpenAI pour les suggestions IA | ⚠️ | `sk-...` |
+| `VITE_POSTHOG_KEY` | Tracking produit & métriques | Optionnel | `phc_xxxxxxxxxx` |
+
+> ℹ️ Les clés sensibles (`SERVICE_ROLE`, `OPENAI_API_KEY`) doivent être renseignées dans les secrets Supabase Edge Functions ou GitHub Actions, jamais commitées.
 
 ## ▶️ Lancement
 ### Après installation
@@ -180,6 +220,13 @@ La structure est feature-based avec séparation stricte UI / logique / data et u
 - `codecov.yml` : upload de la couverture depuis GitHub Actions
 - `supabase/` : policies SQL, seed, migrations
 
+## 🔄 Workflows CI/CD
+- `tests.yml` : installe les dépendances, exécute `npm run lint`, `npm run test` puis publie la couverture sur Codecov.
+- `security-scan.yml` : déclenche `npm audit` et bloque les vulnérabilités critiques avant merge.
+- `preview.yml` (optionnel) : construit une prévisualisation Vite pour les branches de feature.
+
+> 📦 Les badges en tête de README reflètent l’état de ces workflows. La matrice complète est documentée dans [docs/CODE_QUALITY_SYSTEM.md](./docs/CODE_QUALITY_SYSTEM.md).
+
 ## 🧪 Tests
 ### Installation des dépendances de développement
 ```bash
@@ -221,6 +268,13 @@ S’appuyer sur [PRETTIER_SETUP.md](./PRETTIER_SETUP.md) et [docs/ESLINT_SUPABAS
 npm run lint
 ```
 Husky exécute lint + tests pré-commit, Commitlint garantit des messages conformes Conventional Commits. Voir [HUSKY.md](./HUSKY.md) et [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## ✅ Quality Gates
+- **Lint & Format** : aucun avertissement eslint/prettier (`npm run lint`, `npm run format:check`).
+- **Tests unitaires** : 100 % des suites `npm run test` doivent réussir avant merge.
+- **Couverture** : seuil global ≥ 80 % (branches & statements) validé par Codecov.
+- **Accessibilité** : revue manuelle (WCAG 2.1 AA) menée sur les écrans critiques avant chaque release.
+- **Sécurité** : `npm audit` critique = blocage + vérification des politiques RLS Supabase.
 
 ## 🤝 Contribuer
 - Lire [CONTRIBUTING.md](./CONTRIBUTING.md) pour l’onboarding, la convention de branches et les revues de code
