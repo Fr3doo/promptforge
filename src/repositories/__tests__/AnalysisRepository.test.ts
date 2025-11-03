@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SupabaseAnalysisRepository } from '../AnalysisRepository';
+import { SupabaseAnalysisRepository, AnalysisTimeoutError } from '../AnalysisRepository';
 import type { AnalysisResult } from '../AnalysisRepository';
 
 // Mock Supabase client
@@ -82,6 +82,62 @@ describe('AnalysisRepository', () => {
       await expect(repository.analyzePrompt('Test prompt')).rejects.toThrow(
         'Analysis failed'
       );
+    });
+  });
+
+  describe('Timeout Handling', () => {
+    it('should throw AnalysisTimeoutError on AbortError', async () => {
+      const repository = new SupabaseAnalysisRepository();
+      
+      const abortError = new Error('The user aborted a request.');
+      abortError.name = 'AbortError';
+      
+      mockInvoke.mockRejectedValue(abortError);
+
+      await expect(repository.analyzePrompt('Test prompt'))
+        .rejects
+        .toThrow(AnalysisTimeoutError);
+      
+      await expect(repository.analyzePrompt('Test prompt'))
+        .rejects
+        .toThrow(/dépassé le délai maximum de 30s/);
+    });
+
+    it('should clear timeout on successful response', async () => {
+      const repository = new SupabaseAnalysisRepository();
+      
+      const mockResult: AnalysisResult = {
+        sections: { introduction: 'Test intro' },
+        variables: [],
+        prompt_template: 'Template',
+        metadata: {
+          role: 'assistant',
+          objectifs: ['Test objective'],
+        },
+        exports: {
+          json: { original: 'Template', version: '1.0', created_at: new Date().toISOString() },
+          markdown: '# Test',
+        },
+      };
+
+      mockInvoke.mockResolvedValue({
+        data: mockResult,
+        error: null,
+      });
+
+      const result = await repository.analyzePrompt('Test prompt');
+      expect(result).toEqual(mockResult);
+    });
+
+    it('should throw AnalysisTimeoutError when message contains "aborted"', async () => {
+      const repository = new SupabaseAnalysisRepository();
+      
+      const error = new Error('Request was aborted');
+      mockInvoke.mockRejectedValue(error);
+
+      await expect(repository.analyzePrompt('Test prompt'))
+        .rejects
+        .toThrow(AnalysisTimeoutError);
     });
   });
 });

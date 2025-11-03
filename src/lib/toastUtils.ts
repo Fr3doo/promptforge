@@ -9,12 +9,12 @@ export const successToast = (title: string, description?: string) => {
   });
 };
 
-export const errorToast = (title: string, description?: string) => {
+export const errorToast = (title: string, description?: string, customDuration?: number) => {
   toast({
     title: `❌ ${title}`,
     description,
     variant: "destructive",
-    duration: TIMING.TOAST_DURATION + 2000, // 5000ms pour les erreurs (plus visibles)
+    duration: customDuration ?? TIMING.TOAST_DURATION + 2000, // 5000ms pour les erreurs (plus visibles)
   });
 };
 

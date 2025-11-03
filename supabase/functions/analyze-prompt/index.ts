@@ -32,6 +32,8 @@ const AI_METADATA_LIMITS = {
 const VARIABLE_NAME_AI_REGEX = /^[a-zA-Z0-9_-]+$/;
 const CATEGORY_AI_REGEX = /^[a-zA-Z0-9\s\-_]+$/;
 
+const EDGE_TIMEOUT_MS = 35_000; // 35 secondes
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -401,24 +403,57 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY non configurée');
     }
 
-    // 3. AI call
-    console.log('Appel Lovable AI...');
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: buildUserPrompt(validated) }
-        ],
-        tools: [STRUCTURE_TOOL],
-        tool_choice: { type: "function", function: { name: "structure_prompt" } }
-      }),
-    });
+    // 3. AI call with timeout protection
+    console.log(`[${new Date().toISOString()}] Appel Lovable AI (timeout: ${EDGE_TIMEOUT_MS}ms)...`);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.error(`[${new Date().toISOString()}] Timeout AI après ${EDGE_TIMEOUT_MS}ms`);
+      controller.abort();
+    }, EDGE_TIMEOUT_MS);
+
+    let response;
+    try {
+      response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: buildUserPrompt(validated) }
+          ],
+          tools: [STRUCTURE_TOOL],
+          tool_choice: { type: "function", function: { name: "structure_prompt" } }
+        }),
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      console.log(`[${new Date().toISOString()}] Réponse AI reçue (status: ${response.status})`);
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      
+      // Handle AbortError (timeout)
+      if (fetchError?.name === 'AbortError') {
+        console.error(`[${new Date().toISOString()}] Timeout: L'appel AI a été annulé après ${EDGE_TIMEOUT_MS}ms`);
+        return new Response(
+          JSON.stringify({ 
+            error: `Le service d'analyse IA n'a pas répondu dans le délai imparti (${EDGE_TIMEOUT_MS / 1000}s). Réessayez avec un prompt plus court ou attendez quelques instants.`
+          }),
+          { 
+            status: 504, // Gateway Timeout
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
+      // Re-throw other fetch errors
+      throw fetchError;
+    }
 
     // 4. Error handling (fail-fast)
     if (!response.ok) {
@@ -452,13 +487,14 @@ serve(async (req) => {
       }
     };
 
+    console.log(`[${new Date().toISOString()}] Analyse réussie`);
     return new Response(
       JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error(`[${new Date().toISOString()}] Erreur:`, error);
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Erreur inconnue' 

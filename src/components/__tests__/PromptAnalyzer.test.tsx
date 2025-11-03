@@ -58,6 +58,7 @@ describe('PromptAnalyzer - Save Function', () => {
     vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue({
       result: null,
       isAnalyzing: false,
+      isTimeout: false,
       analyze: vi.fn(),
       reset: vi.fn(),
     });
@@ -80,6 +81,7 @@ describe('PromptAnalyzer - Save Function', () => {
     vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue({
       result: mockAnalysisResult,
       isAnalyzing: false,
+      isTimeout: false,
       analyze: vi.fn(),
       reset: vi.fn(),
     });
@@ -168,6 +170,7 @@ describe('PromptAnalyzer - Save Function', () => {
     vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue({
       result: resultWithoutVariables,
       isAnalyzing: false,
+      isTimeout: false,
       analyze: vi.fn(),
       reset: vi.fn(),
     });
@@ -204,6 +207,7 @@ describe('PromptAnalyzer - Save Function', () => {
     vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue({
       result: invalidResult,
       isAnalyzing: false,
+      isTimeout: false,
       analyze: vi.fn(),
       reset: vi.fn(),
     });
@@ -222,6 +226,7 @@ describe('PromptAnalyzer - Save Function', () => {
     vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue({
       result: mockAnalysisResult,
       isAnalyzing: false,
+      isTimeout: false,
       analyze: vi.fn(),
       reset: vi.fn(),
     });
@@ -263,6 +268,7 @@ describe('PromptAnalyzer - Save Function', () => {
     vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue({
       result: mockAnalysisResult,
       isAnalyzing: false,
+      isTimeout: false,
       analyze: vi.fn(),
       reset: vi.fn(),
     });
@@ -305,6 +311,7 @@ describe('PromptAnalyzer - Save Function', () => {
     vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue({
       result: resultWithOriginalContent,
       isAnalyzing: false,
+      isTimeout: false,
       analyze: vi.fn(),
       reset: vi.fn(),
     });

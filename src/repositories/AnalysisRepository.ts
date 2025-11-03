@@ -1,5 +1,16 @@
 import { supabase } from "@/integrations/supabase/client";
 import { handleSupabaseError } from "@/lib/errorHandler";
+import { TIMING } from "@/constants/application-config";
+
+/**
+ * Custom error class for timeout scenarios
+ */
+export class AnalysisTimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AnalysisTimeoutError';
+  }
+}
 
 /**
  * Result structure returned by prompt analysis
@@ -43,6 +54,7 @@ export interface AnalysisRepository {
    * Analyzes a prompt and returns structured data
    * @param content - The prompt content to analyze
    * @returns Promise resolving to the analysis result
+   * @throws AnalysisTimeoutError if analysis exceeds timeout
    * @throws Error if analysis fails
    */
   analyzePrompt(content: string): Promise<AnalysisResult>;
@@ -50,21 +62,44 @@ export interface AnalysisRepository {
 
 /**
  * Supabase implementation of the AnalysisRepository
- * Invokes the analyze-prompt edge function
+ * Invokes the analyze-prompt edge function with timeout protection
  */
 export class SupabaseAnalysisRepository implements AnalysisRepository {
   async analyzePrompt(content: string): Promise<AnalysisResult> {
-    const result = await supabase.functions.invoke('analyze-prompt', {
-      body: { promptContent: content }
-    });
+    // Create AbortController for timeout management
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      TIMING.ANALYSIS_CLIENT_TIMEOUT
+    );
 
-    handleSupabaseError(result);
+    try {
+      const result = await supabase.functions.invoke('analyze-prompt', {
+        body: { promptContent: content },
+        // @ts-ignore - Supabase types don't include signal yet
+        signal: controller.signal,
+      });
 
-    if (result.data.error) {
-      throw new Error(result.data.error);
+      clearTimeout(timeoutId);
+      handleSupabaseError(result);
+
+      if (result.data?.error) {
+        throw new Error(result.data.error);
+      }
+
+      return result.data as AnalysisResult;
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+
+      // Detect AbortError (timeout triggered)
+      if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+        throw new AnalysisTimeoutError(
+          `L'analyse a dépassé le délai maximum de ${TIMING.ANALYSIS_CLIENT_TIMEOUT / 1000}s. Le service d'analyse est temporairement lent, réessayez plus tard.`
+        );
+      }
+
+      throw error;
     }
-
-    return result.data as AnalysisResult;
   }
 }
 
