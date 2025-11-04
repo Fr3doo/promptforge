@@ -25,8 +25,50 @@ export function handleSupabaseError<T>(result: { data: T | null; error: any }): 
 }
 
 /**
+ * Mapping des codes d'erreur PostgreSQL vers des messages utilisateur
+ */
+const ERROR_CODE_MESSAGES: Record<string, string> = {
+  '23505': messages.errors.database.duplicate,
+  '23503': messages.errors.database.invalidReference,
+  '23514': messages.errors.database.constraintViolation,
+  '42501': messages.errors.database.unauthorized,
+} as const;
+
+/**
+ * Mapping des patterns de message d'erreur vers des messages utilisateur
+ * Ordre important : les patterns sont vérifiés séquentiellement
+ */
+const ERROR_PATTERN_MESSAGES: ReadonlyArray<{
+  pattern: string;
+  message: string;
+}> = [
+  { pattern: 'row-level security', message: messages.errors.database.rlsViolation },
+  { pattern: 'jwt', message: messages.errors.database.sessionExpired },
+  { pattern: 'token', message: messages.errors.database.sessionExpired },
+  { pattern: 'unique', message: messages.errors.database.uniqueViolation },
+  { pattern: 'invalid email', message: messages.errors.database.invalidEmail },
+  { pattern: 'invalid_grant', message: messages.errors.database.invalidEmail },
+  { pattern: 'user already registered', message: messages.errors.database.userExists },
+  { pattern: 'email not confirmed', message: messages.errors.database.emailNotConfirmed },
+  { pattern: 'invalid password', message: messages.errors.database.invalidPassword },
+] as const;
+
+/**
  * Maps database and application errors to user-friendly messages
  * Prevents exposure of internal database structure and implementation details
+ * 
+ * @param error - Error object from Supabase or application
+ * @returns User-friendly error message
+ * 
+ * @example
+ * ```typescript
+ * try {
+ *   await supabase.from('prompts').insert(data);
+ * } catch (error) {
+ *   const message = getSafeErrorMessage(error);
+ *   toast.error(message);
+ * }
+ * ```
  */
 export function getSafeErrorMessage(error: any): string {
   // Log full error for debugging
@@ -36,44 +78,28 @@ export function getSafeErrorMessage(error: any): string {
     stack: error?.stack,
   });
 
-  // Handle Zod validation errors
+  // 1. Handle Zod validation errors (specific format)
   if (error?.name === 'ZodError') {
     return error.errors?.[0]?.message || 'Données invalides';
   }
 
-  // Get error code and message safely
+  // 2. Try to match by PostgreSQL error code
   const errorCode = error?.code;
+  if (errorCode && ERROR_CODE_MESSAGES[errorCode]) {
+    return ERROR_CODE_MESSAGES[errorCode];
+  }
+
+  // 3. Try to match by error message pattern
   const errorMessage = error?.message?.toLowerCase() || '';
-
-  // PostgreSQL error codes
-  if (errorCode === '23505') return messages.errors.database.duplicate;
-  if (errorCode === '23503') return messages.errors.database.invalidReference;
-  if (errorCode === '23514') return messages.errors.database.constraintViolation;
-  if (errorCode === '42501') return messages.errors.database.unauthorized;
-  
-  // Supabase/Auth specific errors
-  if (errorMessage.includes('row-level security')) {
-    return messages.errors.database.rlsViolation;
-  }
-  if (errorMessage.includes('jwt') || errorMessage.includes('token')) {
-    return messages.errors.database.sessionExpired;
-  }
-  if (errorMessage.includes('unique')) {
-    return messages.errors.database.uniqueViolation;
-  }
-  if (errorMessage.includes('invalid email') || errorMessage.includes('invalid_grant')) {
-    return messages.errors.database.invalidEmail;
-  }
-  if (errorMessage.includes('user already registered')) {
-    return messages.errors.database.userExists;
-  }
-  if (errorMessage.includes('email not confirmed')) {
-    return messages.errors.database.emailNotConfirmed;
-  }
-  if (errorMessage.includes('invalid password')) {
-    return messages.errors.database.invalidPassword;
+  if (errorMessage) {
+    const matchedPattern = ERROR_PATTERN_MESSAGES.find(
+      ({ pattern }) => errorMessage.includes(pattern)
+    );
+    if (matchedPattern) {
+      return matchedPattern.message;
+    }
   }
 
-  // Generic fallback
+  // 4. Generic fallback
   return messages.errors.generic;
 }
