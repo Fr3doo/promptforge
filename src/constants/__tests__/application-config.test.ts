@@ -29,6 +29,32 @@ describe("application-config", () => {
       expect(TIMING.TOAST_DURATION).toBeGreaterThan(0);
     });
 
+    it("should define client analysis timeout correctly", () => {
+      expect(TIMING.ANALYSIS_CLIENT_TIMEOUT).toBe(30_000);
+      expect(TIMING.ANALYSIS_CLIENT_TIMEOUT).toBeGreaterThan(0);
+    });
+
+    it("should define edge analysis timeout correctly", () => {
+      expect(TIMING.ANALYSIS_EDGE_TIMEOUT).toBe(35_000);
+      expect(TIMING.ANALYSIS_EDGE_TIMEOUT).toBeGreaterThan(0);
+    });
+
+    it("should ensure edge timeout is greater than client timeout", () => {
+      expect(TIMING.ANALYSIS_EDGE_TIMEOUT).toBeGreaterThan(
+        TIMING.ANALYSIS_CLIENT_TIMEOUT
+      );
+    });
+
+    it("should ensure timeout gap is at least 5 seconds", () => {
+      const gap = TIMING.ANALYSIS_EDGE_TIMEOUT - TIMING.ANALYSIS_CLIENT_TIMEOUT;
+      expect(gap).toBeGreaterThanOrEqual(5000);
+    });
+
+    it("should ensure analysis timeouts are reasonable (< 60s)", () => {
+      expect(TIMING.ANALYSIS_CLIENT_TIMEOUT).toBeLessThan(60_000);
+      expect(TIMING.ANALYSIS_EDGE_TIMEOUT).toBeLessThan(60_000);
+    });
+
     it("should ensure search debounce is longer than default debounce", () => {
       expect(TIMING.DEBOUNCE_SEARCH_DELAY).toBeGreaterThan(
         TIMING.DEBOUNCE_DELAY

@@ -145,6 +145,10 @@ export const messages = {
     },
     analysis: {
       failed: "Impossible d'analyser",
+      timeout: (seconds: number) => 
+        `L'analyse a dépassé le délai maximum de ${seconds}s. Le service d'analyse est temporairement lent, réessayez plus tard.`,
+      edgeTimeout: (seconds: number) => 
+        `Le service d'analyse IA n'a pas répondu dans le délai imparti (${seconds}s). Réessayez avec un prompt plus court ou attendez quelques instants.`,
     },
     save: {
       failed: "Erreur de sauvegarde",

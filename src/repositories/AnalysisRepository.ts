@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { TIMING } from "@/constants/application-config";
+import { messages } from "@/constants/messages";
 
 /**
  * Custom error class for timeout scenarios
@@ -94,7 +95,7 @@ export class SupabaseAnalysisRepository implements AnalysisRepository {
       // Detect AbortError (timeout triggered)
       if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
         throw new AnalysisTimeoutError(
-          `L'analyse a dépassé le délai maximum de ${TIMING.ANALYSIS_CLIENT_TIMEOUT / 1000}s. Le service d'analyse est temporairement lent, réessayez plus tard.`
+          messages.errors.analysis.timeout(TIMING.ANALYSIS_CLIENT_TIMEOUT / 1000)
         );
       }
 
