@@ -42,6 +42,17 @@ const ERROR_PATTERN_MESSAGES: ReadonlyArray<{
   pattern: string;
   message: string;
 }> = [
+  // Variables validation constraints (doivent être avant les patterns génériques)
+  { pattern: 'variables_name_length', message: messages.errors.database.variableNameTooLong },
+  { pattern: 'variables_default_value_length', message: messages.errors.database.variableDefaultTooLong },
+  { pattern: 'variables_help_length', message: messages.errors.database.variableHelpTooLong },
+  { pattern: 'variables_pattern_length', message: messages.errors.database.variablePatternTooLong },
+  { pattern: 'variables_name_format', message: messages.errors.database.variableNameInvalid },
+  { pattern: "nombre d'options ne peut pas dépasser", message: messages.errors.database.variableTooManyOptions },
+  { pattern: 'option ne peut pas dépasser 100', message: messages.errors.database.variableOptionTooLong },
+  { pattern: 'ne peut pas avoir plus de 50 variables', message: messages.errors.database.variableCountExceeded },
+  
+  // Patterns existants
   { pattern: 'row-level security', message: messages.errors.database.rlsViolation },
   { pattern: 'jwt', message: messages.errors.database.sessionExpired },
   { pattern: 'token', message: messages.errors.database.sessionExpired },

@@ -1284,4 +1284,307 @@ describe("SupabaseVariableRepository", () => {
       });
     });
   });
+
+  // ========================================
+  // DATABASE CONSTRAINT TESTS
+  // ========================================
+  describe('Database constraint validation', () => {
+    const testPromptId = 'test-prompt-constraint-id';
+
+    describe('Name constraints', () => {
+      it('should reject variable with name > 100 characters', async () => {
+        const longName = 'a'.repeat(101);
+        
+        const mockError = { 
+          message: 'violates check constraint "variables_name_length"',
+          code: '23514'
+        };
+
+        const mockSingle = vi.fn().mockResolvedValue({
+          data: null,
+          error: mockError,
+        });
+
+        const mockInsert = vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: mockSingle,
+          }),
+        });
+
+        mockSupabase.from.mockReturnValue({
+          insert: mockInsert,
+        });
+
+        await expect(
+          repository.create({
+            prompt_id: testPromptId,
+            name: longName,
+            type: 'STRING',
+            required: false,
+          })
+        ).rejects.toThrow(/variables_name_length/);
+      });
+
+      it('should reject variable with invalid name format (contains spaces)', async () => {
+        const mockError = { 
+          message: 'violates check constraint "variables_name_format"',
+          code: '23514'
+        };
+
+        const mockSingle = vi.fn().mockResolvedValue({
+          data: null,
+          error: mockError,
+        });
+
+        const mockInsert = vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: mockSingle,
+          }),
+        });
+
+        mockSupabase.from.mockReturnValue({
+          insert: mockInsert,
+        });
+
+        await expect(
+          repository.create({
+            prompt_id: testPromptId,
+            name: 'invalid name',  // Contient un espace
+            type: 'STRING',
+            required: false,
+          })
+        ).rejects.toThrow(/variables_name_format/);
+      });
+
+      it('should reject variable with invalid name format (contains hyphens)', async () => {
+        const mockError = { 
+          message: 'violates check constraint "variables_name_format"',
+          code: '23514'
+        };
+
+        const mockSingle = vi.fn().mockResolvedValue({
+          data: null,
+          error: mockError,
+        });
+
+        const mockInsert = vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: mockSingle,
+          }),
+        });
+
+        mockSupabase.from.mockReturnValue({
+          insert: mockInsert,
+        });
+
+        await expect(
+          repository.create({
+            prompt_id: testPromptId,
+            name: 'invalid-name',  // Contient un tiret
+            type: 'STRING',
+            required: false,
+          })
+        ).rejects.toThrow(/variables_name_format/);
+      });
+    });
+
+    describe('Field length constraints', () => {
+      it('should reject variable with default_value > 1000 characters', async () => {
+        const mockError = { 
+          message: 'violates check constraint "variables_default_value_length"',
+          code: '23514'
+        };
+
+        const mockSingle = vi.fn().mockResolvedValue({
+          data: null,
+          error: mockError,
+        });
+
+        const mockInsert = vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: mockSingle,
+          }),
+        });
+
+        mockSupabase.from.mockReturnValue({
+          insert: mockInsert,
+        });
+
+        await expect(
+          repository.create({
+            prompt_id: testPromptId,
+            name: 'test',
+            type: 'STRING',
+            required: false,
+            default_value: 'a'.repeat(1001),
+          })
+        ).rejects.toThrow(/variables_default_value_length/);
+      });
+
+      it('should reject variable with help > 500 characters', async () => {
+        const mockError = { 
+          message: 'violates check constraint "variables_help_length"',
+          code: '23514'
+        };
+
+        const mockSingle = vi.fn().mockResolvedValue({
+          data: null,
+          error: mockError,
+        });
+
+        const mockInsert = vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: mockSingle,
+          }),
+        });
+
+        mockSupabase.from.mockReturnValue({
+          insert: mockInsert,
+        });
+
+        await expect(
+          repository.create({
+            prompt_id: testPromptId,
+            name: 'test',
+            type: 'STRING',
+            required: false,
+            help: 'a'.repeat(501),
+          })
+        ).rejects.toThrow(/variables_help_length/);
+      });
+
+      it('should reject variable with pattern > 200 characters', async () => {
+        const mockError = { 
+          message: 'violates check constraint "variables_pattern_length"',
+          code: '23514'
+        };
+
+        const mockSingle = vi.fn().mockResolvedValue({
+          data: null,
+          error: mockError,
+        });
+
+        const mockInsert = vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: mockSingle,
+          }),
+        });
+
+        mockSupabase.from.mockReturnValue({
+          insert: mockInsert,
+        });
+
+        await expect(
+          repository.create({
+            prompt_id: testPromptId,
+            name: 'test',
+            type: 'STRING',
+            required: false,
+            pattern: 'a'.repeat(201),
+          })
+        ).rejects.toThrow(/variables_pattern_length/);
+      });
+    });
+
+    describe('Options constraints', () => {
+      it('should reject variable with > 50 options', async () => {
+        const mockError = { 
+          message: "Le nombre d'options ne peut pas dépasser 50 (actuel: 51)",
+          code: '23514'
+        };
+
+        const mockSingle = vi.fn().mockResolvedValue({
+          data: null,
+          error: mockError,
+        });
+
+        const mockInsert = vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: mockSingle,
+          }),
+        });
+
+        mockSupabase.from.mockReturnValue({
+          insert: mockInsert,
+        });
+
+        const tooManyOptions = Array.from({ length: 51 }, (_, i) => `option_${i}`);
+        
+        await expect(
+          repository.create({
+            prompt_id: testPromptId,
+            name: 'test',
+            type: 'ENUM',
+            required: false,
+            options: tooManyOptions,
+          })
+        ).rejects.toThrow(/nombre d'options ne peut pas dépasser/);
+      });
+
+      it('should reject variable with option > 100 characters', async () => {
+        const mockError = { 
+          message: 'Chaque option ne peut pas dépasser 100 caractères',
+          code: '23514'
+        };
+
+        const mockSingle = vi.fn().mockResolvedValue({
+          data: null,
+          error: mockError,
+        });
+
+        const mockInsert = vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: mockSingle,
+          }),
+        });
+
+        mockSupabase.from.mockReturnValue({
+          insert: mockInsert,
+        });
+
+        await expect(
+          repository.create({
+            prompt_id: testPromptId,
+            name: 'test',
+            type: 'ENUM',
+            required: false,
+            options: ['a'.repeat(101)],
+          })
+        ).rejects.toThrow(/option ne peut pas dépasser 100 caractères/);
+      });
+    });
+
+    describe('Variables count constraint', () => {
+      it('should reject creating > 50 variables for a prompt', async () => {
+        const mockError = { 
+          message: 'Un prompt ne peut pas avoir plus de 50 variables (actuel: 50)',
+          code: '23514'
+        };
+
+        const mockSingle = vi.fn().mockResolvedValue({
+          data: null,
+          error: mockError,
+        });
+
+        const mockInsert = vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: mockSingle,
+          }),
+        });
+
+        mockSupabase.from.mockReturnValue({
+          insert: mockInsert,
+        });
+
+        await expect(
+          repository.create({
+            prompt_id: testPromptId,
+            name: 'var_51',
+            type: 'STRING',
+            required: false,
+          })
+        ).rejects.toThrow(/ne peut pas avoir plus de 50 variables/);
+      });
+    });
+  });
 });

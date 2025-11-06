@@ -197,6 +197,15 @@ export const messages = {
       userExists: "Cet email est déjà utilisé",
       emailNotConfirmed: "Veuillez confirmer votre email avant de vous connecter",
       invalidPassword: "Mot de passe invalide",
+      // Variables validation constraints
+      variableNameTooLong: "Le nom de la variable ne peut pas dépasser 100 caractères",
+      variableDefaultTooLong: "La valeur par défaut ne peut pas dépasser 1000 caractères",
+      variableHelpTooLong: "Le texte d'aide ne peut pas dépasser 500 caractères",
+      variablePatternTooLong: "Le pattern ne peut pas dépasser 200 caractères",
+      variableNameInvalid: "Le nom de la variable ne peut contenir que des lettres, chiffres et underscores",
+      variableTooManyOptions: "Le nombre d'options ne peut pas dépasser 50",
+      variableOptionTooLong: "Chaque option ne peut pas dépasser 100 caractères",
+      variableCountExceeded: "Un prompt ne peut pas avoir plus de 50 variables",
     },
   },
 
