@@ -168,6 +168,30 @@ function validateAIResponse(structured: any): void {
   }
 }
 
+/**
+ * Sanitize variable names to match database constraints
+ * Replaces hyphens (-) with underscores (_) to comply with CHECK constraint
+ * Rationale: AI can generate hyphens, but DB only accepts [a-zA-Z0-9_]
+ */
+function sanitizeVariableNames(variables: any[]): any[] {
+  if (!variables || !Array.isArray(variables)) return variables;
+  
+  return variables.map(v => {
+    if (v.name && typeof v.name === 'string') {
+      const originalName = v.name;
+      const sanitizedName = v.name.replace(/-/g, '_');
+      
+      // Log uniquement si une modification a été faite
+      if (originalName !== sanitizedName) {
+        console.log(`[SANITIZE] Variable renommée: "${originalName}" → "${sanitizedName}"`);
+      }
+      
+      return { ...v, name: sanitizedName };
+    }
+    return v;
+  });
+}
+
 // === MARKDOWN GENERATION (DRY) ===
 function buildMarkdownSection(title: string, content: string | string[]): string {
   if (!content || (Array.isArray(content) && content.length === 0)) return '';
@@ -306,6 +330,7 @@ Avant de renvoyer la structure, vérifie mentalement :
 3. Rôle précis (max 500 caractères)
 4. Catégories en PascalCase SANS espaces (ex: "DeveloppementWeb", "AnalyseDonnees")
 5. Variables nommées en snake_case ou camelCase (a-z, A-Z, 0-9, _, -)
+   Note: Les tirets (-) sont automatiquement convertis en underscores (_)
 6. Types ENUM uniquement si options clairement définies
 
 Applique maintenant ce workflow sur le prompt utilisateur.`;
@@ -470,10 +495,14 @@ serve(async (req) => {
 
     const structured = JSON.parse(toolCall.function.arguments);
     
-    // Validate AI response structure
+    // 6. Validation (fail-fast)
     validateAIResponse(structured);
+    console.log(`[${new Date().toISOString()}] Validation réussie (${structured.variables?.length || 0} variables, ${structured.metadata?.categories?.length || 0} catégories)`);
 
-    // 6. Generate exports (DRY - une seule structure)
+    // 6.1 Sanitize variable names (DB constraint compliance)
+    structured.variables = sanitizeVariableNames(structured.variables);
+
+    // 7. Generate exports (DRY - une seule structure)
     const result = {
       ...structured,
       exports: {
