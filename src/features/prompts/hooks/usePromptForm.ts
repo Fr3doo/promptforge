@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
 import { useVariableManager } from "@/hooks/useVariableManager";
 import { usePromptSave } from "@/hooks/usePromptSave";
 import { errorToast } from "@/lib/toastUtils";
-import { useDraftAutoSave, loadDraft, clearDraft } from "./useDraftAutoSave";
-import { promptSchema } from "@/lib/validation";
+import { useFormState } from "./useFormState";
+import { useFormValidation } from "./useFormValidation";
+import { useFormDraft } from "./useFormDraft";
+import { useFormChangeDetector } from "./useFormChangeDetector";
 import type { Prompt, Variable } from "../types";
-import type { ZodError } from "zod";
 
 interface UsePromptFormOptions {
   prompt?: Prompt;
@@ -14,107 +14,73 @@ interface UsePromptFormOptions {
   canEdit?: boolean;
 }
 
-interface ValidationErrors {
-  title?: string;
-  description?: string;
-  content?: string;
-  tags?: string;
-}
+/**
+ * Hook orchestrateur pour la gestion du formulaire de prompt
+ * Compose les hooks spécialisés pour offrir une interface unifiée
+ * 
+ * Responsabilité : orchestrer la composition des hooks spécialisés
+ */
+export function usePromptForm({ 
+  prompt, 
+  existingVariables = [], 
+  isEditMode, 
+  canEdit = true 
+}: UsePromptFormOptions) {
+  // 1. État du formulaire
+  const formState = useFormState({ prompt, isEditMode });
 
-export function usePromptForm({ prompt, existingVariables = [], isEditMode, canEdit = true }: UsePromptFormOptions) {
-  // Save logic with callback to clear draft on success
+  // 2. Validation
+  const validation = useFormValidation({
+    title: formState.title,
+    description: formState.description,
+    content: formState.content,
+    tags: formState.tags,
+  });
+
+  // 3. Gestion des brouillons (uniquement en mode création)
+  const draft = useFormDraft(
+    {
+      title: formState.title,
+      description: formState.description,
+      content: formState.content,
+      tags: formState.tags,
+    },
+    !isEditMode
+  );
+
+  // 4. Détection des changements
+  const changeDetector = useFormChangeDetector(
+    {
+      title: formState.title,
+      description: formState.description,
+      content: formState.content,
+      tags: formState.tags,
+    },
+    prompt,
+    isEditMode
+  );
+
+  // 5. Gestion des variables
+  const { variables, addVariablesFromContent, updateVariable, deleteVariable } = useVariableManager({
+    content: formState.content,
+    initialVariables: existingVariables,
+  });
+
+  // 6. Sauvegarde avec callback pour nettoyer le brouillon
   const { savePrompt, isSaving } = usePromptSave({ 
     isEditMode,
     onSuccess: () => {
       // Supprimer le brouillon après enregistrement réussi (mode création uniquement)
       if (!isEditMode) {
-        clearDraft();
+        draft.clearSavedDraft();
       }
     }
   });
 
-  // Form state
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [content, setContent] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
-  const [variableValues, setVariableValues] = useState<Record<string, string>>({});
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
-  const [visibility] = useState<"PRIVATE" | "SHARED">("PRIVATE");
-  
-  // Variable management
-  const { variables, addVariablesFromContent, updateVariable, deleteVariable } = useVariableManager({
-    content,
-    initialVariables: existingVariables,
-  });
-
-  // Auto-sauvegarde locale (uniquement en mode création)
-  useDraftAutoSave({
-    title,
-    description,
-    content,
-    tags,
-    enabled: !isEditMode,
-  });
-
-  // Initialize form with existing data
-  useEffect(() => {
-    if (prompt) {
-      setTitle(prompt.title);
-      setDescription(prompt.description ?? "");
-      setContent(prompt.content);
-      setTags(prompt.tags || []);
-    } else if (!isEditMode) {
-      // En mode création, charger le brouillon s'il existe
-      const draft = loadDraft();
-      if (draft) {
-        setTitle(draft.title);
-        setDescription(draft.description);
-        setContent(draft.content);
-        setTags(draft.tags);
-      }
-    }
-  }, [prompt, isEditMode]);
-
-  // Validation en temps réel
-  const validateForm = useCallback((): boolean => {
-    const errors: ValidationErrors = {};
-    
-    try {
-      promptSchema.parse({
-        title: title.trim(),
-        description: description.trim(),
-        content: content.trim(),
-        tags,
-        visibility,
-      });
-      setValidationErrors({});
-      return true;
-    } catch (error) {
-      if (error instanceof Error && 'errors' in error) {
-        const zodError = error as ZodError;
-        zodError.errors.forEach((err) => {
-          const field = err.path[0] as keyof ValidationErrors;
-          errors[field] = err.message;
-        });
-      }
-      setValidationErrors(errors);
-      return false;
-    }
-  }, [title, description, content, tags, visibility]);
-
-  // Valider à chaque changement
-  useEffect(() => {
-    // Ne valider que si au moins un champ est rempli
-    if (title || description || content || tags.length > 0) {
-      validateForm();
-    }
-  }, [title, description, content, tags, validateForm]);
-
-
+  // 7. Logique de sauvegarde
   const handleSave = async (promptId?: string, hasConflict?: boolean) => {
     // Valider avant de sauvegarder
-    if (!validateForm()) {
+    if (!validation.validate()) {
       return;
     }
 
@@ -137,63 +103,43 @@ export function usePromptForm({ prompt, existingVariables = [], isEditMode, canE
     }
 
     await savePrompt({
-      title,
-      description,
-      content,
-      tags,
+      title: formState.title,
+      description: formState.description,
+      content: formState.content,
+      tags: formState.tags,
       visibility: "PRIVATE",
       variables,
     }, promptId);
   };
 
-
-
-  // Détecter les changements non sauvegardés
-  const hasUnsavedChanges = () => {
-    if (!isEditMode) {
-      // En mode création : vérifier si au moins un champ est rempli
-      return title.trim() !== "" || 
-             description.trim() !== "" || 
-             content.trim() !== "" || 
-             tags.length > 0;
-    } else if (prompt) {
-      // En mode édition : comparer avec les valeurs initiales
-      return title !== prompt.title ||
-             description !== (prompt.description ?? "") ||
-             content !== prompt.content ||
-             JSON.stringify(tags) !== JSON.stringify(prompt.tags || []);
-    }
-    return false;
-  };
-
-  const isFormValid = Object.keys(validationErrors).length === 0 && 
-                       title.trim() !== "" && 
-                       content.trim() !== "";
-
   return {
     // Form state
-    title,
-    setTitle,
-    description,
-    setDescription,
-    content,
-    setContent,
-    tags,
-    setTags,
-    variables,
-    variableValues,
-    setVariableValues,
-    validationErrors,
+    title: formState.title,
+    setTitle: formState.setTitle,
+    description: formState.description,
+    setDescription: formState.setDescription,
+    content: formState.content,
+    setContent: formState.setContent,
+    tags: formState.tags,
+    setTags: formState.setTags,
+    variableValues: formState.variableValues,
+    setVariableValues: formState.setVariableValues,
     
-    // Actions
-    handleSave,
+    // Variables
+    variables,
     detectVariables: addVariablesFromContent,
     updateVariable,
     deleteVariable,
     
+    // Validation
+    validationErrors: validation.validationErrors,
+    isFormValid: validation.isFormValid,
+    
+    // Actions
+    handleSave,
+    
     // Status
     isSaving,
-    hasUnsavedChanges: hasUnsavedChanges(),
-    isFormValid,
+    hasUnsavedChanges: changeDetector.hasUnsavedChanges,
   };
 }
