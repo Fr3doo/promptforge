@@ -1,4 +1,5 @@
 import { toast } from "@/hooks/use-toast";
+import { messages } from "@/constants/messages";
 import { ToastAction } from "@/components/ui/toast";
 import * as React from "react";
 
@@ -71,19 +72,13 @@ export function useToastNotifier() {
 
   // Specialized notifications for common scenarios
   const notifyPromptCreated = (promptTitle: string) => {
-    notifySuccess(
-      "Prompt créé avec succès",
-      `"${promptTitle}" a été ajouté à votre bibliothèque`,
-      { duration: 4000 }
-    );
+    const msg = messages.prompts.notifications.created;
+    notifySuccess(msg.title, msg.description(promptTitle), { duration: 4000 });
   };
 
   const notifyPromptUpdated = (promptTitle: string) => {
-    notifySuccess(
-      "Modifications enregistrées",
-      `Les changements apportés à "${promptTitle}" ont été sauvegardés`,
-      { duration: 3000 }
-    );
+    const msg = messages.prompts.notifications.updated;
+    notifySuccess(msg.title, msg.description(promptTitle), { duration: 3000 });
   };
 
   const notifyValidationError = (field: string, constraint: string) => {

@@ -1,6 +1,6 @@
 import { useVariableManager } from "@/hooks/useVariableManager";
 import { usePromptSave } from "@/hooks/usePromptSave";
-import { errorToast } from "@/lib/toastUtils";
+import { usePromptMessages } from "./usePromptMessages";
 import { useFormState } from "./useFormState";
 import { useFormValidation } from "./useFormValidation";
 import { useFormDraft } from "./useFormDraft";
@@ -26,6 +26,9 @@ export function usePromptForm({
   isEditMode, 
   canEdit = true 
 }: UsePromptFormOptions) {
+  // Messages centralisés
+  const promptMessages = usePromptMessages();
+
   // 1. État du formulaire
   const formState = useFormState({ prompt, isEditMode });
 
@@ -86,19 +89,13 @@ export function usePromptForm({
 
     // Bloquer la sauvegarde si pas de permission d'édition
     if (!canEdit) {
-      errorToast(
-        "Action interdite",
-        "Vous n'avez pas la permission de modifier ce prompt. Contactez le propriétaire pour obtenir l'accès en écriture."
-      );
+      promptMessages.showNoEditPermission();
       return;
     }
 
     // Bloquer la sauvegarde en cas de conflit non résolu
     if (hasConflict) {
-      errorToast(
-        "Conflit détecté",
-        "Veuillez recharger le prompt pour obtenir la dernière version avant de sauvegarder."
-      );
+      promptMessages.showConflictDetected();
       return;
     }
 

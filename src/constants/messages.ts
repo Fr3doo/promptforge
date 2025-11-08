@@ -265,6 +265,150 @@ export const messages = {
     copyAction: "Copier",
   },
 
+  // System messages
+  system: {
+    sessionExpired: {
+      title: "Session expirée",
+      description: "Votre session a expiré. Veuillez vous reconnecter.",
+    },
+    genericError: {
+      title: "Erreur",
+      description: "Une erreur inattendue s'est produite",
+    },
+    networkError: {
+      title: "Erreur de connexion",
+      description: "Vérifiez votre connexion internet et réessayez",
+    },
+  },
+
+  // Prompts-specific notifications
+  prompts: {
+    notifications: {
+      // Succès - CRUD
+      created: {
+        title: "Prompt créé avec succès",
+        description: (title: string) => `"${title}" a été ajouté à votre bibliothèque`,
+      },
+      updated: {
+        title: "Modifications enregistrées",
+        description: (title: string) => `Les changements apportés à "${title}" ont été sauvegardés`,
+      },
+      deleted: {
+        title: "Prompt supprimé",
+        description: "Le prompt a été supprimé avec succès",
+      },
+      duplicated: {
+        title: "Prompt dupliqué avec succès",
+        description: (title: string) => `Une copie de "${title}" a été créée`,
+      },
+
+      // Erreurs - Formulaire
+      form: {
+        noEditPermission: {
+          title: "Action interdite",
+          description: "Vous n'avez pas la permission de modifier ce prompt. Contactez le propriétaire pour obtenir l'accès en écriture.",
+        },
+        conflictDetected: {
+          title: "Conflit détecté",
+          description: "Veuillez recharger le prompt pour obtenir la dernière version avant de sauvegarder.",
+        },
+        validationFailed: {
+          title: "Validation échouée",
+          description: (field: string, constraint: string) => `${field}: ${constraint}`,
+        },
+      },
+
+      // Erreurs - Sauvegarde
+      save: {
+        duplicateTitle: {
+          title: "Erreur de création",
+          description: "Un prompt avec ce titre existe déjà",
+        },
+        networkError: {
+          title: "Erreur de connexion",
+          description: (action: string) => `Impossible de ${action}. Vérifiez votre connexion internet.`,
+        },
+        serverError: {
+          title: "Erreur serveur",
+          description: (action: string) => `Une erreur s'est produite lors de l'opération "${action}". Veuillez réessayer.`,
+        },
+        permissionDenied: {
+          title: "Accès refusé",
+          description: (resource: string) => `Vous n'avez pas les permissions nécessaires pour modifier ${resource}.`,
+        },
+      },
+
+      // Partage privé
+      share: {
+        added: {
+          title: "Prompt partagé",
+          description: (email: string, permission: "READ" | "WRITE") =>
+            `Le prompt a été partagé avec ${email} en ${permission === "READ" ? "lecture seule" : "lecture/écriture"}`,
+        },
+        permissionUpdated: {
+          title: "Permission mise à jour",
+          description: "Le niveau d'accès a été modifié avec succès",
+        },
+        deleted: {
+          title: "Partage supprimé",
+          description: "L'accès au prompt a été retiré",
+        },
+        errors: {
+          userNotFound: {
+            title: "Utilisateur introuvable",
+            description: "Cet email n'est pas encore inscrit. Invitez cet utilisateur à créer un compte pour pouvoir partager avec lui.",
+          },
+          selfShare: {
+            title: "Partage impossible",
+            description: "Vous ne pouvez pas partager un prompt avec vous-même",
+          },
+          notOwner: {
+            title: "Action non autorisée",
+            description: "Seul le propriétaire du prompt peut le partager avec d'autres utilisateurs",
+          },
+          alreadyShared: {
+            title: "Déjà partagé",
+            description: "Ce prompt est déjà partagé avec cet utilisateur",
+          },
+          shareNotFound: {
+            title: "Partage introuvable",
+            description: "Ce partage n'existe plus ou a déjà été supprimé",
+          },
+          unauthorizedUpdate: {
+            title: "Action non autorisée",
+            description: "Vous n'êtes pas autorisé à modifier ce partage",
+          },
+          unauthorizedDelete: {
+            title: "Action non autorisée",
+            description: "Vous n'avez pas les permissions nécessaires pour supprimer ce partage",
+          },
+        },
+      },
+
+      // Visibilité publique
+      visibility: {
+        shared: {
+          title: "Prompt partagé avec la communauté",
+          description: "Votre prompt est maintenant accessible publiquement",
+        },
+        private: {
+          title: "Prompt redevenu privé",
+          description: "Votre prompt n'est plus accessible publiquement",
+        },
+        permissionUpdated: {
+          title: "Niveau d'accès mis à jour",
+          description: "Les permissions publiques ont été modifiées",
+        },
+        errors: {
+          cannotUpdatePrivate: {
+            title: "Action impossible",
+            description: "Impossible de modifier le niveau d'accès d'un prompt privé. Activez d'abord le partage public.",
+          },
+        },
+      },
+    },
+  },
+
   // Authentication messages
   auth: {
     loginTitle: "Connexion",

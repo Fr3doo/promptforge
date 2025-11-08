@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { usePromptMessages } from "@/features/prompts/hooks/usePromptMessages";
 import { successToast, errorToast } from "@/lib/toastUtils";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { messages } from "@/constants/messages";
@@ -189,7 +190,8 @@ export function useDuplicatePrompt() {
 export function useToggleVisibility() {
   const queryClient = useQueryClient();
   const repository = usePromptRepository();
-  
+  const promptMessages = usePromptMessages();
+
   return useMutation({
     mutationFn: ({ 
       id, 
@@ -224,9 +226,9 @@ export function useToggleVisibility() {
     onSuccess: (newVisibility) => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
       if (newVisibility === "SHARED") {
-        successToast(messages.success.promptShared);
+        promptMessages.showVisibilityShared();
       } else {
-        successToast(messages.success.promptPrivate);
+        promptMessages.showVisibilityPrivate();
       }
     },
     onError: (err, variables, context) => {
@@ -240,7 +242,8 @@ export function useToggleVisibility() {
 export function useUpdatePublicPermission() {
   const queryClient = useQueryClient();
   const repository = usePromptRepository();
-  
+  const promptMessages = usePromptMessages();
+
   return useMutation({
     mutationFn: ({ id, permission }: { id: string; permission: "READ" | "WRITE" }) =>
       repository.updatePublicPermission(id, permission),
@@ -256,15 +259,12 @@ export function useUpdatePublicPermission() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
-      successToast("Niveau d'accès mis à jour");
+      promptMessages.showPublicPermissionUpdated();
     },
     onError: (err: any, variables, context) => {
       queryClient.setQueryData(["prompts"], context?.previous);
       if (err.message === "PERMISSION_UPDATE_ON_PRIVATE_PROMPT") {
-        errorToast(
-          "Action impossible",
-          "Impossible de modifier le niveau d'accès d'un prompt privé. Activez d'abord le partage public."
-        );
+        promptMessages.showCannotUpdatePrivateError();
       } else {
         errorToast(messages.labels.error, getSafeErrorMessage(err));
       }

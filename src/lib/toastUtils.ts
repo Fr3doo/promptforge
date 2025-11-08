@@ -1,6 +1,10 @@
 import { toast } from "@/hooks/use-toast";
 import { TIMING } from "@/constants/application-config";
 
+/**
+ * @deprecated Utilisez usePromptMessages() pour les messages liés aux prompts
+ * Conservé pour compatibilité avec d'autres modules (Analyzer, Variables, etc.)
+ */
 export const successToast = (title: string, description?: string) => {
   toast({
     title: `✅ ${title}`,
@@ -9,6 +13,10 @@ export const successToast = (title: string, description?: string) => {
   });
 };
 
+/**
+ * @deprecated Utilisez usePromptMessages() pour les messages liés aux prompts
+ * Conservé pour compatibilité avec d'autres modules (Analyzer, Variables, etc.)
+ */
 export const errorToast = (title: string, description?: string, customDuration?: number) => {
   toast({
     title: `❌ ${title}`,
@@ -18,6 +26,10 @@ export const errorToast = (title: string, description?: string, customDuration?:
   });
 };
 
+/**
+ * @deprecated Utilisez usePromptMessages() pour les messages liés aux prompts
+ * Conservé pour compatibilité avec d'autres modules (Analyzer, Variables, etc.)
+ */
 export const infoToast = (title: string, description?: string) => {
   toast({
     title: `ℹ️ ${title}`,
@@ -26,6 +38,10 @@ export const infoToast = (title: string, description?: string) => {
   });
 };
 
+/**
+ * @deprecated Utilisez usePromptMessages() pour les messages liés aux prompts
+ * Conservé pour compatibilité avec d'autres modules (Analyzer, Variables, etc.)
+ */
 export const warningToast = (title: string, description?: string) => {
   toast({
     title: `⚠️ ${title}`,
@@ -34,6 +50,10 @@ export const warningToast = (title: string, description?: string) => {
   });
 };
 
+/**
+ * @deprecated Utilisez usePromptMessages() pour les messages liés aux prompts
+ * Conservé pour compatibilité avec d'autres modules (Analyzer, Variables, etc.)
+ */
 export const loadingToast = (title: string) => {
   return toast({
     title: `⏳ ${title}`,

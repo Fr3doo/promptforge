@@ -145,7 +145,26 @@ Component Re-render (Automatic)
 UI Update
 ```
 
-### 4. Repository Pattern (DIP)
+### 4. Gestion des Messages UI
+
+**Localisation** : `src/constants/messages.ts`  
+**Accès** : Hook `usePromptMessages()` pour les prompts  
+**Principe** : Source unique de vérité pour tous les messages (DRY, i18n-ready)  
+**Documentation** : Voir `docs/MESSAGES_CENTRALIZATION.md`
+
+Tous les messages utilisateur sont centralisés dans `messages.ts` pour :
+- Éliminer la duplication (~50 messages)
+- Type-safety avec autocomplete TypeScript
+- Faciliter l'internationalisation future
+
+```typescript
+import { usePromptMessages } from "@/features/prompts/hooks/usePromptMessages";
+
+const messages = usePromptMessages();
+messages.showPromptCreated("Mon Prompt"); // Type-safe, centralisé
+```
+
+### 5. Repository Pattern (DIP)
 
 PromptForge v2 suit le **principe d'inversion de dépendance** (SOLID) via une couche de repositories.
 

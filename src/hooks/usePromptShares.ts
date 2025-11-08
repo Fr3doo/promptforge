@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePromptShareRepository } from "@/contexts/PromptShareRepositoryContext";
-import { successToast, errorToast } from "@/lib/toastUtils";
+import { usePromptMessages } from "@/features/prompts/hooks/usePromptMessages";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
 
@@ -22,6 +22,7 @@ export function usePromptShares(promptId: string | undefined) {
 export function useAddPromptShare(promptId: string) {
   const queryClient = useQueryClient();
   const repository = usePromptShareRepository();
+  const promptMessages = usePromptMessages();
 
   return useMutation({
     mutationFn: async ({
@@ -48,36 +49,21 @@ export function useAddPromptShare(promptId: string) {
     retryDelay: getRetryDelay,
     onSuccess: ({ email, permission }) => {
       queryClient.invalidateQueries({ queryKey: ["prompt-shares", promptId] });
-      successToast(
-        "Prompt partagé",
-        `Le prompt a été partagé avec ${email} en ${permission === "READ" ? "lecture seule" : "lecture/écriture"}`
-      );
+      promptMessages.showShareAdded(email, permission);
     },
     onError: (error: any) => {
       if (error.message === "USER_NOT_FOUND") {
-        errorToast(
-          "Utilisateur introuvable", 
-          "Cet email n'est pas encore inscrit. Invitez cet utilisateur à créer un compte pour pouvoir partager avec lui."
-        );
+        promptMessages.showUserNotFoundError();
       } else if (error.message === "SELF_SHARE") {
-        errorToast(
-          "Partage impossible", 
-          "Vous ne pouvez pas partager un prompt avec vous-même"
-        );
+        promptMessages.showSelfShareError();
       } else if (error.message === "NOT_PROMPT_OWNER") {
-        errorToast(
-          "Action non autorisée", 
-          "Seul le propriétaire du prompt peut le partager avec d'autres utilisateurs"
-        );
+        promptMessages.showNotOwnerError();
       } else if (error.message === "SESSION_EXPIRED") {
-        errorToast(
-          "Session expirée", 
-          "Votre session a expiré. Veuillez vous reconnecter."
-        );
+        promptMessages.showSessionExpired();
       } else if (error.code === "23505") {
-        errorToast("Déjà partagé", "Ce prompt est déjà partagé avec cet utilisateur");
+        promptMessages.showAlreadySharedError();
       } else {
-        errorToast("Erreur", getSafeErrorMessage(error));
+        promptMessages.showGenericError(getSafeErrorMessage(error));
       }
     },
   });
@@ -87,6 +73,7 @@ export function useAddPromptShare(promptId: string) {
 export function useUpdatePromptShare(promptId: string) {
   const queryClient = useQueryClient();
   const repository = usePromptShareRepository();
+  const promptMessages = usePromptMessages();
 
   return useMutation({
     mutationFn: async ({ shareId, permission }: { shareId: string; permission: "READ" | "WRITE" }) => {
@@ -96,17 +83,17 @@ export function useUpdatePromptShare(promptId: string) {
     retryDelay: getRetryDelay,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompt-shares", promptId] });
-      successToast("Permission mise à jour", "Le niveau d'accès a été modifié avec succès");
+      promptMessages.showSharePermissionUpdated();
     },
     onError: (error: any) => {
       if (error.message === "SHARE_NOT_FOUND") {
-        errorToast("Partage introuvable", "Ce partage n'existe plus ou a déjà été supprimé");
+        promptMessages.showShareNotFoundError();
       } else if (error.message === "UNAUTHORIZED_UPDATE") {
-        errorToast("Action non autorisée", "Vous n'êtes pas autorisé à modifier ce partage");
+        promptMessages.showUnauthorizedUpdateError();
       } else if (error.message === "SESSION_EXPIRED") {
-        errorToast("Session expirée", "Votre session a expiré. Veuillez vous reconnecter.");
+        promptMessages.showSessionExpired();
       } else {
-        errorToast("Erreur", getSafeErrorMessage(error));
+        promptMessages.showGenericError(getSafeErrorMessage(error));
       }
     },
   });
@@ -116,6 +103,7 @@ export function useUpdatePromptShare(promptId: string) {
 export function useDeletePromptShare(promptId: string) {
   const queryClient = useQueryClient();
   const repository = usePromptShareRepository();
+  const promptMessages = usePromptMessages();
 
   return useMutation({
     mutationFn: (shareId: string) => repository.deleteShare(shareId),
@@ -123,26 +111,17 @@ export function useDeletePromptShare(promptId: string) {
     retryDelay: getRetryDelay,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompt-shares", promptId] });
-      successToast("Partage supprimé", "L'accès au prompt a été retiré");
+      promptMessages.showShareDeleted();
     },
     onError: (error: any) => {
       if (error.message === "SHARE_NOT_FOUND") {
-        errorToast(
-          "Partage introuvable", 
-          "Ce partage n'existe plus ou a déjà été supprimé"
-        );
+        promptMessages.showShareNotFoundError();
       } else if (error.message === "UNAUTHORIZED_DELETE") {
-        errorToast(
-          "Action non autorisée", 
-          "Vous n'avez pas les permissions nécessaires pour supprimer ce partage"
-        );
+        promptMessages.showUnauthorizedDeleteError();
       } else if (error.message === "SESSION_EXPIRED") {
-        errorToast(
-          "Session expirée", 
-          "Votre session a expiré. Veuillez vous reconnecter."
-        );
+        promptMessages.showSessionExpired();
       } else {
-        errorToast("Erreur", getSafeErrorMessage(error));
+        promptMessages.showGenericError(getSafeErrorMessage(error));
       }
     },
   });

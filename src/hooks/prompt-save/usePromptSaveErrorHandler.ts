@@ -1,5 +1,4 @@
-import { useToastNotifier } from "@/hooks/useToastNotifier";
-import { messages } from "@/constants/messages";
+import { usePromptMessages } from "@/features/prompts/hooks/usePromptMessages";
 
 export type SaveErrorType = 
   | "VALIDATION"
@@ -20,13 +19,7 @@ export interface SaveError {
  * Élimine la duplication de logique d'erreur (lignes 136-147, 213-224, 227-244)
  */
 export function usePromptSaveErrorHandler() {
-  const {
-    notifyValidationError,
-    notifyPermissionError,
-    notifyNetworkError,
-    notifyServerError,
-    notifyError,
-  } = useToastNotifier();
+  const promptMessages = usePromptMessages();
 
   const handleError = (
     error: any,
@@ -37,15 +30,12 @@ export function usePromptSaveErrorHandler() {
     if (error?.errors?.[0]?.message) {
       const validationError = error.errors[0];
       const field = validationError.path?.[0] || "Champ";
-      notifyValidationError(field.toString(), validationError.message);
+      promptMessages.showValidationError(field.toString(), validationError.message);
       return;
     }
 
     if (error?.name === "ZodError") {
-      notifyError(
-        messages.errors.validation.failed,
-        "Veuillez vérifier les données saisies"
-      );
+      promptMessages.showValidationError("Données", "Veuillez vérifier les données saisies");
       return;
     }
 
@@ -55,25 +45,25 @@ export function usePromptSaveErrorHandler() {
       error?.message?.includes("fetch")
     ) {
       const action = context === "CREATE" ? "créer le prompt" : "mettre à jour le prompt";
-      notifyNetworkError(action, retry);
+      promptMessages.showNetworkError(action, retry);
       return;
     }
 
     // 3. Erreurs de permissions
     if (error?.code === "PGRST116" || error?.message?.includes("permission")) {
-      notifyPermissionError("ce prompt");
+      promptMessages.showPermissionDenied("ce prompt");
       return;
     }
 
     // 4. Erreurs de duplication (contrainte unique)
     if (error?.code === "23505") {
-      notifyError("Erreur de création", "Un prompt avec ce titre existe déjà");
+      promptMessages.showDuplicateTitleError();
       return;
     }
 
     // 5. Erreur serveur générique
     const action = context === "CREATE" ? "création du prompt" : "mise à jour du prompt";
-    notifyServerError(action, retry);
+    promptMessages.showServerError(action, retry);
   };
 
   return { handleError };
