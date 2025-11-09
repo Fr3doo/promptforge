@@ -159,6 +159,17 @@ UI Update
 **Utilisation** : Dans Dashboard, PromptList, et futurs composants de listes  
 **Documentation** : Voir `docs/LOADING_STATE_HOOK.md`
 
+### 6. Système de Validation
+
+**Localisation** : `src/features/prompts/validation/`  
+**Principe** : Validation modulaire selon OCP (Open/Closed Principle)  
+**Composants** :
+  - Validateurs atomiques (required, length, unique, conditional, async)
+  - Système de composition (priority, stopOnFailure)
+  - Presets réutilisables (prompt, tag, variable)
+**Hooks** : `useFormValidation` (extensible)  
+**Documentation** : Voir `docs/VALIDATION_SYSTEM.md`
+
 Tous les messages utilisateur sont centralisés dans `messages.ts` pour :
 - Éliminer la duplication (~50 messages)
 - Type-safety avec autocomplete TypeScript
@@ -171,7 +182,7 @@ const messages = usePromptMessages();
 messages.showPromptCreated("Mon Prompt"); // Type-safe, centralisé
 ```
 
-### 5. Repository Pattern (DIP)
+### 7. Repository Pattern (DIP)
 
 PromptForge v2 suit le **principe d'inversion de dépendance** (SOLID) via une couche de repositories.
 
@@ -577,34 +588,56 @@ export function usePromptSave({ isEditMode, onSuccess }: UsePromptSaveOptions) {
 
 ##### useTagManager
 
-Hook simple pour gérer l'état et la logique des tags.
+Hook simple pour gérer l'état et la logique des tags avec validation composable.
 
 ```typescript
 // src/hooks/useTagManager.ts
 export function useTagManager(initialTags: string[] = []) {
   const [tags, setTags] = useState<string[]>(initialTags);
   const [tagInput, setTagInput] = useState("");
+  const [tagError, setTagError] = useState<string | null>(null);
 
-  const addTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-      setTags([...tags, tagInput.trim()]);
-      setTagInput("");
+  const addTag = async () => {
+    setTagError(null);
+
+    if (!tagInput.trim()) {
+      return;
     }
+
+    // Validation avec système composable
+    const trimmedTag = tagInput.trim();
+    const validators = getTagValidators();
+    
+    const result = await composeValidators(trimmedTag, validators, {
+      formData: { tags },
+    });
+
+    if (!result.isValid) {
+      const firstError = Object.values(result.errors)[0];
+      setTagError(firstError || "Tag invalide");
+      return;
+    }
+
+    setTags([...tags, trimmedTag]);
+    setTagInput("");
   };
 
   const removeTag = (tag: string) => {
     setTags(tags.filter(t => t !== tag));
+    setTagError(null);
   };
 
-  return { tags, setTags, tagInput, setTagInput, addTag, removeTag };
+  return { tags, setTags, tagInput, setTagInput, addTag, removeTag, tagError, clearTagError };
 }
 ```
 
 **Responsabilités:**
 
 - ✅ État des tags
-- ✅ Ajout avec dédoublonnage
+- ✅ Validation composable avec système modulaire
+- ✅ Ajout avec vérification d'unicité et format
 - ✅ Suppression de tags
+- ✅ Gestion des erreurs
 
 ##### useVariableManager
 

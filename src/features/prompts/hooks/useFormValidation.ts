@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { promptSchema } from "@/lib/validation";
-import type { ZodError } from "zod";
+import { composeFieldValidators } from "../validation/compose";
+import { getDefaultPromptValidators } from "../validation/presets/prompt-validators";
+import type { Validator, ValidationContext } from "../validation/types";
 
 interface ValidationErrors {
   title?: string;
@@ -16,46 +17,53 @@ interface FormData {
   tags: string[];
 }
 
+interface UseFormValidationOptions {
+  /** Validateurs custom (optionnel) */
+  customValidators?: Record<string, Validator<any>[]>;
+  
+  /** Contexte de validation (optionnel) */
+  context?: ValidationContext;
+  
+  /** Désactiver auto-validation */
+  disableAutoValidation?: boolean;
+}
+
 /**
- * Hook responsable de la validation Zod du formulaire
- * Responsabilité unique : valider les données avec Zod
+ * Hook de validation extensible selon le principe OCP
+ * Peut être utilisé avec les validateurs par défaut OU des validateurs custom
  */
-export function useFormValidation(formData: FormData) {
+export function useFormValidation(
+  formData: FormData,
+  options?: UseFormValidationOptions
+) {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  
+  // Fusionner validateurs par défaut et custom
+  const validators = {
+    ...getDefaultPromptValidators(),
+    ...options?.customValidators,
+  };
 
-  const validate = useCallback((): boolean => {
-    const errors: ValidationErrors = {};
+  const validate = useCallback(async (): Promise<boolean> => {
+    const result = await composeFieldValidators(
+      formData,
+      validators,
+      options?.context
+    );
     
-    try {
-      promptSchema.parse({
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        content: formData.content.trim(),
-        tags: formData.tags,
-        visibility: "PRIVATE",
-      });
-      setValidationErrors({});
-      return true;
-    } catch (error) {
-      if (error instanceof Error && 'errors' in error) {
-        const zodError = error as ZodError;
-        zodError.errors.forEach((err) => {
-          const field = err.path[0] as keyof ValidationErrors;
-          errors[field] = err.message;
-        });
-      }
-      setValidationErrors(errors);
-      return false;
-    }
-  }, [formData]);
+    setValidationErrors(result.errors as ValidationErrors);
+    return result.isValid;
+  }, [formData, validators, options?.context]);
 
-  // Auto-validation on change
+  // Auto-validation on change (optionnelle)
   useEffect(() => {
+    if (options?.disableAutoValidation) return;
+    
     // Ne valider que si au moins un champ est rempli
     if (formData.title || formData.description || formData.content || formData.tags.length > 0) {
       validate();
     }
-  }, [formData.title, formData.description, formData.content, formData.tags, validate]);
+  }, [formData, validate, options?.disableAutoValidation]);
 
   const isFormValid = Object.keys(validationErrors).length === 0 && 
                       formData.title.trim() !== "" && 

@@ -1,13 +1,14 @@
 import { useState, useCallback } from "react";
-import { z } from "zod";
-import { TAG_CONSTRAINTS, tagSchema } from "@/lib/tagValidation";
+import { TAG_CONSTRAINTS } from "@/lib/tagValidation";
+import { composeValidators } from "@/features/prompts/validation/compose";
+import { getTagValidators } from "@/features/prompts/validation/presets/tag-validators";
 
 export function useTagManager(initialTags: string[] = []) {
   const [tags, setTags] = useState<string[]>(initialTags);
   const [tagInput, setTagInput] = useState("");
   const [tagError, setTagError] = useState<string | null>(null);
 
-  const addTag = useCallback(() => {
+  const addTag = useCallback(async () => {
     setTagError(null);
 
     // Validation: champ vide
@@ -15,29 +16,23 @@ export function useTagManager(initialTags: string[] = []) {
       return;
     }
 
-    // Validation: nombre maximum de tags
-    if (tags.length >= TAG_CONSTRAINTS.MAX_COUNT) {
-      setTagError(`Vous ne pouvez pas avoir plus de ${TAG_CONSTRAINTS.MAX_COUNT} tags`);
-      return;
-    }
-
-    // Validation: tag déjà présent
+    // Validation avec système composable
     const trimmedTag = tagInput.trim();
-    if (tags.includes(trimmedTag)) {
-      setTagError("Ce tag existe déjà");
+    const validators = getTagValidators();
+    
+    const result = await composeValidators(trimmedTag, validators, {
+      formData: { tags },
+    });
+
+    if (!result.isValid) {
+      const firstError = Object.values(result.errors)[0];
+      setTagError(firstError || "Tag invalide");
       return;
     }
 
-    // Validation: format du tag
-    try {
-      tagSchema.parse(trimmedTag);
-      setTags([...tags, trimmedTag]);
-      setTagInput("");
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        setTagError(error.errors[0]?.message || "Tag invalide");
-      }
-    }
+    // Ajout du tag
+    setTags([...tags, trimmedTag]);
+    setTagInput("");
   }, [tagInput, tags]);
 
   const removeTag = useCallback((tag: string) => {
