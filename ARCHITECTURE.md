@@ -152,6 +152,13 @@ UI Update
 **Principe** : Source unique de vérité pour tous les messages (DRY, i18n-ready)  
 **Documentation** : Voir `docs/MESSAGES_CENTRALIZATION.md`
 
+### 5. Gestion des États de Chargement
+
+**Localisation** : `src/hooks/useLoadingState.tsx`  
+**Principe** : Hook centralisé pour gérer les états loading/error/empty  
+**Utilisation** : Dans Dashboard, PromptList, et futurs composants de listes  
+**Documentation** : Voir `docs/LOADING_STATE_HOOK.md`
+
 Tous les messages utilisateur sont centralisés dans `messages.ts` pour :
 - Éliminer la duplication (~50 messages)
 - Type-safety avec autocomplete TypeScript

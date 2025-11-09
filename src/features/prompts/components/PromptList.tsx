@@ -1,10 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { PromptCard } from "./PromptCard";
 import { PromptListSkeleton } from "@/components/PromptCardSkeleton";
-import { EmptyState } from "@/components/EmptyState";
-import { FileText, Search, Share2 } from "lucide-react";
+import { EmptyPromptState } from "./EmptyPromptState";
 import type { Prompt } from "../types";
-import { messages } from "@/constants/messages";
+import { useLoadingState } from "@/hooks/useLoadingState";
 
 interface PromptListProps {
   prompts: Prompt[];
@@ -33,40 +32,21 @@ export const PromptList = ({
 }: PromptListProps) => {
   const navigate = useNavigate();
 
-  if (isLoading) {
-    return <PromptListSkeleton />;
-  }
-
-  if (prompts.length === 0) {
-    if (emptySearchState) {
-      return (
-        <EmptyState
-          icon={Search}
-          title={messages.promptList.noResults}
-          description={messages.promptList.noResultsDescription}
-        />
-      );
-    }
-
-    if (isSharedSection) {
-      return (
-        <EmptyState
-          icon={Share2}
-          title={messages.promptList.noSharedPrompts}
-          description={messages.promptList.noSharedPromptsDescription}
-        />
-      );
-    }
-
-    return (
-      <EmptyState
-        icon={FileText}
-        title={messages.promptList.noPrompts}
-        description={messages.promptList.noPromptsDescription}
-        actionLabel={messages.promptList.createFirstPrompt}
-        onAction={() => navigate("/prompts/new")}
+  const loadingState = useLoadingState({
+    isLoading,
+    data: prompts,
+    loadingComponent: <PromptListSkeleton />,
+    emptyComponent: (
+      <EmptyPromptState 
+        emptySearchState={emptySearchState} 
+        isSharedSection={isSharedSection} 
       />
-    );
+    ),
+    isEmpty: (data) => data.length === 0,
+  });
+
+  if (loadingState.shouldRender) {
+    return <>{loadingState.content}</>;
   }
 
   return (

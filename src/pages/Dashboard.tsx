@@ -4,11 +4,12 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PromptCard } from "@/features/prompts/components/PromptCard";
 import { useToggleFavorite, useToggleVisibility } from "@/hooks/usePrompts";
-import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, Star, Share2, Clock } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { messages } from "@/constants/messages";
+import { useLoadingState } from "@/hooks/useLoadingState";
+import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -22,22 +23,31 @@ const Dashboard = () => {
     return null;
   }
 
-  if (isLoading) {
+  const loadingState = useLoadingState({
+    isLoading,
+    data: dashboardData,
+    loadingComponent: <DashboardSkeleton />,
+    emptyComponent: (
+      <Card>
+        <CardHeader>
+          <CardTitle>{messages.dashboard.noDataAvailable}</CardTitle>
+          <CardDescription>{messages.dashboard.noDataDescription}</CardDescription>
+        </CardHeader>
+      </Card>
+    ),
+    isEmpty: (data) => 
+      !data?.recentPrompts?.length && 
+      !data?.favoritePrompts?.length && 
+      !data?.sharedPrompts?.length &&
+      !data?.usageStats?.length,
+  });
+
+  if (loadingState.shouldRender) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="border-b border-border bg-card">
-          <div className="container mx-auto px-4 py-4">
-            <h1 className="text-2xl font-bold">{messages.dashboard.title}</h1>
-          </div>
-        </div>
-        <main className="container mx-auto px-4 py-8">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-64" />
-            ))}
-          </div>
-        </main>
+        {loadingState.content}
+        <Footer />
       </div>
     );
   }
@@ -177,20 +187,6 @@ const Dashboard = () => {
           </section>
         )}
 
-        {/* Empty state */}
-        {(!dashboardData?.recentPrompts?.length && 
-          !dashboardData?.favoritePrompts?.length && 
-          !dashboardData?.sharedPrompts?.length &&
-          !dashboardData?.usageStats?.length) && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{messages.dashboard.noDataAvailable}</CardTitle>
-              <CardDescription>
-                {messages.dashboard.noDataDescription}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        )}
       </main>
       
       <Footer />
