@@ -121,6 +121,34 @@ export const messages = {
     newVersion: "Nouvelle version",
     typeLabel: "Type de version",
     messageLabel: "Message (optionnel)",
+    notifications: {
+      created: {
+        title: "Version créée",
+        description: "La nouvelle version a été créée avec succès",
+      },
+      deleted: {
+        title: "Version supprimée",
+        description: "La version a été supprimée avec succès",
+      },
+      restored: {
+        title: "Version restaurée",
+        description: (semver: string) => `La version ${semver} a été restaurée avec succès`,
+      },
+      errors: {
+        createFailed: {
+          title: "Erreur de création",
+          description: "Impossible de créer la version",
+        },
+        deleteFailed: {
+          title: "Erreur de suppression",
+          description: "Impossible de supprimer la version",
+        },
+        restoreFailed: {
+          title: "Erreur de restauration",
+          description: "Impossible de restaurer la version",
+        },
+      },
+    },
   },
 
   // Share banners and notifications
@@ -186,6 +214,35 @@ export const messages = {
     },
     // Database errors (for getSafeErrorMessage)
     database: {
+      // Codes PostgreSQL
+      codes: {
+        '23505': "Cette valeur existe déjà",
+        '23503': "Référence invalide",
+        '23514': "Contrainte de validation violée",
+        '42501': "Accès non autorisé",
+      },
+      // Patterns de messages (par ordre de priorité)
+      patterns: [
+        // Variables (spécifiques)
+        { pattern: 'variables_name_length', message: "Le nom de la variable est trop long (max 50 caractères)" },
+        { pattern: 'variables_default_value_length', message: "La valeur par défaut est trop longue (max 1000 caractères)" },
+        { pattern: 'variables_help_length', message: "Le texte d'aide est trop long (max 500 caractères)" },
+        { pattern: 'variables_pattern_length', message: "Le pattern est trop long (max 200 caractères)" },
+        { pattern: 'variables_name_format', message: "Le nom de la variable doit respecter le format snake_case" },
+        { pattern: "nombre d'options ne peut pas dépasser", message: "Vous ne pouvez pas avoir plus de 20 options" },
+        { pattern: 'option ne peut pas dépasser 100', message: "Une option ne peut pas dépasser 100 caractères" },
+        { pattern: 'ne peut pas avoir plus de 50 variables', message: "Vous ne pouvez pas avoir plus de 50 variables par prompt" },
+        // Génériques
+        { pattern: 'row-level security', message: "Accès refusé par les politiques de sécurité" },
+        { pattern: 'jwt', message: "Session expirée. Veuillez vous reconnecter." },
+        { pattern: 'token', message: "Session expirée. Veuillez vous reconnecter." },
+        { pattern: 'unique', message: "Cette valeur doit être unique" },
+        { pattern: 'invalid email', message: "Adresse email invalide" },
+        { pattern: 'invalid_grant', message: "Adresse email invalide" },
+        { pattern: 'user already registered', message: "Un compte existe déjà avec cette adresse email" },
+        { pattern: 'email not confirmed', message: "Veuillez confirmer votre adresse email" },
+        { pattern: 'invalid password', message: "Mot de passe incorrect" },
+      ],
       duplicate: "Cette entrée existe déjà",
       invalidReference: "Référence invalide",
       constraintViolation: "Les données ne respectent pas les contraintes",
@@ -278,6 +335,34 @@ export const messages = {
     networkError: {
       title: "Erreur de connexion",
       description: "Vérifiez votre connexion internet et réessayez",
+    },
+  },
+
+  // Analysis-specific notifications
+  analysis: {
+    notifications: {
+      analyzing: {
+        title: "Analyse en cours",
+        description: "Analyse du prompt en cours...",
+      },
+      complete: {
+        title: "Analyse terminée",
+        description: "L'analyse du prompt est terminée avec succès",
+      },
+      errors: {
+        emptyPrompt: {
+          title: "Erreur",
+          description: "Le contenu du prompt est vide",
+        },
+        failed: {
+          title: "Erreur",
+          description: "L'analyse du prompt a échoué",
+        },
+        timeout: {
+          title: "Délai dépassé",
+          description: "L'analyse a pris trop de temps. Veuillez réessayer avec un prompt plus court.",
+        },
+      },
     },
   },
 
@@ -664,6 +749,22 @@ export const messages = {
     defaultValueLabel: "Valeur par défaut",
     helpTextLabel: "Texte d'aide",
     patternLabel: "Pattern de validation",
+    notifications: {
+      saved: {
+        title: "Variables enregistrées",
+        description: "Les variables ont été sauvegardées avec succès",
+      },
+      errors: {
+        saveFailed: {
+          title: "Erreur de sauvegarde",
+          description: "Impossible de sauvegarder les variables",
+        },
+        createFailed: {
+          title: "Erreur de création",
+          description: "Impossible de créer la variable",
+        },
+      },
+    },
   },
 
   // Prompt Actions Menu

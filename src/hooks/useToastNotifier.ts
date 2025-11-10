@@ -70,7 +70,7 @@ export function useToastNotifier() {
     });
   };
 
-  // Specialized notifications for common scenarios
+  // Specialized notifications for prompts (legacy compatibility)
   const notifyPromptCreated = (promptTitle: string) => {
     const msg = messages.prompts.notifications.created;
     notifySuccess(msg.title, msg.description(promptTitle), { duration: 4000 });
@@ -81,77 +81,14 @@ export function useToastNotifier() {
     notifySuccess(msg.title, msg.description(promptTitle), { duration: 3000 });
   };
 
-  const notifyValidationError = (field: string, constraint: string) => {
-    notifyError(
-      "Validation échouée",
-      `${field}: ${constraint}`,
-      { duration: 5000 }
-    );
-  };
-
-  const notifyNetworkError = (action: string, retry?: () => void) => {
-    notifyError(
-      "Erreur de connexion",
-      `Impossible de ${action}. Vérifiez votre connexion internet.`,
-      {
-        duration: 7000,
-        action: retry ? {
-          label: "Réessayer",
-          onClick: retry,
-        } : undefined,
-      }
-    );
-  };
-
-  const notifyServerError = (action: string, retry?: () => void) => {
-    notifyError(
-      "Erreur serveur",
-      `Une erreur s'est produite lors de l'opération "${action}". Veuillez réessayer.`,
-      {
-        duration: 6000,
-        action: retry ? {
-          label: "Réessayer",
-          onClick: retry,
-        } : undefined,
-      }
-    );
-  };
-
-  const notifyPermissionError = (resource: string) => {
-    notifyError(
-      "Accès refusé",
-      `Vous n'avez pas les permissions nécessaires pour modifier ${resource}.`,
-      { duration: 5000 }
-    );
-  };
-
-  const notifyConflictError = (resourceName: string, reload?: () => void) => {
-    notifyError(
-      "Conflit détecté",
-      `${resourceName} a été modifié par un autre utilisateur. Veuillez recharger pour voir les dernières modifications.`,
-      {
-        duration: 8000,
-        action: reload ? {
-          label: "Recharger",
-          onClick: reload,
-        } : undefined,
-      }
-    );
-  };
-
   return {
     notifySuccess,
     notifyError,
     notifyInfo,
     notifyWarning,
     notifyLoading,
-    // Specialized notifications
+    // Legacy prompt notifications (consider using usePromptMessages instead)
     notifyPromptCreated,
     notifyPromptUpdated,
-    notifyValidationError,
-    notifyNetworkError,
-    notifyServerError,
-    notifyPermissionError,
-    notifyConflictError,
   };
 }

@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { successToast, errorToast } from "@/lib/toastUtils";
-import { messages } from "@/constants/messages";
+import { useVersionMessages } from "@/features/prompts/hooks/useVersionMessages";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 import { logDebug, logError, logInfo } from "@/lib/logger";
 import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
@@ -30,6 +29,7 @@ export function useVersions(promptId: string | undefined) {
 
 export function useCreateVersion() {
   const queryClient = useQueryClient();
+  const versionMessages = useVersionMessages();
 
   return useMutation({
     mutationFn: async (version: VersionInsert) => {
@@ -58,16 +58,17 @@ export function useCreateVersion() {
       queryClient.invalidateQueries({ queryKey: ["versions", variables.prompt_id] });
       queryClient.invalidateQueries({ queryKey: ["prompts", variables.prompt_id] });
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
-      successToast(messages.success.versionCreated);
+      versionMessages.showVersionCreated();
     },
     onError: () => {
-      errorToast(messages.errors.version.createFailed);
+      versionMessages.showCreateFailed();
     },
   });
 }
 
 export function useDeleteVersions() {
   const queryClient = useQueryClient();
+  const versionMessages = useVersionMessages();
 
   return useMutation({
     mutationFn: async ({ 
@@ -152,16 +153,17 @@ export function useDeleteVersions() {
       queryClient.invalidateQueries({ queryKey: ["versions", promptId] });
       queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
-      successToast(messages.success.versionDeleted);
+      versionMessages.showVersionDeleted();
     },
     onError: () => {
-      errorToast(messages.errors.version.deleteFailed);
+      versionMessages.showDeleteFailed();
     },
   });
 }
 
 export function useRestoreVersion() {
   const queryClient = useQueryClient();
+  const versionMessages = useVersionMessages();
 
   return useMutation({
     mutationFn: async ({ 
@@ -214,13 +216,13 @@ export function useRestoreVersion() {
       queryClient.invalidateQueries({ queryKey: ["variables", promptId] });
       queryClient.invalidateQueries({ queryKey: ["versions", promptId] });
       
-      successToast(messages.success.versionRestored(version.semver));
+      versionMessages.showVersionRestored(version.semver);
     },
     onError: (error) => {
       logError("Erreur lors de la restauration", { 
         error: error instanceof Error ? error.message : String(error) 
       });
-      errorToast(messages.errors.version.restoreFailed);
+      versionMessages.showRestoreFailed();
     },
   });
 }
