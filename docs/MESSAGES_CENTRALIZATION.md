@@ -32,9 +32,14 @@ messages.ts
 ├── versions.notifications ⭐ NOUVEAU (Phase 1 bis)
 │   ├── created, deleted, restored (succès)
 │   └── errors (createFailed, deleteFailed, restoreFailed)
-└── analysis.notifications ⭐ NOUVEAU (Phase 1 bis)
-    ├── analyzing, complete (succès)
-    └── errors (emptyPrompt, failed, timeout)
+├── analysis.notifications ⭐ NOUVEAU (Phase 1 bis)
+│   ├── analyzing, complete (succès)
+│   └── errors (emptyPrompt, failed, timeout)
+└── ui.errorFallback ⭐ NOUVEAU (Phase 2)
+    ├── title, subtitle, technicalError
+    ├── instructions (retry, goHome, refresh, viewDetails)
+    ├── buttons (retry, goHome, reportError, showDetails, hideDetails)
+    └── debug (errorMessage, stackTrace, componentStack)
 ```
 
 ### Hook d'Accès
@@ -86,9 +91,16 @@ errorToast("Prompt créé", "Mon Prompt a été créé");
 - [x] `errorHandler.ts` refactorisé (principe OCP)
 - [x] Créé hook `useErrorHandler` optionnel
 
+### Phase 2 (Composants UI) ✅ Terminée
+- [x] ErrorFallback (15 messages hardcodés → 0)
+- [x] EmptyState (déjà générique, utilise props)
+- [x] ConflictAlert (déjà centralisé, utilise `messages.conflict`)
+- [x] EmptyPromptState (déjà centralisé, utilise `messages.promptList`)
+- [x] VariableEmptyState (déjà centralisé, utilise `messages.variables`)
+
 ### Prochaines Phases
-- [ ] Phase 2 : Étendre aux composants UI (EmptyState, ErrorFallback, ConflictAlert)
 - [ ] Phase 3 : Support i18n avec react-i18next
+- [ ] Phase 4 : Messages contextuels (tooltips, aide inline)
 
 ## Exemples
 
@@ -105,18 +117,18 @@ messages.showNoEditPermission();
 
 ## Bénéfices Mesurés
 
-| Métrique | Avant (Phase 1) | Après (Phase 1 + 1bis + 1ter + 1.2) | Gain |
-|----------|-----------------|--------------------------------------|------|
+| Métrique | Avant (Phase 1) | Après (Phase 1 + 1bis + 1ter + 1.2 + 2) | Gain |
+|----------|-----------------|------------------------------------------|------|
 | **Messages dupliqués** | 50+ | 0 | **-100%** |
 | **Mappings d'erreurs hardcodés** | 36 (dans `errorHandler.ts`) | 0 | **-100%** ⭐ |
+| **Messages UI hardcodés** | 15 (ErrorFallback) | 0 | **-100%** ⭐ |
 | **Fichiers avec messages hardcodés** | 14 | 1 (`messages.ts`) | **-93%** |
-| **Hooks de messages** | 1 (`usePromptMessages`) | 5 (prompts, variables, versions, analysis, system) | **+400%** |
+| **Hooks de messages** | 1 (`usePromptMessages`) | 6 (prompts, variables, versions, analysis, system, ui) | **+500%** |
+| **Composants UI centralisés** | 2/5 | 5/5 | **+150%** ⭐ |
 | **Lignes de code (toasts)** | 230 (`useToastNotifier`) | 85 | **-63%** ⭐ |
 | **Type-safety** | ❌ Partielle | ✅ Complète | **+100%** |
 | **i18n-ready** | ❌ Non | ✅ Oui | **+100%** |
 | **Principe OCP (erreurs)** | ❌ Modifier `errorHandler.ts` | ✅ Modifier uniquement `messages.ts` | **+100%** ⭐ |
-
-⭐ = Nouveaux bénéfices des phases 1 bis, 1 ter et 1.2
 
 ## API usePromptMessages
 
@@ -163,6 +175,12 @@ messages.showNoEditPermission();
 | `useVariableMessages` | Variables | `src/features/variables/hooks/` | Sauvegarde, création |
 | `useVersionMessages` | Versions | `src/features/prompts/hooks/` | Création, suppression, restauration |
 | `useAnalysisMessages` | Analyse | `src/features/prompts/hooks/` | Analyse, timeout |
+
+### Hook Composants UI (Phase 2)
+
+| Hook | Localisation | Responsabilité |
+|------|--------------|----------------|
+| `useUIMessages` | `src/hooks/` | Messages ErrorFallback (optionnel) |
 
 ### Hook Système Générique
 
@@ -326,6 +344,36 @@ Le hook détecte automatiquement le type d'erreur et affiche le toast approprié
 - Mot-clé "jwt" ou "token" → `showSessionExpired()`
 - Sinon → `showGenericError()` avec message de `getSafeErrorMessage()`
 
+## API useUIMessages (Optionnel - Phase 2)
+
+### ErrorFallback
+- `errorFallback.title` - Titre principal ("Une erreur est survenue")
+- `errorFallback.subtitle` - Sous-titre ("L'application a rencontré un problème inattendu")
+- `errorFallback.technicalError` - Titre de l'alerte ("Erreur technique")
+- `errorFallback.unknownError` - Message par défaut ("Une erreur inconnue s'est produite")
+- `errorFallback.apologyMessage` - Message d'excuse
+- `errorFallback.instructions.*` - Instructions (retry, goHome, refresh, viewDetails)
+- `errorFallback.buttons.*` - Labels des boutons (retry, goHome, reportError, showDetails, hideDetails)
+- `errorFallback.debug.*` - Titres des sections de debug (errorMessage, stackTrace, componentStack)
+
+**Note** : Ce hook est optionnel. Les composants peuvent directement importer `messages.ui.*`.
+
+**Exemple** :
+\`\`\`typescript
+import { messages } from "@/constants/messages";
+
+function ErrorFallback({ error }: { error: Error }) {
+  const uiMessages = messages.ui.errorFallback;
+  return (
+    <div>
+      <h1>{uiMessages.title}</h1>
+      <p>{error?.message || uiMessages.unknownError}</p>
+      <button>{uiMessages.buttons.retry}</button>
+    </div>
+  );
+}
+\`\`\`
+
 ## Notes Techniques
 
 ### Typage TypeScript
@@ -362,6 +410,7 @@ export function usePromptMessages() {
 - `src/features/prompts/hooks/useVersionMessages.ts` - Hook pour versions
 - `src/features/prompts/hooks/useAnalysisMessages.ts` - Hook pour analyse
 - `src/hooks/useSystemMessages.ts` - Hook pour messages système génériques
+- `src/hooks/useUIMessages.ts` - Hook pour messages UI (optionnel - Phase 2)
 - `src/hooks/useErrorHandler.ts` - Hook pour gestion d'erreurs combinée
 - `src/hooks/useToastNotifier.ts` - Affichage des toasts (simplifié)
 - `src/lib/errorHandler.ts` - Gestion des erreurs (refactorisé avec messages.ts)

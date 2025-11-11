@@ -6,6 +6,7 @@ import { AlertTriangle, Home, RefreshCw, Bug } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useState } from 'react';
 import { logInfo } from '@/lib/logger';
+import { messages } from '@/constants/messages';
 
 interface ErrorFallbackProps {
   error: Error | null;
@@ -26,12 +27,12 @@ interface ErrorFallbackProps {
 export function ErrorFallback({ error, errorInfo, onReset }: ErrorFallbackProps) {
   const [showDetails, setShowDetails] = useState(false);
   const isDevelopment = import.meta.env.DEV;
+  const uiMessages = messages.ui.errorFallback;
 
   const handleReset = () => {
     if (onReset) {
       onReset();
     } else {
-      // Fallback: reload the page
       window.location.reload();
     }
   };
@@ -41,9 +42,6 @@ export function ErrorFallback({ error, errorInfo, onReset }: ErrorFallbackProps)
   };
 
   const handleReportError = () => {
-    // TODO: Implement error reporting
-    // Could open a modal with a form to submit error details
-    // Or automatically send to a support endpoint
     logInfo('Report error feature - to be implemented');
   };
 
@@ -56,10 +54,8 @@ export function ErrorFallback({ error, errorInfo, onReset }: ErrorFallbackProps)
               <AlertTriangle className="h-6 w-6 text-destructive" />
             </div>
             <div>
-              <CardTitle className="text-2xl">Une erreur est survenue</CardTitle>
-              <CardDescription>
-                L'application a rencontré un problème inattendu
-              </CardDescription>
+              <CardTitle className="text-2xl">{uiMessages.title}</CardTitle>
+              <CardDescription>{uiMessages.subtitle}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -67,21 +63,21 @@ export function ErrorFallback({ error, errorInfo, onReset }: ErrorFallbackProps)
         <CardContent className="space-y-4">
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Erreur technique</AlertTitle>
+            <AlertTitle>{uiMessages.technicalError}</AlertTitle>
             <AlertDescription>
-              {error?.message || "Une erreur inconnue s'est produite"}
+              {error?.message || uiMessages.unknownError}
             </AlertDescription>
           </Alert>
 
           <p className="text-sm text-muted-foreground">
-            Nous nous excusons pour ce désagrément. Vous pouvez essayer de :
+            {uiMessages.apologyMessage}
           </p>
 
           <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-            <li>Réessayer l'opération qui a échoué</li>
-            <li>Retourner à la page d'accueil</li>
-            <li>Rafraîchir la page complètement</li>
-            {isDevelopment && <li>Consulter les détails techniques ci-dessous</li>}
+            <li>{uiMessages.instructions.retry}</li>
+            <li>{uiMessages.instructions.goHome}</li>
+            <li>{uiMessages.instructions.refresh}</li>
+            {isDevelopment && <li>{uiMessages.instructions.viewDetails}</li>}
           </ul>
 
           {isDevelopment && error && (
@@ -89,12 +85,16 @@ export function ErrorFallback({ error, errorInfo, onReset }: ErrorFallbackProps)
               <CollapsibleTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2 w-full">
                   <Bug className="h-4 w-4" />
-                  {showDetails ? 'Masquer' : 'Afficher'} les détails techniques
+                  {showDetails 
+                    ? uiMessages.buttons.hideDetails 
+                    : uiMessages.buttons.showDetails}
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-4 space-y-3">
                 <div className="p-4 bg-muted rounded-lg">
-                  <h4 className="text-sm font-semibold mb-2">Message d'erreur</h4>
+                  <h4 className="text-sm font-semibold mb-2">
+                    {uiMessages.debug.errorMessage}
+                  </h4>
                   <pre className="text-xs overflow-auto whitespace-pre-wrap">
                     {error.message}
                   </pre>
@@ -102,7 +102,9 @@ export function ErrorFallback({ error, errorInfo, onReset }: ErrorFallbackProps)
 
                 {error.stack && (
                   <div className="p-4 bg-muted rounded-lg">
-                    <h4 className="text-sm font-semibold mb-2">Stack trace</h4>
+                    <h4 className="text-sm font-semibold mb-2">
+                      {uiMessages.debug.stackTrace}
+                    </h4>
                     <pre className="text-xs overflow-auto max-h-64">
                       {error.stack}
                     </pre>
@@ -111,7 +113,9 @@ export function ErrorFallback({ error, errorInfo, onReset }: ErrorFallbackProps)
 
                 {errorInfo?.componentStack && (
                   <div className="p-4 bg-muted rounded-lg">
-                    <h4 className="text-sm font-semibold mb-2">Component stack</h4>
+                    <h4 className="text-sm font-semibold mb-2">
+                      {uiMessages.debug.componentStack}
+                    </h4>
                     <pre className="text-xs overflow-auto max-h-64">
                       {errorInfo.componentStack}
                     </pre>
@@ -125,17 +129,12 @@ export function ErrorFallback({ error, errorInfo, onReset }: ErrorFallbackProps)
         <CardFooter className="flex gap-2 flex-wrap">
           <Button onClick={handleReset} className="gap-2">
             <RefreshCw className="h-4 w-4" />
-            Réessayer
+            {uiMessages.buttons.retry}
           </Button>
           <Button onClick={handleGoHome} variant="outline" className="gap-2">
             <Home className="h-4 w-4" />
-            Accueil
+            {uiMessages.buttons.goHome}
           </Button>
-          {/* Future feature: Report error button */}
-          {/* <Button onClick={handleReportError} variant="ghost" size="sm" className="gap-2">
-            <Bug className="h-4 w-4" />
-            Signaler l'erreur
-          </Button> */}
         </CardFooter>
       </Card>
     </div>

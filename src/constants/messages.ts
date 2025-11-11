@@ -867,6 +867,35 @@ export const messages = {
       },
     },
   },
+
+  // UI Components messages (Phase 2)
+  ui: {
+    errorFallback: {
+      title: "Une erreur est survenue",
+      subtitle: "L'application a rencontré un problème inattendu",
+      technicalError: "Erreur technique",
+      unknownError: "Une erreur inconnue s'est produite",
+      apologyMessage: "Nous nous excusons pour ce désagrément. Vous pouvez essayer de :",
+      instructions: {
+        retry: "Réessayer l'opération qui a échoué",
+        goHome: "Retourner à la page d'accueil",
+        refresh: "Rafraîchir la page complètement",
+        viewDetails: "Consulter les détails techniques ci-dessous",
+      },
+      buttons: {
+        retry: "Réessayer",
+        goHome: "Accueil",
+        reportError: "Signaler l'erreur",
+        showDetails: "Afficher les détails techniques",
+        hideDetails: "Masquer les détails techniques",
+      },
+      debug: {
+        errorMessage: "Message d'erreur",
+        stackTrace: "Stack trace",
+        componentStack: "Component stack",
+      },
+    },
+  },
 } as const;
 
 // Helper type for message keys (useful for future i18n)

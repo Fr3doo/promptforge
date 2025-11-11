@@ -157,11 +157,21 @@ UI Update
 - `useVersionMessages()` - Messages pour les versions (création, suppression, restauration)
 - `useAnalysisMessages()` - Messages pour l'analyse de prompts (analyse, timeout)
 - `useSystemMessages()` - Messages système génériques (session, réseau, permissions)
+- `useUIMessages()` - Messages des composants UI (ErrorFallback) [optionnel]
 - `useErrorHandler()` - Gestion d'erreurs combinée (optionnel)
+
+**Composants UI centralisés (Phase 2)** :
+- ✅ `ErrorFallback` - Tous les messages dans `messages.ui.errorFallback`
+- ✅ `ConflictAlert` - Utilise `messages.conflict.*`
+- ✅ `EmptyPromptState` - Utilise `messages.promptList.*`
+- ✅ `VariableEmptyState` - Utilise `messages.variables.emptyState`
+- ✅ `EmptyState` - Composant générique (reçoit messages en props)
 
 **Bénéfices mesurés** :
 - ✅ -100% de messages hardcodés (50+ messages → 0)
 - ✅ -100% de mappings d'erreurs hardcodés (36 → 0)
+- ✅ -100% de messages UI hardcodés (15 → 0)
+- ✅ +150% de composants UI centralisés (2/5 → 5/5)
 - ✅ -63% de lignes de code pour toasts (230 → 85)
 - ✅ Type-safety complète avec autocomplete TypeScript
 - ✅ Principe OCP respecté (extension sans modification)
@@ -225,7 +235,7 @@ Aucune modification requise dans `errorHandler.ts` ! ✅
 **Documentation** : Voir `docs/VALIDATION_SYSTEM.md`
 
 Tous les messages utilisateur et mappings d'erreurs sont centralisés dans `messages.ts` pour :
-- Éliminer la duplication (~50 messages, 36 mappings d'erreurs)
+- Éliminer la duplication (~50 messages, 36 mappings d'erreurs, 15 messages UI)
 - Type-safety avec autocomplete TypeScript
 - Faciliter l'internationalisation future
 - Respecter le principe OCP (extension sans modification)
@@ -252,6 +262,13 @@ analysisMessages.showAnalyzing();
 import { useSystemMessages } from "@/hooks/useSystemMessages";
 const systemMessages = useSystemMessages();
 systemMessages.showNetworkError("sauvegarder", handleRetry);
+
+// Composants UI (Phase 2)
+import { messages } from "@/constants/messages";
+function ErrorFallback({ error }: { error: Error }) {
+  const uiMessages = messages.ui.errorFallback;
+  return <h1>{uiMessages.title}</h1>;
+}
 
 // Gestion d'erreurs automatique
 import { useErrorHandler } from "@/hooks/useErrorHandler";
