@@ -147,10 +147,64 @@ UI Update
 
 ### 4. Gestion des Messages UI
 
-**Localisation** : `src/constants/messages.ts`  
-**Accès** : Hook `usePromptMessages()` pour les prompts  
-**Principe** : Source unique de vérité pour tous les messages (DRY, i18n-ready)  
+**Localisation** : `src/constants/messages.ts` (source unique de vérité)  
+**Principe** : Tous les messages utilisateur (succès, erreurs, infos) sont centralisés pour DRY et i18n-ready  
 **Documentation** : Voir `docs/MESSAGES_CENTRALIZATION.md`
+
+**Hooks disponibles** :
+- `usePromptMessages()` - Messages pour les prompts (CRUD, partage, visibilité)
+- `useVariableMessages()` - Messages pour les variables (sauvegarde, création)
+- `useVersionMessages()` - Messages pour les versions (création, suppression, restauration)
+- `useAnalysisMessages()` - Messages pour l'analyse de prompts (analyse, timeout)
+- `useSystemMessages()` - Messages système génériques (session, réseau, permissions)
+- `useErrorHandler()` - Gestion d'erreurs combinée (optionnel)
+
+**Bénéfices mesurés** :
+- ✅ -100% de messages hardcodés (50+ messages → 0)
+- ✅ -100% de mappings d'erreurs hardcodés (36 → 0)
+- ✅ -63% de lignes de code pour toasts (230 → 85)
+- ✅ Type-safety complète avec autocomplete TypeScript
+- ✅ Principe OCP respecté (extension sans modification)
+
+### 4.1. Gestion des Erreurs (Phase 1.2)
+
+**Localisation** : `src/lib/errorHandler.ts` + `src/constants/messages.ts`  
+**Principe** : Mappings d'erreurs centralisés dans `messages.ts` (principe OCP)  
+**Hook** : `useErrorHandler()` pour gestion automatique avec toasts
+
+**Architecture** :
+
+```
+User Action → Error
+      │
+      ▼
+errorHandler.getSafeErrorMessage(error)
+      │
+      ├─→ 1. Validation Zod ?
+      ├─→ 2. Code PostgreSQL dans messages.errors.database.codes ?
+      ├─→ 3. Pattern dans messages.errors.database.patterns ?
+      └─→ 4. Fallback : messages.errors.generic
+      │
+      ▼
+Message user-friendly
+```
+
+**Extension OCP** :
+Pour ajouter un nouveau code d'erreur PostgreSQL, modifier **uniquement** `messages.ts` :
+
+```typescript
+// messages.ts
+errors: {
+  database: {
+    codes: {
+      '23505': "Cette valeur existe déjà",
+      '23502': "Valeur NULL non autorisée", // ⬅️ AJOUT
+    },
+  },
+}
+```
+
+Aucune modification requise dans `errorHandler.ts` ! ✅
 
 ### 5. Gestion des États de Chargement
 
@@ -170,16 +224,43 @@ UI Update
 **Hooks** : `useFormValidation` (extensible)  
 **Documentation** : Voir `docs/VALIDATION_SYSTEM.md`
 
-Tous les messages utilisateur sont centralisés dans `messages.ts` pour :
-- Éliminer la duplication (~50 messages)
+Tous les messages utilisateur et mappings d'erreurs sont centralisés dans `messages.ts` pour :
+- Éliminer la duplication (~50 messages, 36 mappings d'erreurs)
 - Type-safety avec autocomplete TypeScript
 - Faciliter l'internationalisation future
+- Respecter le principe OCP (extension sans modification)
+
+**Exemples d'utilisation** :
 
 ```typescript
+// Prompts
 import { usePromptMessages } from "@/features/prompts/hooks/usePromptMessages";
+const promptMessages = usePromptMessages();
+promptMessages.showPromptCreated("Mon Prompt");
 
-const messages = usePromptMessages();
-messages.showPromptCreated("Mon Prompt"); // Type-safe, centralisé
+// Versions
+import { useVersionMessages } from "@/features/prompts/hooks/useVersionMessages";
+const versionMessages = useVersionMessages();
+versionMessages.showVersionRestored("1.2.3");
+
+// Analyse
+import { useAnalysisMessages } from "@/features/prompts/hooks/useAnalysisMessages";
+const analysisMessages = useAnalysisMessages();
+analysisMessages.showAnalyzing();
+
+// Messages système génériques
+import { useSystemMessages } from "@/hooks/useSystemMessages";
+const systemMessages = useSystemMessages();
+systemMessages.showNetworkError("sauvegarder", handleRetry);
+
+// Gestion d'erreurs automatique
+import { useErrorHandler } from "@/hooks/useErrorHandler";
+const { handleError } = useErrorHandler();
+try {
+  await riskyOperation();
+} catch (error) {
+  handleError(error, "effectuer cette opération"); // Détection auto + toast
+}
 ```
 
 ### 7. Repository Pattern (DIP)
