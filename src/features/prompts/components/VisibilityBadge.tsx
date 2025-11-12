@@ -1,6 +1,7 @@
 import { Lock, Users, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { messages } from "@/constants/messages";
 
 export type SharingState = 
   | "PRIVATE"           // Pas de partage du tout
@@ -13,29 +14,29 @@ interface VisibilityBadgeProps {
 }
 
 export const VisibilityBadge = ({ sharingState, shareCount }: VisibilityBadgeProps) => {
+  const tooltips = messages.tooltips.prompts.visibility;
+  
   const configs = {
     PRIVATE: {
       icon: Lock,
       label: "Privé",
       variant: "secondary" as const,
       className: "bg-muted/50 text-muted-foreground border-muted",
-      tooltip: "Ce prompt est privé et accessible uniquement par vous"
+      tooltip: tooltips.private
     },
     PRIVATE_SHARED: {
       icon: Users,
       label: shareCount ? `Partagé (${shareCount})` : "Partagé",
       variant: "outline" as const,
       className: "bg-blue-500/10 text-blue-600 border-blue-500/30 dark:text-blue-400",
-      tooltip: shareCount 
-        ? `Partagé avec ${shareCount} personne${shareCount > 1 ? 's' : ''} spécifique${shareCount > 1 ? 's' : ''}`
-        : "Partagé avec des utilisateurs spécifiques"
+      tooltip: shareCount ? tooltips.privateShared(shareCount) : "Partagé avec des utilisateurs spécifiques"
     },
     PUBLIC: {
       icon: Globe,
       label: "Public",
       variant: "outline" as const,
       className: "bg-green-500/10 text-green-600 border-green-500/30 dark:text-green-400",
-      tooltip: "Ce prompt est accessible à tous les utilisateurs de la plateforme"
+      tooltip: tooltips.public
     }
   };
 

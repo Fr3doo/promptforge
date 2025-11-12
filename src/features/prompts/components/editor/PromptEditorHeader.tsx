@@ -3,7 +3,9 @@ import { useUnsavedChangesWarning } from "@/hooks/useUnsavedChangesWarning";
 import { usePromptEditorContext } from "@/features/prompts/contexts/PromptEditorContext";
 import { LoadingButton } from "@/components/LoadingButton";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ArrowLeft, Eye } from "lucide-react";
+import { messages } from "@/constants/messages";
 
 /**
  * Header component for prompt editor
@@ -12,10 +14,17 @@ import { ArrowLeft, Eye } from "lucide-react";
 export function PromptEditorHeader() {
   const navigate = useNavigate();
   const { form, canEdit, permission, hasConflict, promptId } = usePromptEditorContext();
+  const tooltips = messages.tooltips.prompts.save;
   
   const { confirmNavigation } = useUnsavedChangesWarning({
     hasUnsavedChanges: form.hasUnsavedChanges && !form.isSaving,
   });
+
+  const saveTooltip = !canEdit 
+    ? tooltips.readOnly 
+    : !form.isFormValid 
+    ? tooltips.disabled 
+    : undefined;
   
   return (
     <div className="border-b border-border bg-card sticky top-0 z-10">
@@ -37,16 +46,28 @@ export function PromptEditorHeader() {
                 Mode lecture seule
               </Badge>
             )}
-            <LoadingButton
-              onClick={() => form.handleSave(promptId, hasConflict)}
-              isLoading={form.isSaving}
-              loadingText="Enregistrement..."
-              className="gap-2"
-              disabled={!canEdit || hasConflict || !form.isFormValid}
-              title={!form.isFormValid ? "Veuillez corriger les erreurs avant d'enregistrer" : ""}
-            >
-              Enregistrer
-            </LoadingButton>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <LoadingButton
+                      onClick={() => form.handleSave(promptId, hasConflict)}
+                      isLoading={form.isSaving}
+                      loadingText="Enregistrement..."
+                      className="gap-2"
+                      disabled={!canEdit || hasConflict || !form.isFormValid}
+                    >
+                      Enregistrer
+                    </LoadingButton>
+                  </span>
+                </TooltipTrigger>
+                {saveTooltip && (
+                  <TooltipContent>
+                    <p>{saveTooltip}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </div>

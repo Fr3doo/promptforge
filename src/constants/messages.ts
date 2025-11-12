@@ -896,6 +896,93 @@ export const messages = {
       },
     },
   },
+
+  // Contextual messages (tooltips, inline help) - Phase 4
+  tooltips: {
+    prompts: {
+      favorite: {
+        add: "Ajouter aux favoris",
+        remove: "Retirer des favoris",
+      },
+      visibility: {
+        private: "Ce prompt est privé et accessible uniquement par vous",
+        privateShared: (count: number) => 
+          `Partagé avec ${count} personne${count > 1 ? 's' : ''} spécifique${count > 1 ? 's' : ''}`,
+        public: "Ce prompt est accessible à tous les utilisateurs de la plateforme",
+      },
+      actions: {
+        edit: "Modifier ce prompt",
+        duplicate: "Dupliquer ce prompt",
+        delete: "Supprimer ce prompt",
+        share: "Partager ce prompt",
+        analyze: "Analyser ce prompt",
+      },
+      save: {
+        disabled: "Veuillez corriger les erreurs avant d'enregistrer",
+        readOnly: "Mode lecture seule - Vous ne pouvez pas modifier ce prompt",
+      },
+    },
+    versions: {
+      create: "Créer une nouvelle version",
+      delete: "Supprimer cette version",
+      restore: "Restaurer cette version",
+      compare: "Comparer les versions",
+      current: "Version actuelle",
+    },
+    variables: {
+      add: "Ajouter une nouvelle variable",
+      delete: "Supprimer cette variable",
+      required: "Cette variable est obligatoire",
+      optional: "Cette variable est optionnelle",
+      dragHandle: "Glisser pour réorganiser",
+    },
+    analysis: {
+      start: "Analyser ce prompt",
+      export: "Exporter l'analyse",
+      clear: "Effacer l'analyse",
+    },
+    sharing: {
+      addUser: "Ajouter un utilisateur",
+      removeAccess: "Retirer l'accès",
+      changePermission: "Modifier la permission",
+      copyLink: "Copier le lien de partage",
+    },
+    tags: {
+      add: "Ajouter un tag (Entrée)",
+      remove: (tag: string) => `Retirer le tag ${tag}`,
+    },
+    search: {
+      clear: "Effacer la recherche",
+      filter: "Filtrer les résultats",
+    },
+  },
+
+  help: {
+    prompts: {
+      title: "Donnez un nom clair et descriptif à votre prompt",
+      description: (current: number, max: number) => 
+        `Ajoutez des détails pour retrouver facilement ce prompt plus tard (${current}/${max})`,
+      tags: (current: number, max: number) => 
+        `Organisez vos prompts avec des mots-clés. Appuyez sur Entrée pour ajouter.${current > 0 ? ` (${current}/${max})` : ''}`,
+      tagsEdit: "Modifiez les tags dans la section \"Options avancées\" ci-dessous",
+    },
+    variables: {
+      name: "Nom de la variable (utilisé dans le prompt avec {{nom}})",
+      type: "Type de données attendu pour cette variable",
+      required: "Si activé, la variable doit être renseignée",
+      defaultValue: "Valeur par défaut si non renseignée",
+      pattern: "Expression régulière pour valider le format",
+      help: "Texte d'aide affiché à l'utilisateur",
+    },
+    versions: {
+      name: "Nom de cette version (optionnel)",
+      description: "Description des changements dans cette version",
+    },
+    sharing: {
+      email: "Adresse email de l'utilisateur à ajouter",
+      permission: "Niveau d'accès accordé (lecture ou édition)",
+    },
+  },
 } as const;
 
 // Helper type for message keys (useful for future i18n)

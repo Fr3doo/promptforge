@@ -92,7 +92,7 @@ export const PromptMetadataForm = ({
               {errors.title}
             </p>
           )}
-          <p id="title-help" className="text-xs text-muted-foreground">Donnez un nom clair et descriptif à votre prompt</p>
+          <p id="title-help" className="text-xs text-muted-foreground">{messages.help.prompts.title}</p>
         </div>
 
         {/* Champs optionnels de base */}
@@ -116,7 +116,7 @@ export const PromptMetadataForm = ({
             </p>
           )}
           <p id="description-help" className="text-xs text-muted-foreground">
-            Ajoutez des détails pour retrouver facilement ce prompt plus tard ({description.length}/{PROMPT_LIMITS.DESCRIPTION.MAX})
+            {messages.help.prompts.description(description.length, PROMPT_LIMITS.DESCRIPTION.MAX)}
           </p>
         </div>
 
@@ -132,7 +132,7 @@ export const PromptMetadataForm = ({
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              Modifiez les tags dans la section "Options avancées" ci-dessous
+              {messages.help.prompts.tagsEdit}
             </p>
           </div>
         )}
@@ -189,8 +189,7 @@ export const PromptMetadataForm = ({
                   </Button>
                 </div>
                 <p id="tags-help" className="text-xs text-muted-foreground">
-                  Organisez vos prompts avec des mots-clés. Appuyez sur Entrée pour ajouter.
-                  {tags.length > 0 && ` (${tags.length}/${maxTags})`}
+                  {messages.help.prompts.tags(tags.length, maxTags)}
                 </p>
                 {(tagError || errors.tags) && (
                   <p className="text-sm text-destructive" role="alert">

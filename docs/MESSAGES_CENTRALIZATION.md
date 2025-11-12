@@ -35,11 +35,22 @@ messages.ts
 ├── analysis.notifications ⭐ NOUVEAU (Phase 1 bis)
 │   ├── analyzing, complete (succès)
 │   └── errors (emptyPrompt, failed, timeout)
-└── ui.errorFallback ⭐ NOUVEAU (Phase 2)
-    ├── title, subtitle, technicalError
-    ├── instructions (retry, goHome, refresh, viewDetails)
-    ├── buttons (retry, goHome, reportError, showDetails, hideDetails)
-    └── debug (errorMessage, stackTrace, componentStack)
+├── ui.errorFallback (Phase 2)
+│   ├── title, subtitle, technicalError
+│   ├── instructions (retry, goHome, refresh, viewDetails)
+│   ├── buttons (retry, goHome, reportError, showDetails, hideDetails)
+│   └── debug (errorMessage, stackTrace, componentStack)
+├── tooltips ⭐ NOUVEAU (Phase 4)
+│   ├── prompts (favorite, visibility, actions, save)
+│   ├── versions (create, delete, restore, compare, current)
+│   ├── variables (add, delete, required, optional, dragHandle)
+│   ├── analysis, sharing, tags, search
+│   └── Tous les tooltips de l'application
+└── help ⭐ NOUVEAU (Phase 4)
+    ├── prompts (title, description, tags, tagsEdit)
+    ├── variables (name, type, required, defaultValue, pattern, help)
+    ├── versions (name, description)
+    └── sharing (email, permission)
 ```
 
 ### Hook d'Accès
@@ -98,6 +109,15 @@ errorToast("Prompt créé", "Mon Prompt a été créé");
 - [x] EmptyPromptState (déjà centralisé, utilise `messages.promptList`)
 - [x] VariableEmptyState (déjà centralisé, utilise `messages.variables`)
 
+### Phase 4 (Messages Contextuels) ✅ Terminée
+- [x] Tooltips centralisés dans `messages.tooltips.*` (40+ tooltips)
+- [x] Aide inline centralisée dans `messages.help.*` (15+ messages d'aide)
+- [x] VisibilityBadge (3 tooltips hardcodés → 0)
+- [x] FavoriteButton (1 tooltip hardcodé → 0, +Tooltip ajouté)
+- [x] PromptMetadataForm (3 aides inline hardcodées → 0)
+- [x] PromptEditorHeader (1 tooltip hardcodé → 0, +Tooltip ajouté)
+- [x] Hook `useContextualMessages` créé (optionnel)
+
 ### Prochaines Phases
 - [ ] Phase 3 : Support i18n avec react-i18next
 - [ ] Phase 4 : Messages contextuels (tooltips, aide inline)
@@ -120,17 +140,36 @@ messages.showNoEditPermission();
 | Métrique | Avant (Phase 1) | Après (Phase 1 + 1bis + 1ter + 1.2 + 2) | Gain |
 |----------|-----------------|------------------------------------------|------|
 | **Messages dupliqués** | 50+ | 0 | **-100%** |
-| **Mappings d'erreurs hardcodés** | 36 (dans `errorHandler.ts`) | 0 | **-100%** ⭐ |
-| **Messages UI hardcodés** | 15 (ErrorFallback) | 0 | **-100%** ⭐ |
+| **Mappings d'erreurs hardcodés** | 36 (dans `errorHandler.ts`) | 0 | **-100%** |
+| **Messages UI hardcodés** | 15 (ErrorFallback) | 0 | **-100%** |
+| **Tooltips hardcodés** | 8 (VisibilityBadge, FavoriteButton, etc.) | 0 | **-100%** ⭐ |
+| **Tooltips centralisés** | 3 (VisibilityBadge) | 40+ | **+1233%** ⭐ |
+| **Aides inline hardcodées** | 3 (PromptMetadataForm) | 0 | **-100%** ⭐ |
+| **Composants avec tooltips** | 1/6 (VisibilityBadge) | 4/6 | **+300%** ⭐ |
 | **Fichiers avec messages hardcodés** | 14 | 1 (`messages.ts`) | **-93%** |
-| **Hooks de messages** | 1 (`usePromptMessages`) | 6 (prompts, variables, versions, analysis, system, ui) | **+500%** |
-| **Composants UI centralisés** | 2/5 | 5/5 | **+150%** ⭐ |
+| **Hooks de messages** | 1 (`usePromptMessages`) | 7 (prompts, variables, versions, analysis, system, ui, contextual) | **+600%** |
+| **Composants UI centralisés** | 2/5 | 5/5 | **+150%** |
+| **Lignes de code (toasts)** | 230 (`useToastNotifier`) | 85 | **-63%** |
+| **Type-safety** | ❌ Partielle | ✅ Complète | **+100%** |
+| **i18n-ready** | ❌ Non | ✅ Oui | **+100%** |
+| **Principe OCP (erreurs)** | ❌ Modifier `errorHandler.ts` | ✅ Modifier uniquement `messages.ts` | **+100%** |
 | **Lignes de code (toasts)** | 230 (`useToastNotifier`) | 85 | **-63%** ⭐ |
 | **Type-safety** | ❌ Partielle | ✅ Complète | **+100%** |
 | **i18n-ready** | ❌ Non | ✅ Oui | **+100%** |
 | **Principe OCP (erreurs)** | ❌ Modifier `errorHandler.ts` | ✅ Modifier uniquement `messages.ts` | **+100%** ⭐ |
 
-## API usePromptMessages
+## Hooks disponibles
+
+| Hook | Responsabilité | Localisation | Messages |
+|------|----------------|--------------|----------|
+| `usePromptMessages` | Prompts | `src/hooks/` | CRUD, partage, visibilité |
+| `useVariableMessages` | Variables | `src/features/variables/hooks/` | Sauvegarde, création |
+| `useVersionMessages` | Versions | `src/features/prompts/hooks/` | Création, suppression, restauration |
+| `useAnalysisMessages` | Analyse | `src/features/prompts/hooks/` | Analyse, timeout |
+| `useSystemMessages` | Système | `src/hooks/` | Session, réseau, permissions |
+| `useUIMessages` | Composants UI | `src/hooks/` | Messages ErrorFallback (optionnel) |
+| `useContextualMessages` | Tous composants | `src/hooks/` | Tooltips & aide inline (optionnel) |
+
 
 ### Succès CRUD
 - `showPromptCreated(title: string)`
@@ -357,6 +396,155 @@ Le hook détecte automatiquement le type d'erreur et affiche le toast approprié
 - `errorFallback.debug.*` - Titres des sections de debug (errorMessage, stackTrace, componentStack)
 
 **Note** : Ce hook est optionnel. Les composants peuvent directement importer `messages.ui.*`.
+
+---
+
+## API useContextualMessages (Optionnel)
+
+### Tooltips Prompts
+- `tooltips.prompts.favorite.add` - "Ajouter aux favoris"
+- `tooltips.prompts.favorite.remove` - "Retirer des favoris"
+- `tooltips.prompts.visibility.private` - Tooltip pour prompt privé
+- `tooltips.prompts.visibility.privateShared(count)` - Tooltip dynamique pour partage privé
+- `tooltips.prompts.visibility.public` - Tooltip pour prompt public
+- `tooltips.prompts.actions.*` - Tooltips pour actions (edit, duplicate, delete, share, analyze)
+- `tooltips.prompts.save.disabled` - Tooltip bouton enregistrer désactivé
+- `tooltips.prompts.save.readOnly` - Tooltip mode lecture seule
+
+### Tooltips Versions
+- `tooltips.versions.create` - "Créer une nouvelle version"
+- `tooltips.versions.delete` - "Supprimer cette version"
+- `tooltips.versions.restore` - "Restaurer cette version"
+- `tooltips.versions.compare` - "Comparer les versions"
+- `tooltips.versions.current` - "Version actuelle"
+
+### Tooltips Variables
+- `tooltips.variables.add` - "Ajouter une nouvelle variable"
+- `tooltips.variables.delete` - "Supprimer cette variable"
+- `tooltips.variables.required` - "Cette variable est obligatoire"
+- `tooltips.variables.optional` - "Cette variable est optionnelle"
+- `tooltips.variables.dragHandle` - "Glisser pour réorganiser"
+
+### Tooltips Autres
+- `tooltips.analysis.*` - Tooltips analyse (start, export, clear)
+- `tooltips.sharing.*` - Tooltips partage (addUser, removeAccess, changePermission, copyLink)
+- `tooltips.tags.add` - "Ajouter un tag (Entrée)"
+- `tooltips.tags.remove(tag)` - Tooltip dynamique pour retirer un tag
+- `tooltips.search.*` - Tooltips recherche (clear, filter)
+
+### Aide Inline Prompts
+- `help.prompts.title` - Aide pour le champ titre
+- `help.prompts.description(current, max)` - Aide dynamique pour description avec compteur
+- `help.prompts.tags(current, max)` - Aide dynamique pour tags avec compteur
+- `help.prompts.tagsEdit` - Aide pour éditer les tags
+
+### Aide Inline Variables
+- `help.variables.name` - "Nom de la variable (utilisé dans le prompt avec {{nom}})"
+- `help.variables.type` - "Type de données attendu pour cette variable"
+- `help.variables.required` - "Si activé, la variable doit être renseignée"
+- `help.variables.defaultValue` - "Valeur par défaut si non renseignée"
+- `help.variables.pattern` - "Expression régulière pour valider le format"
+- `help.variables.help` - "Texte d'aide affiché à l'utilisateur"
+
+### Aide Inline Versions
+- `help.versions.name` - "Nom de cette version (optionnel)"
+- `help.versions.description` - "Description des changements dans cette version"
+
+### Aide Inline Partage
+- `help.sharing.email` - "Adresse email de l'utilisateur à ajouter"
+- `help.sharing.permission` - "Niveau d'accès accordé (lecture ou édition)"
+
+**Exemple d'utilisation** :
+```typescript
+import { useContextualMessages } from "@/hooks/useContextualMessages";
+
+function MyComponent() {
+  const { tooltips, help } = useContextualMessages();
+  
+  return (
+    <Tooltip>
+      <TooltipTrigger>...</TooltipTrigger>
+      <TooltipContent>{tooltips.prompts.favorite.add}</TooltipContent>
+    </Tooltip>
+  );
+}
+```
+
+**Note** : Ce hook est optionnel. Les composants peuvent directement importer `messages.tooltips.*` ou `messages.help.*`.
+
+
+## API useContextualMessages (Optionnel)
+
+### Tooltips Prompts
+- `tooltips.prompts.favorite.add` - "Ajouter aux favoris"
+- `tooltips.prompts.favorite.remove` - "Retirer des favoris"
+- `tooltips.prompts.visibility.private` - Tooltip pour prompt privé
+- `tooltips.prompts.visibility.privateShared(count)` - Tooltip dynamique pour partage privé
+- `tooltips.prompts.visibility.public` - Tooltip pour prompt public
+- `tooltips.prompts.actions.*` - Tooltips pour actions (edit, duplicate, delete, share, analyze)
+- `tooltips.prompts.save.disabled` - Tooltip bouton enregistrer désactivé
+- `tooltips.prompts.save.readOnly` - Tooltip mode lecture seule
+
+### Tooltips Versions
+- `tooltips.versions.create` - "Créer une nouvelle version"
+- `tooltips.versions.delete` - "Supprimer cette version"
+- `tooltips.versions.restore` - "Restaurer cette version"
+- `tooltips.versions.compare` - "Comparer les versions"
+- `tooltips.versions.current` - "Version actuelle"
+
+### Tooltips Variables
+- `tooltips.variables.add` - "Ajouter une nouvelle variable"
+- `tooltips.variables.delete` - "Supprimer cette variable"
+- `tooltips.variables.required` - "Cette variable est obligatoire"
+- `tooltips.variables.optional` - "Cette variable est optionnelle"
+- `tooltips.variables.dragHandle` - "Glisser pour réorganiser"
+
+### Tooltips Autres
+- `tooltips.analysis.*` - Tooltips analyse (start, export, clear)
+- `tooltips.sharing.*` - Tooltips partage (addUser, removeAccess, changePermission, copyLink)
+- `tooltips.tags.add` - "Ajouter un tag (Entrée)"
+- `tooltips.tags.remove(tag)` - Tooltip dynamique pour retirer un tag
+- `tooltips.search.*` - Tooltips recherche (clear, filter)
+
+### Aide Inline Prompts
+- `help.prompts.title` - Aide pour le champ titre
+- `help.prompts.description(current, max)` - Aide dynamique pour description avec compteur
+- `help.prompts.tags(current, max)` - Aide dynamique pour tags avec compteur
+- `help.prompts.tagsEdit` - Aide pour éditer les tags
+
+### Aide Inline Variables
+- `help.variables.name` - "Nom de la variable (utilisé dans le prompt avec {{nom}})"
+- `help.variables.type` - "Type de données attendu pour cette variable"
+- `help.variables.required` - "Si activé, la variable doit être renseignée"
+- `help.variables.defaultValue` - "Valeur par défaut si non renseignée"
+- `help.variables.pattern` - "Expression régulière pour valider le format"
+- `help.variables.help` - "Texte d'aide affiché à l'utilisateur"
+
+### Aide Inline Versions
+- `help.versions.name` - "Nom de cette version (optionnel)"
+- `help.versions.description` - "Description des changements dans cette version"
+
+### Aide Inline Partage
+- `help.sharing.email` - "Adresse email de l'utilisateur à ajouter"
+- `help.sharing.permission` - "Niveau d'accès accordé (lecture ou édition)"
+
+**Exemple d'utilisation** :
+```typescript
+import { useContextualMessages } from "@/hooks/useContextualMessages";
+
+function MyComponent() {
+  const { tooltips, help } = useContextualMessages();
+  
+  return (
+    <Tooltip>
+      <TooltipTrigger>...</TooltipTrigger>
+      <TooltipContent>{tooltips.prompts.favorite.add}</TooltipContent>
+    </Tooltip>
+  );
+}
+```
+
+**Note** : Ce hook est optionnel. Les composants peuvent directement importer `messages.tooltips.*` ou `messages.help.*`.
 
 **Exemple** :
 \`\`\`typescript

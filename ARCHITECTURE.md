@@ -158,6 +158,7 @@ UI Update
 - `useAnalysisMessages()` - Messages pour l'analyse de prompts (analyse, timeout)
 - `useSystemMessages()` - Messages système génériques (session, réseau, permissions)
 - `useUIMessages()` - Messages des composants UI (ErrorFallback) [optionnel]
+- `useContextualMessages()` - Messages contextuels (tooltips, aide inline) [optionnel]
 - `useErrorHandler()` - Gestion d'erreurs combinée (optionnel)
 
 **Composants UI centralisés (Phase 2)** :
@@ -166,6 +167,14 @@ UI Update
 - ✅ `EmptyPromptState` - Utilise `messages.promptList.*`
 - ✅ `VariableEmptyState` - Utilise `messages.variables.emptyState`
 - ✅ `EmptyState` - Composant générique (reçoit messages en props)
+
+**Messages contextuels centralisés (Phase 4)** :
+- ✅ `VisibilityBadge` - Tooltips dans `messages.tooltips.prompts.visibility`
+- ✅ `FavoriteButton` - Tooltips dans `messages.tooltips.prompts.favorite`
+- ✅ `PromptMetadataForm` - Aides inline dans `messages.help.prompts`
+- ✅ `PromptEditorHeader` - Tooltips dans `messages.tooltips.prompts.save`
+- ✅ 40+ tooltips centralisés (prompts, versions, variables, analysis, sharing, tags, search)
+- ✅ 15+ aides inline centralisées (prompts, variables, versions, sharing)
 
 **Bénéfices mesurés** :
 - ✅ -100% de messages hardcodés (50+ messages → 0)
@@ -268,6 +277,35 @@ import { messages } from "@/constants/messages";
 function ErrorFallback({ error }: { error: Error }) {
   const uiMessages = messages.ui.errorFallback;
   return <h1>{uiMessages.title}</h1>;
+}
+
+// Messages contextuels (tooltips) - Phase 4
+import { messages } from "@/constants/messages";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+function FavoriteButton({ isFavorite }: { isFavorite: boolean }) {
+  const tooltips = messages.tooltips.prompts.favorite;
+  const label = isFavorite ? tooltips.remove : tooltips.add;
+  
+  return (
+    <Tooltip>
+      <TooltipTrigger aria-label={label}>...</TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+// Aide inline - Phase 4
+function PromptForm({ description }: { description: string }) {
+  return (
+    <div>
+      <label>Description</label>
+      <textarea aria-describedby="desc-help" />
+      <p id="desc-help" className="text-muted-foreground">
+        {messages.help.prompts.description(description.length, 500)}
+      </p>
+    </div>
+  );
 }
 
 // Gestion d'erreurs automatique
