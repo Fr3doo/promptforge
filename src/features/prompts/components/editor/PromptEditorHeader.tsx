@@ -3,7 +3,7 @@ import { useUnsavedChangesWarning } from "@/hooks/useUnsavedChangesWarning";
 import { usePromptEditorContext } from "@/features/prompts/contexts/PromptEditorContext";
 import { LoadingButton } from "@/components/LoadingButton";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ArrowLeft, Eye } from "lucide-react";
 import { messages } from "@/constants/messages";
 
@@ -46,7 +46,7 @@ export function PromptEditorHeader() {
                 Mode lecture seule
               </Badge>
             )}
-            <TooltipProvider>
+            {saveTooltip ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span>
@@ -61,13 +61,21 @@ export function PromptEditorHeader() {
                     </LoadingButton>
                   </span>
                 </TooltipTrigger>
-                {saveTooltip && (
-                  <TooltipContent>
-                    <p>{saveTooltip}</p>
-                  </TooltipContent>
-                )}
+                <TooltipContent>
+                  <p>{saveTooltip}</p>
+                </TooltipContent>
               </Tooltip>
-            </TooltipProvider>
+            ) : (
+              <LoadingButton
+                onClick={() => form.handleSave(promptId, hasConflict)}
+                isLoading={form.isSaving}
+                loadingText="Enregistrement..."
+                className="gap-2"
+                disabled={!canEdit || hasConflict || !form.isFormValid}
+              >
+                Enregistrer
+              </LoadingButton>
+            )}
           </div>
         </div>
       </div>
