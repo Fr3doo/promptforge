@@ -24,11 +24,13 @@ export const contextual = {
         createVersion: "Sauvegarder l'état actuel comme nouvelle version",
         viewVersions: "Consulter l'historique des versions",
       },
-      save: {
-        hasChanges: "Enregistrer les modifications (Ctrl+S)",
-        noChanges: "Aucune modification à enregistrer",
-        saving: "Sauvegarde en cours...",
-      },
+    save: {
+      hasChanges: "Enregistrer les modifications (Ctrl+S)",
+      noChanges: "Aucune modification à enregistrer",
+      saving: "Sauvegarde en cours...",
+      readOnly: "Mode lecture seule - Vous ne pouvez pas modifier ce prompt",
+      disabled: "Sauvegarde désactivée - Aucune modification détectée",
+    },
     },
     versions: {
       create: "Créer une nouvelle version pour suivre les changements",
@@ -82,9 +84,12 @@ export const contextual = {
   help: {
     prompts: {
       title: "Le titre doit être court et descriptif (max 100 caractères)",
-      description: "Décrivez le but et le contexte d'utilisation de ce prompt",
+      description: (current: number, max: number) => 
+        `Décrivez le but et le contexte d'utilisation de ce prompt (${current}/${max} caractères)`,
       content: "Utilisez {{nom_variable}} pour créer des variables dynamiques",
-      tags: "Ajoutez des tags séparés par des virgules pour faciliter la recherche",
+      tags: (count: number, max: number) => 
+        `Ajoutez des tags séparés par des virgules pour faciliter la recherche (${count}/${max})`,
+      tagsEdit: "Modifiez ou supprimez les tags existants",
       category: "Choisissez la catégorie qui correspond le mieux à votre prompt",
       visibility: "Définissez qui peut voir et utiliser ce prompt",
     },

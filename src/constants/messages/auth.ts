@@ -8,6 +8,7 @@ export const auth = {
   loginSubtitle: "Accédez à votre bibliothèque de prompts",
   loginSuccess: "Connexion réussie",
   loginButton: "Se connecter",
+  signInButton: "Se connecter",
   loginWithEmail: "Se connecter avec email",
   loginWithGoogle: "Se connecter avec Google",
   signInButton: "Se connecter",

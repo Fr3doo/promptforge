@@ -205,8 +205,8 @@ export const prompts = {
         title: "Partage public désactivé",
         description: "Ce prompt n'est plus accessible publiquement",
       },
-      privateCreated: {
-        title: "Partage créé",
+      privateAdded: {
+        title: "Utilisateur ajouté",
         description: (email: string) => `Le prompt a été partagé avec ${email}`,
       },
       privateUpdated: {
@@ -237,9 +237,41 @@ export const prompts = {
         title: "Erreur de suppression",
         description: "Impossible de supprimer le partage",
       },
+      deleteSomeFailed: {
+        title: "Suppression partielle",
+        description: "Certains partages n'ont pas pu être supprimés",
+      },
       publicAlreadyEnabled: {
         title: "Déjà partagé publiquement",
         description: "Ce prompt est déjà accessible publiquement",
+      },
+      userNotFound: {
+        title: "Utilisateur non trouvé",
+        description: "L'utilisateur spécifié n'existe pas",
+      },
+      selfShare: {
+        title: "Partage impossible",
+        description: "Vous ne pouvez pas partager avec vous-même",
+      },
+      notOwner: {
+        title: "Permission refusée",
+        description: "Seul le propriétaire peut gérer les partages",
+      },
+      alreadyShared: {
+        title: "Déjà partagé",
+        description: "Ce prompt est déjà partagé avec cet utilisateur",
+      },
+      shareNotFound: {
+        title: "Partage non trouvé",
+        description: "Le partage spécifié n'existe pas",
+      },
+      unauthorizedUpdate: {
+        title: "Modification refusée",
+        description: "Vous n'êtes pas autorisé à modifier ce partage",
+      },
+      unauthorizedDelete: {
+        title: "Suppression refusée",
+        description: "Vous n'êtes pas autorisé à supprimer ce partage",
       },
     },
 
@@ -248,6 +280,24 @@ export const prompts = {
       changed: {
         title: "Visibilité modifiée",
         description: "Le niveau de visibilité du prompt a été mis à jour",
+      },
+      shared: {
+        title: "Prompt public",
+        description: "Le prompt est maintenant accessible à tous les utilisateurs",
+      },
+      private: {
+        title: "Prompt privé",
+        description: "Le prompt n'est plus accessible publiquement",
+      },
+      permissionUpdated: {
+        title: "Permission mise à jour",
+        description: "Les droits d'accès ont été modifiés",
+      },
+      errors: {
+        cannotUpdatePrivate: {
+          title: "Erreur de visibilité",
+          description: "Impossible de modifier la visibilité d'un prompt privé",
+        },
       },
     },
   },

@@ -49,6 +49,19 @@ export const variables = {
     multiString: "Texte multi-lignes",
   },
 
+  typeLabels: {
+    STRING: "Chaîne de caractères",
+    NUMBER: "Nombre",
+    BOOLEAN: "Booléen (Vrai/Faux)",
+    ENUM: "Liste de choix",
+    DATE: "Date",
+    MULTISTRING: "Texte multi-lignes",
+  },
+
+  requiredLabel: "Obligatoire",
+  defaultValueLabel: "Valeur par défaut",
+  patternLabel: "Pattern de validation",
+
   // Variable notifications
   notifications: {
     saved: {
