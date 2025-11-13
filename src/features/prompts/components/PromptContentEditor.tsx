@@ -48,9 +48,7 @@ export const PromptContentEditor = ({
                 <SheetTrigger asChild>
                   <Button variant="outline" className="gap-2 w-full sm:w-auto justify-center" disabled={disabled}>
                     <Edit3 className="h-4 w-4" />
-                    {typeof messages.editor.variablesButton === 'function' 
-                      ? messages.editor.variablesButton(variables.length)
-                      : messages.editor.variablesButton}
+                    {messages.editor.variablesButton(variables.length)}
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-full sm:w-[90vw] sm:max-w-[600px] lg:w-[46rem] overflow-y-auto">

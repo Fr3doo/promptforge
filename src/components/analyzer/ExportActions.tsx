@@ -23,7 +23,7 @@ export function ExportActions({ jsonData, markdownData, filename }: ExportAction
     a.download = name;
     a.click();
     URL.revokeObjectURL(url);
-    successToast("Fichier téléchargé", messages.success.downloaded(name));
+    successToast(messages.success.downloaded, messages.copy.download(name));
   };
 
   return (
