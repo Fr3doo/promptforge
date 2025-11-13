@@ -1,6 +1,12 @@
 import { VariableConfigItem } from "./VariableConfigItem";
 import { VariableEmptyState } from "./VariableEmptyState";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Sparkles } from "lucide-react";
 import { messages } from "@/constants/messages";
 import type { Variable } from "@/features/prompts/types";
@@ -20,14 +26,23 @@ export const VariableConfigPanel = ({
 }: VariableConfigPanelProps) => {
   return (
     <div className="space-y-4">
-      <Button 
-        onClick={onDetectVariables} 
-        variant="outline" 
-        className="w-full gap-2"
-      >
-        <Sparkles className="h-4 w-4" />
-        {messages.editor.detectVariablesAuto}
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              onClick={onDetectVariables} 
+              variant="outline" 
+              className="w-full gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              {messages.editor.detectVariablesAuto}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{messages.tooltips.variables.detectAuto}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       
       {variables.length === 0 ? (
         <VariableEmptyState message={messages.variables.emptyStateWithButton} />

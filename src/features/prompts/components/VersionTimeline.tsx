@@ -2,11 +2,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { GitBranch, RotateCcw, Eye, Clock, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
 import { useState } from "react";
+import { messages } from "@/constants/messages";
 
 type Version = Tables<"versions">;
 
@@ -70,16 +77,25 @@ export function VersionTimeline({
           <span className="text-sm font-medium">
             {selectedVersions.length} version(s) sélectionnée(s)
           </span>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleDeleteSelected}
-            disabled={isDeleting}
-            className="gap-2"
-          >
-            <Trash2 className="h-4 w-4" />
-            Supprimer
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDeleteSelected}
+                  disabled={isDeleting}
+                  className="gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Supprimer
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{messages.tooltips.versions.deleteSelected}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       )}
       
@@ -91,13 +107,26 @@ export function VersionTimeline({
           <Card key={version.id} className={isCurrent ? "border-primary" : ""}>
             <CardHeader className="pb-3">
               <div className="flex items-start gap-3">
-                <Checkbox
-                  checked={selectedVersions.includes(version.id)}
-                  onCheckedChange={() => toggleVersion(version.id, version.semver)}
-                  disabled={isCurrent}
-                  className="mt-1"
-                  title={isCurrent ? "La version courante ne peut pas être supprimée" : ""}
-                />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Checkbox
+                        checked={selectedVersions.includes(version.id)}
+                        onCheckedChange={() => toggleVersion(version.id, version.semver)}
+                        disabled={isCurrent}
+                        className="mt-1"
+                        aria-label={messages.tooltips.versions.selectVersion}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {isCurrent 
+                          ? messages.tooltips.versions.currentVersionLocked 
+                          : messages.tooltips.versions.selectVersion}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 
                 <div className="flex-1 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="space-y-1">
@@ -106,9 +135,18 @@ export function VersionTimeline({
                       v{version.semver}
                     </Badge>
                     {isCurrent && (
-                      <Badge variant="outline" className="text-xs">
-                        ✓ Actuelle
-                      </Badge>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="text-xs">
+                              ✓ Actuelle
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{messages.tooltips.versions.currentVersionLocked}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </div>
                   <CardTitle className="text-sm font-normal text-muted-foreground">
@@ -117,25 +155,43 @@ export function VersionTimeline({
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onViewDiff(version.id)}
-                    className="gap-2 flex-1 sm:flex-none"
-                  >
-                    <Eye className="h-3 w-3" />
-                    Diff
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => onRestore(version.id)}
-                    disabled={isRestoring}
-                    className="gap-2 flex-1 sm:flex-none"
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                    Restaurer
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onViewDiff(version.id)}
+                          className="gap-2 flex-1 sm:flex-none"
+                        >
+                          <Eye className="h-3 w-3" />
+                          Diff
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{messages.tooltips.versions.viewDiff}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => onRestore(version.id)}
+                          disabled={isRestoring}
+                          className="gap-2 flex-1 sm:flex-none"
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                          Restaurer
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{messages.tooltips.versions.restoreVersion}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
                 </div>
               </div>

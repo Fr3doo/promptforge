@@ -916,6 +916,7 @@ export const messages = {
         delete: "Supprimer ce prompt",
         share: "Partager ce prompt",
         analyze: "Analyser ce prompt",
+        menu: "Ouvrir le menu des actions",
       },
       save: {
         disabled: "Veuillez corriger les erreurs avant d'enregistrer",
@@ -928,6 +929,11 @@ export const messages = {
       restore: "Restaurer cette version",
       compare: "Comparer les versions",
       current: "Version actuelle",
+      viewDiff: "Comparer avec la version actuelle",
+      restoreVersion: "Restaurer cette version comme version actuelle",
+      deleteSelected: "Supprimer les versions sélectionnées",
+      selectVersion: "Sélectionner cette version pour suppression",
+      currentVersionLocked: "La version actuelle ne peut pas être supprimée",
     },
     variables: {
       add: "Ajouter une nouvelle variable",
@@ -935,6 +941,7 @@ export const messages = {
       required: "Cette variable est obligatoire",
       optional: "Cette variable est optionnelle",
       dragHandle: "Glisser pour réorganiser",
+      detectAuto: "Détecter automatiquement les variables {{}} dans le prompt",
     },
     analysis: {
       start: "Analyser ce prompt",
