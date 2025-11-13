@@ -10,6 +10,7 @@ export const auth = {
   loginButton: "Se connecter",
   loginWithEmail: "Se connecter avec email",
   loginWithGoogle: "Se connecter avec Google",
+  signInButton: "Se connecter",
   
   // Signup
   signupTitle: "Créer un compte",
@@ -19,6 +20,7 @@ export const auth = {
   signupRedirect: "Vous avez déjà un compte ?",
   signupWithEmail: "Créer un compte avec email",
   signupWithGoogle: "Créer un compte avec Google",
+  signUpButton: "Créer un compte",
   
   // Logout
   logoutSuccess: "Déconnexion réussie",

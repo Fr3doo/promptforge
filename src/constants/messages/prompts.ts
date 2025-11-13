@@ -35,12 +35,19 @@ export const prompts = {
 
   // Prompt actions menu
   promptActions: {
+    title: "Actions",
+    edit: "Modifier",
     editTitle: "Modifier",
     editDescription: "Éditer le contenu et les métadonnées du prompt",
+    duplicate: "Dupliquer",
     duplicateTitle: "Dupliquer",
     duplicateDescription: "Créer une copie de ce prompt",
+    privateShare: "Partager (privé)",
+    publicShare: "Rendre public",
+    stopPublicShare: "Rendre privé",
     shareTitle: "Partager",
     shareDescription: "Gérer le partage de ce prompt",
+    delete: "Supprimer",
     deleteTitle: "Supprimer",
     deleteDescription: "Supprimer définitivement ce prompt",
     createVersionTitle: "Créer une version",
@@ -57,6 +64,13 @@ export const prompts = {
       noResultsTitle: "Aucun résultat",
       noResultsDescription: "Aucun prompt ne correspond à votre recherche",
     },
+    noResults: "Aucun résultat",
+    noResultsDescription: "Aucun prompt ne correspond à votre recherche",
+    noSharedPrompts: "Aucun prompt partagé",
+    noSharedPromptsDescription: "Aucun prompt n'a encore été partagé avec vous",
+    noPrompts: "Aucun prompt",
+    noPromptsDescription: "Commencez par créer votre premier prompt",
+    createFirstPrompt: "Créer mon premier prompt",
     filters: {
       allPrompts: "Tous les prompts",
       myPrompts: "Mes prompts",
@@ -85,9 +99,11 @@ export const prompts = {
   // Conflict messages
   conflict: {
     title: "Conflit de modification détecté",
-    description: "Une version plus récente de ce prompt existe. Veuillez recharger avant de sauvegarder.",
+    description: (timeAgo: string) => `Une version plus récente de ce prompt existe (mise à jour ${timeAgo}). Veuillez recharger avant de sauvegarder.`,
     action: "Recharger maintenant",
     ignoreAction: "Ignorer et continuer (risque de perte de données)",
+    reloadLatest: "Recharger la dernière version",
+    continueAnyway: "Continuer quand même",
   },
 
   // Prompts-specific notifications
@@ -156,6 +172,31 @@ export const prompts = {
 
     // Succès - Partage
     share: {
+      added: {
+        title: "Partage ajouté",
+        description: (email: string) => `Le prompt a été partagé avec ${email}`,
+      },
+      permissionUpdated: {
+        title: "Permission mise à jour",
+        description: "Les droits d'accès ont été modifiés",
+      },
+      deleted: {
+        title: "Partage supprimé",
+        description: "L'accès a été révoqué",
+      },
+      allPrivateDeleted: {
+        title: "Tous les partages supprimés",
+        description: "Tous les partages privés ont été révoqués",
+      },
+      errors: {
+        userNotFound: "Utilisateur non trouvé",
+        selfShare: "Vous ne pouvez pas partager avec vous-même",
+        notOwner: "Seul le propriétaire peut gérer les partages",
+        alreadyShared: "Déjà partagé avec cet utilisateur",
+        shareNotFound: "Partage non trouvé",
+        unauthorizedUpdate: "Vous n'êtes pas autorisé à modifier ce partage",
+        unauthorizedDelete: "Vous n'êtes pas autorisé à supprimer ce partage",
+      },
       publicEnabled: {
         title: "Partage public activé",
         description: "Ce prompt est maintenant accessible publiquement",

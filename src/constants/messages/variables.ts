@@ -9,6 +9,7 @@ export const variables = {
     description: "Utilisez {{nom_variable}} dans votre prompt pour créer des variables",
     helpText: "Les variables permettent de créer des prompts réutilisables avec différentes valeurs",
   },
+  emptyStateWithInstructions: "Ajoutez des variables à votre prompt en utilisant la syntaxe {{nom_variable}}",
 
   // Variable config panel
   configPanel: {
@@ -36,12 +37,16 @@ export const variables = {
   // Variable types
   types: {
     text: "Texte",
+    string: "Chaîne de caractères",
     number: "Nombre",
+    boolean: "Booléen",
     email: "Email",
     url: "URL",
     date: "Date",
     select: "Sélection",
+    enum: "Liste de choix",
     textarea: "Texte long",
+    multiString: "Texte multi-lignes",
   },
 
   // Variable notifications
