@@ -1,0 +1,84 @@
+/**
+ * Variables domain messages - Configuration, validation, input
+ */
+
+export const variables = {
+  // Variable empty state
+  emptyState: {
+    title: "Aucune variable détectée",
+    description: "Utilisez {{nom_variable}} dans votre prompt pour créer des variables",
+    helpText: "Les variables permettent de créer des prompts réutilisables avec différentes valeurs",
+  },
+
+  // Variable config panel
+  configPanel: {
+    title: "Configuration des variables",
+    description: "Définissez les propriétés de vos variables",
+    nameLabel: "Nom",
+    typeLabel: "Type",
+    defaultValueLabel: "Valeur par défaut",
+    helpTextLabel: "Texte d'aide",
+    requiredLabel: "Obligatoire",
+    patternLabel: "Pattern de validation",
+    minLengthLabel: "Longueur minimale",
+    maxLengthLabel: "Longueur maximale",
+    optionsLabel: "Options (séparées par des virgules)",
+  },
+
+  // Variable input panel
+  inputPanel: {
+    title: "Valeurs des variables",
+    description: "Saisissez les valeurs pour vos variables",
+    previewTitle: "Aperçu du prompt",
+    fillAllRequired: "Veuillez remplir toutes les variables obligatoires",
+  },
+
+  // Variable types
+  types: {
+    text: "Texte",
+    number: "Nombre",
+    email: "Email",
+    url: "URL",
+    date: "Date",
+    select: "Sélection",
+    textarea: "Texte long",
+  },
+
+  // Variable notifications
+  notifications: {
+    saved: {
+      title: "Variables sauvegardées",
+      description: "La configuration des variables a été enregistrée",
+    },
+    errors: {
+      saveFailed: {
+        title: "Erreur de sauvegarde",
+        description: "Impossible de sauvegarder la configuration des variables",
+      },
+      createFailed: {
+        title: "Erreur de création",
+        description: "Impossible de créer la variable",
+      },
+      updateFailed: {
+        title: "Erreur de mise à jour",
+        description: "Impossible de mettre à jour la variable",
+      },
+      deleteFailed: {
+        title: "Erreur de suppression",
+        description: "Impossible de supprimer la variable",
+      },
+      validationFailed: {
+        title: "Validation échouée",
+        description: (variable: string) => `La variable "${variable}" n'est pas valide`,
+      },
+      invalidPattern: {
+        title: "Pattern invalide",
+        description: "Le pattern de validation n'est pas une expression régulière valide",
+      },
+      requiredMissing: {
+        title: "Variable obligatoire",
+        description: (variable: string) => `La variable "${variable}" est obligatoire`,
+      },
+    },
+  },
+} as const;
