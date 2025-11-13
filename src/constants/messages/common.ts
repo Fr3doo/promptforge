@@ -70,7 +70,9 @@ export const common = {
   // Permission and access levels
   permissions: {
     readOnly: "Lecture seule",
+    readOnlyDescription: "Les utilisateurs peuvent uniquement consulter ce prompt",
     readAndWrite: "Lecture et modification",
+    readWriteDescription: "Les utilisateurs peuvent consulter et modifier ce prompt",
     publicAccess: "Niveau d'accès public",
     privateAccess: "Niveau d'accès",
     noPermissionToEdit: "Vous n'avez pas la permission de modifier ce prompt",
@@ -129,6 +131,10 @@ export const common = {
     duplicate: {
       failed: "Erreur de duplication",
     },
+    variables: {
+      saveFailed: "Erreur lors de la sauvegarde des variables",
+    },
+    share: "Erreur lors du partage",
     // Database errors (for getSafeErrorMessage)
     database: {
       // Codes PostgreSQL
@@ -161,6 +167,11 @@ export const common = {
     historyClearedMessage: "L'historique de consultation a été effacé avec succès",
     sharePermissionUpdated: "Les permissions ont été mises à jour",
     signedOut: "Vous avez été déconnecté avec succès",
+    copied: "Copié !",
+    promptSaved: "Prompt sauvegardé avec succès",
+    copiedToClipboard: "Copié dans le presse-papiers",
+    downloaded: (name: string) => `${name} téléchargé avec succès`,
+    allPrivateSharesDeleted: "Tous les partages privés ont été supprimés",
   },
 
   // Info messages

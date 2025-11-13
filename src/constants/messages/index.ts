@@ -27,12 +27,20 @@ export const messages = {
   
   // Domain-specific messages
   prompts: prompts,
+  promptList: prompts.promptList,
+  promptActions: prompts.promptActions,
+  dialogs: prompts.dialogs,
   conflict: prompts.conflict,
+  shareBanner: prompts.shareBanner,
+  sharedWith: prompts.sharedWith,
+  
   variables: variables,
+  
   auth: {
     ...auth,
     logout: auth.logoutButton,
   },
+  
   ui: ui,
   navigation: ui.navigation,
   
