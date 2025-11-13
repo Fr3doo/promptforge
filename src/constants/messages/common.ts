@@ -84,9 +84,12 @@ export const common = {
 
   // Copy action descriptions
   copy: {
+    success: "Copié dans le presse-papier",
+    error: "Erreur lors de la copie",
+    variableInput: "Variables copiées",
     template: "Template copié",
     export: (label: string) => `${label} copié`,
-    download: (name: string) => `${name} téléchargé`,
+    download: (name: string) => `${name} copié dans le presse-papier`,
     copyPromptPreview: "Copier l'aperçu du prompt",
     copyAction: "Copier",
   },
@@ -129,10 +132,15 @@ export const common = {
       failed: "Erreur de suppression",
     },
     duplicate: {
+      title: "Un prompt avec ce titre existe déjà",
+      description: "Veuillez choisir un titre différent",
       failed: "Erreur de duplication",
     },
     variables: {
       saveFailed: "Erreur lors de la sauvegarde des variables",
+      invalidType: "Le type de variable n'est pas valide",
+      invalidPattern: "Le pattern de validation n'est pas valide",
+      requiredMissing: (name: string) => `La variable "${name}" est obligatoire`,
     },
     share: "Erreur lors du partage",
     // Database errors (for getSafeErrorMessage)
@@ -168,10 +176,8 @@ export const common = {
     sharePermissionUpdated: "Les permissions ont été mises à jour",
     signedOut: "Vous avez été déconnecté avec succès",
     copied: "Copié !",
-    promptSaved: "Prompt sauvegardé avec succès",
-    copiedToClipboard: "Copié dans le presse-papiers",
     downloaded: (name: string) => `${name} téléchargé avec succès`,
-    allPrivateSharesDeleted: "Tous les partages privés ont été supprimés",
+    promptSaved: "Le prompt a été sauvegardé avec succès",
   },
 
   // Info messages

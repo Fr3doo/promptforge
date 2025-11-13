@@ -24,7 +24,7 @@ export function MobileExportActions({ jsonData, markdownData, filename }: Mobile
     a.download = name;
     a.click();
     URL.revokeObjectURL(url);
-    successToast(messages.success.downloaded, messages.copy.download(name));
+    successToast("Fichier téléchargé", messages.success.downloaded(name));
   };
 
   return (

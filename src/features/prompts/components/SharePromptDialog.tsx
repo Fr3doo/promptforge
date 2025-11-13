@@ -91,7 +91,7 @@ export const SharePromptDialog = ({
       );
       notifySuccess(messages.success.allPrivateSharesDeleted);
     } catch (error) {
-      notifyError(messages.labels.error, messages.errors.share.deleteSomeFailed);
+      notifyError(messages.labels.error, messages.prompts.notifications.shareErrors.deleteSomeFailed.description);
     } finally {
       setIsDeletingAll(false);
     }
