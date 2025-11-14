@@ -10,6 +10,7 @@ import { commonMessages } from './common';
 import { promptsMessages } from './prompts';
 import { variablesMessages } from './variables';
 import { versionsMessages } from './versions';
+import { authMessages } from './auth';
 // Import temporaire de l'ancien fichier pour les messages non encore migrés
 import { messages as oldMessages } from '../messages';
 
@@ -33,9 +34,10 @@ export const messages = {
   // Messages from variables.ts
   variables: variablesMessages.variables,
   
-  // Fusion manuelle des erreurs (common + reste à migrer)
+  // Fusion manuelle des erreurs (common + auth + reste à migrer)
   errors: {
     ...commonMessages.errors,           // generic, validation, network, database
+    auth: authMessages.errors.auth,     // auth errors (signOutFailed)
     ...oldMessages.errors,               // analysis, save, update, delete, etc. (from old file)
   },
   
@@ -56,6 +58,7 @@ export const messages = {
   
   // Le reste vient encore de l'ancien messages.ts (à migrer dans les prochaines étapes)
   versions: versionsMessages.versions,
+  auth: authMessages.auth,
   success: oldMessages.success,
   info: oldMessages.info,
   loading: oldMessages.loading,
@@ -63,7 +66,6 @@ export const messages = {
   copy: oldMessages.copy,
   system: oldMessages.system,
   analysis: oldMessages.analysis,
-  auth: oldMessages.auth,
   navigation: oldMessages.navigation,
   dashboard: oldMessages.dashboard,
   settings: oldMessages.settings,
