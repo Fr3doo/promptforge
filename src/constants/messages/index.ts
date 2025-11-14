@@ -12,6 +12,7 @@ import { variablesMessages } from './variables';
 import { versionsMessages } from './versions';
 import { authMessages } from './auth';
 import { uiMessages } from './ui';
+import { appMessages } from './app';
 // Import temporaire de l'ancien fichier pour les messages non encore migrés
 import { messages as oldMessages } from '../messages';
 
@@ -61,24 +62,23 @@ export const messages = {
   ui: uiMessages.ui,
   analyzer: uiMessages.analyzer,
   
-  // Le reste vient encore de l'ancien messages.ts (à migrer dans les prochaines étapes)
+  // Messages App (pages et navigation)
+  navigation: appMessages.navigation,
+  dashboard: appMessages.dashboard,
+  settings: appMessages.settings,
+  editor: appMessages.editor,
+  marketing: appMessages.marketing,
+  
+  // Le reste vient encore de l'ancien messages.ts (à migrer dans l'étape 9)
   versions: versionsMessages.versions,
   auth: authMessages.auth,
-  success: oldMessages.success,
-  info: oldMessages.info,
-  loading: oldMessages.loading,
-  actions: oldMessages.actions,
-  copy: oldMessages.copy,
-  system: oldMessages.system,
-  analysis: oldMessages.analysis,
-  navigation: oldMessages.navigation,     // → Sera migré dans app.ts (étape 8)
-  dashboard: oldMessages.dashboard,       // → Sera migré dans app.ts (étape 8)
-  settings: oldMessages.settings,         // → Sera migré dans app.ts (étape 8)
-  editor: {
-    ...oldMessages.editor,
-    variablesButton: variablesMessages.editor.variablesButton,
-  },
-  marketing: oldMessages.marketing,       // → Sera migré dans app.ts (étape 8)
+  success: oldMessages.success,          // → Sera migré dans system.ts (étape 9)
+  info: oldMessages.info,                // → Sera migré dans system.ts (étape 9)
+  loading: oldMessages.loading,          // → Sera migré dans system.ts (étape 9)
+  actions: oldMessages.actions,          // → Sera migré dans system.ts (étape 9)
+  copy: oldMessages.copy,                // → Sera migré dans system.ts (étape 9)
+  system: oldMessages.system,            // → Sera migré dans system.ts (étape 9)
+  analysis: oldMessages.analysis,        // → Sera migré dans system.ts (étape 9)
 } as const;
 
 export type MessageKey = typeof messages;
