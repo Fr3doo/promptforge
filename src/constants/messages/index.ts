@@ -11,6 +11,7 @@ import { promptsMessages } from './prompts';
 import { variablesMessages } from './variables';
 import { versionsMessages } from './versions';
 import { authMessages } from './auth';
+import { uiMessages } from './ui';
 // Import temporaire de l'ancien fichier pour les messages non encore migrés
 import { messages as oldMessages } from '../messages';
 
@@ -56,6 +57,10 @@ export const messages = {
     ...oldMessages.help,
   },
   
+  // Messages UI (composants réutilisables)
+  ui: uiMessages.ui,
+  analyzer: uiMessages.analyzer,
+  
   // Le reste vient encore de l'ancien messages.ts (à migrer dans les prochaines étapes)
   versions: versionsMessages.versions,
   auth: authMessages.auth,
@@ -66,16 +71,14 @@ export const messages = {
   copy: oldMessages.copy,
   system: oldMessages.system,
   analysis: oldMessages.analysis,
-  navigation: oldMessages.navigation,
-  dashboard: oldMessages.dashboard,
-  settings: oldMessages.settings,
+  navigation: oldMessages.navigation,     // → Sera migré dans app.ts (étape 8)
+  dashboard: oldMessages.dashboard,       // → Sera migré dans app.ts (étape 8)
+  settings: oldMessages.settings,         // → Sera migré dans app.ts (étape 8)
   editor: {
     ...oldMessages.editor,
     variablesButton: variablesMessages.editor.variablesButton,
   },
-  analyzer: oldMessages.analyzer,
-  marketing: oldMessages.marketing,
-  ui: oldMessages.ui,
+  marketing: oldMessages.marketing,       // → Sera migré dans app.ts (étape 8)
 } as const;
 
 export type MessageKey = typeof messages;
