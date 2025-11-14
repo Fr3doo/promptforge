@@ -8,5 +8,30 @@
  * - Session management notifications
  */
 
-// TODO: Migrate from messages.ts in Step 6
-export const authMessages = {} as const;
+export const authMessages = {
+  // Main auth messages
+  auth: {
+    loginTitle: "Connexion",
+    loginSubtitle: "Accédez à vos prompts",
+    loginSuccess: "Connexion réussie !",
+    loginButton: "Se connecter",
+    signupTitle: "Créer un compte",
+    signupSubtitle: "Commencez à gérer vos prompts professionnellement",
+    signupSuccess: "Compte créé avec succès !",
+    signupButton: "Créer mon compte",
+    noAccount: "Pas de compte ?",
+    createAccount: "Créer un compte",
+    alreadyHaveAccount: "Déjà un compte ?",
+    signIn: "Se connecter",
+    signInButton: "Se connecter",
+    signUpButton: "S'inscrire",
+    logout: "Déconnexion",
+  },
+
+  // Authentication errors
+  errors: {
+    auth: {
+      signOutFailed: "Impossible de se déconnecter",
+    },
+  },
+} as const;
