@@ -9,6 +9,7 @@
 import { commonMessages } from './common';
 import { promptsMessages } from './prompts';
 import { variablesMessages } from './variables';
+import { versionsMessages } from './versions';
 // Import temporaire de l'ancien fichier pour les messages non encore migrés
 import { messages as oldMessages } from '../messages';
 
@@ -38,10 +39,11 @@ export const messages = {
     ...oldMessages.errors,               // analysis, save, update, delete, etc. (from old file)
   },
   
-  // Fusion manuelle des tooltips (prompts + variables + reste à migrer)
+  // Fusion manuelle des tooltips (prompts + variables + versions + reste à migrer)
   tooltips: {
     prompts: promptsMessages.tooltips.prompts,
     variables: variablesMessages.tooltips.variables,
+    versions: versionsMessages.tooltips.versions,
     ...oldMessages.tooltips,
   },
   
@@ -53,7 +55,7 @@ export const messages = {
   },
   
   // Le reste vient encore de l'ancien messages.ts (à migrer dans les prochaines étapes)
-  versions: oldMessages.versions,
+  versions: versionsMessages.versions,
   success: oldMessages.success,
   info: oldMessages.info,
   loading: oldMessages.loading,
