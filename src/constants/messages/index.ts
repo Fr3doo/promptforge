@@ -8,6 +8,7 @@
 
 import { commonMessages } from './common';
 import { promptsMessages } from './prompts';
+import { variablesMessages } from './variables';
 // Import temporaire de l'ancien fichier pour les messages non encore migrés
 import { messages as oldMessages } from '../messages';
 
@@ -28,21 +29,26 @@ export const messages = {
   sharedWith: promptsMessages.sharedWith,
   conflict: promptsMessages.conflict,
   
+  // Messages from variables.ts
+  variables: variablesMessages.variables,
+  
   // Fusion manuelle des erreurs (common + reste à migrer)
   errors: {
     ...commonMessages.errors,           // generic, validation, network, database
     ...oldMessages.errors,               // analysis, save, update, delete, etc. (from old file)
   },
   
-  // Fusion manuelle des tooltips (prompts + reste à migrer)
+  // Fusion manuelle des tooltips (prompts + variables + reste à migrer)
   tooltips: {
     prompts: promptsMessages.tooltips.prompts,
+    variables: variablesMessages.tooltips.variables,
     ...oldMessages.tooltips,
   },
   
-  // Fusion manuelle des help (prompts + reste à migrer)
+  // Fusion manuelle des help (prompts + variables + reste à migrer)
   help: {
     prompts: promptsMessages.help.prompts,
+    variables: variablesMessages.help.variables,
     ...oldMessages.help,
   },
   
@@ -59,9 +65,11 @@ export const messages = {
   navigation: oldMessages.navigation,
   dashboard: oldMessages.dashboard,
   settings: oldMessages.settings,
-  editor: oldMessages.editor,
+  editor: {
+    ...oldMessages.editor,
+    variablesButton: variablesMessages.editor.variablesButton,
+  },
   analyzer: oldMessages.analyzer,
-  variables: oldMessages.variables,
   marketing: oldMessages.marketing,
   ui: oldMessages.ui,
 } as const;
