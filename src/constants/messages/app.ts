@@ -2,12 +2,307 @@
  * Application Pages Messages Module
  * 
  * Responsibilities:
+ * - Navigation messages (Header, Footer)
+ * - Marketing/landing page messages
  * - Dashboard page messages
  * - Settings page messages
  * - Editor page messages
- * - Analyzer page messages
- * - Marketing/landing page messages
  */
 
-// TODO: Migrate from messages.ts in Step 8
-export const appMessages = {} as const;
+export const appMessages = {
+  // Navigation (Header + Footer)
+  navigation: {
+    home: "Accueil",
+    dashboard: "Tableau de bord",
+    prompts: "Mes Prompts",
+    resources: "Ressources",
+    methods: "Méthodes",
+    faq: "FAQ",
+    settings: "Paramètres",
+    signIn: "Se connecter",
+    signUp: "S'inscrire",
+    signOut: "Se déconnecter",
+    copyright: (year: number) => `© ${year} PromptForge. Tous droits réservés.`,
+  },
+
+  // Marketing / Landing page
+  marketing: {
+    tagline: "Gérez et optimisez vos prompts IA avec versioning professionnel et collaboration en équipe.",
+    loading: "Chargement...",
+    hero: {
+      title: "Gérez et optimisez vos prompts IA – dans un seul outil",
+      subtitle: "PromptForge vous aide à créer, organiser et améliorer vos prompts avec variables paramétrables, versioning professionnel et collaboration en équipe.",
+      welcomeBack: (name: string) => `Bon retour, ${name} 👋`,
+      cta: "Créer un compte gratuitement",
+      ctaSecondary: "Voir la démo",
+    },
+    features: {
+      title: "Fonctionnalités",
+      subtitle: "Tout ce dont vous avez besoin pour gérer vos prompts efficacement",
+      versioning: {
+        title: "Versioning intelligent",
+        description: "Suivez l'évolution de vos prompts avec un système de versions complet",
+      },
+      variables: {
+        title: "Variables paramétrables",
+        description: "Créez des prompts réutilisables avec des variables dynamiques",
+      },
+      collaboration: {
+        title: "Collaboration en équipe",
+        description: "Partagez vos prompts avec votre équipe et gérez les permissions",
+      },
+      analysis: {
+        title: "Analyse de prompts",
+        description: "Analysez la structure et la qualité de vos prompts automatiquement",
+      },
+    },
+    workflow: {
+      title: "Workflow avant / après",
+      before: {
+        title: "Avant PromptForge",
+        problem1: "Prompts éparpillés dans différents fichiers",
+        problem2: "Perte de versions précédentes",
+        problem3: "Difficile de partager avec l'équipe",
+      },
+      after: {
+        title: "Avec PromptForge",
+        solution1: "Tous vos prompts centralisés",
+        solution2: "Historique complet des versions",
+        solution3: "Collaboration fluide en équipe",
+      },
+    },
+    useCases: {
+      title: "Cas d'usage",
+      subtitle: "Des exemples concrets d'utilisation",
+      marketing: {
+        title: "Marketing",
+        description: "Créez des prompts pour générer du contenu marketing",
+        example: "Génération de posts LinkedIn, emails, etc.",
+      },
+      development: {
+        title: "Développement",
+        description: "Documentez et partagez vos prompts de code",
+        example: "Génération de code, review, documentation",
+      },
+      research: {
+        title: "Recherche",
+        description: "Organisez vos prompts de recherche et d'analyse",
+        example: "Analyse de données, résumés, synthèses",
+      },
+    },
+    quickLinks: {
+      title: "Liens rapides",
+      resources: {
+        title: "Ressources",
+        description: "Apprenez les meilleures pratiques",
+        descriptionWithAuth: "(Connexion requise)",
+        cta: "Découvrir",
+      },
+      methods: {
+        title: "Méthodes de prompting",
+        description: "Maîtrisez les techniques avancées",
+        descriptionWithAuth: "(Connexion requise)",
+        cta: "Voir les méthodes",
+      },
+      faq: {
+        title: "FAQ",
+        description: "Réponses à vos questions fréquentes",
+        descriptionWithAuth: "(Connexion requise)",
+        cta: "Voir la FAQ",
+      },
+      dashboard: {
+        title: "Tableau de bord",
+        description: "Vue d'ensemble et statistiques",
+      },
+      newPrompt: {
+        title: "Nouveau prompt",
+        description: "Créez un prompt avec variables paramétrables",
+      },
+      myPrompts: {
+        title: "Mes prompts",
+        description: "Consultez et gérez tous vos prompts",
+      },
+    },
+  },
+
+  // Dashboard
+  dashboard: {
+    title: "Tableau de bord",
+    pageTitle: "Tableau de bord - PromptForge",
+    pageDescription: "Vue d'ensemble de vos prompts et activités",
+    welcome: (pseudo: string) => `Bienvenue, ${pseudo} 👋`,
+    sections: {
+      usage: "Statistiques d'utilisation",
+      recent: "Prompts récents",
+      favorites: "Favoris",
+      shared: "Partagés avec moi",
+    },
+    stats: {
+      totalPrompts: "Total de prompts",
+      favoritePrompts: "Favoris",
+      sharedPrompts: "Partagés",
+      recentActivity: "Activité récente",
+    },
+    emptyState: {
+      title: "Aucune donnée disponible",
+      description: "Commencez par créer votre premier prompt",
+      cta: "Créer un prompt",
+    },
+  },
+
+  // Settings
+  settings: {
+    title: "Paramètres",
+    pageTitle: "Paramètres - PromptForge",
+    pageDescription: "Personnalisez votre expérience PromptForge",
+    subtitle: "Personnalisez votre expérience",
+    backButton: "Retour",
+    tabs: {
+      appearance: "Apparence",
+      language: "Langue",
+      notifications: "Notifications",
+      data: "Données",
+      security: "Sécurité",
+      about: "À propos",
+    },
+    appearance: {
+      title: "Apparence & Thème",
+      description: "Personnalisez l'apparence de l'interface",
+      themeTitle: "Thème",
+      themeDescription: "Choisissez le thème de l'application",
+      themeLight: "Clair",
+      themeDark: "Sombre",
+      themeSystem: "Système",
+      darkModeTitle: "Mode sombre",
+      darkModeDescription: "Activez le mode sombre pour réduire la fatigue oculaire",
+      systemThemeTitle: "Respecter les préférences système",
+      systemThemeDescription: "Utiliser le thème de votre système d'exploitation",
+      fontSizeTitle: "Taille de la police",
+      fontSizeDescription: "Ajustez la taille du texte",
+      fontSizeSmall: "Petite",
+      fontSizeMedium: "Moyenne",
+      fontSizeLarge: "Grande",
+      compactModeTitle: "Mode compact",
+      compactModeDescription: "Réduire l'espacement entre les éléments",
+      animationsTitle: "Animations",
+      animationsDescription: "Activer les animations de l'interface",
+      pseudoDisplayDescription: "Ce pseudo sera affiché à la place de votre adresse email",
+    },
+    language: {
+      title: "Langue & Région",
+      description: "Choisissez la langue de l'interface utilisateur",
+      currentLanguage: "Langue actuelle",
+      french: "Français",
+      english: "English",
+      spanish: "Español",
+      german: "Deutsch",
+      comingSoon: "Prochainement disponible",
+      languagePreference: "Préférence de langue",
+      languageDescription: "Choisissez votre langue préférée pour l'interface",
+      autoDetectTitle: "Détection automatique de langue",
+      autoDetectDescription: "Détecter automatiquement la langue du navigateur",
+      interfaceLanguageTitle: "Langue de l'interface",
+      changesAppliedAfterReload: "Les modifications seront appliquées après actualisation",
+    },
+    notifications: {
+      title: "Notifications",
+      description: "Gérez vos préférences de notifications",
+      enableTitle: "Activer les notifications",
+      enableDescription: "Recevoir des notifications sur l'activité de votre compte",
+      emailNotificationsTitle: "Notifications par email",
+      emailNotificationsDescription: "Vous recevrez un e-mail lors de mises à jour importantes",
+      appNotificationsTitle: "Notifications dans l'application",
+      appNotificationsDescription: "Afficher les notifications directement dans l'interface",
+      shareNotificationsTitle: "Notifications de partage",
+      shareNotificationsDescription: "Être notifié quand quelqu'un partage un prompt avec vous",
+      versionNotificationsTitle: "Notifications de versions",
+      versionNotificationsDescription: "Être notifié des nouvelles versions de vos prompts favoris",
+      soundTitle: "Sons",
+      soundDescription: "Jouer un son lors des notifications",
+    },
+    data: {
+      title: "Données",
+      description: "Gérez vos données personnelles",
+      autoSaveVersionsTitle: "Sauvegarde automatique des versions",
+      autoSaveVersionsDescription: "Créer automatiquement une version à chaque modification majeure",
+      versionsToKeepTitle: "Versions à conserver",
+      versionsToKeepDescription: "Nombre maximum de versions à garder pour chaque prompt",
+      exportTitle: "Exporter mes données",
+      exportDescription: "Téléchargez toutes vos données au format JSON",
+      exportButton: "Exporter",
+      clearHistoryTitle: "Effacer l'historique",
+      clearHistoryDescription: "Supprimer l'historique de vos prompts (les prompts eux-mêmes seront conservés)",
+      clearHistoryButton: "Effacer",
+      deleteAccountTitle: "Supprimer mon compte",
+      deleteAccountDescription: "Supprimer définitivement votre compte et toutes vos données. Cette action est irréversible.",
+      deleteAccountButton: "Demander la suppression",
+    },
+    security: {
+      title: "Sécurité",
+      description: "Gérez vos paramètres de sécurité",
+      accountInfoTitle: "Informations du compte",
+      accountInfoDescription: "Détails de votre compte utilisateur",
+      emailLabel: "Adresse email",
+      accountCreatedLabel: "Compte créé le",
+      changePasswordTitle: "Changer de mot de passe",
+      changePasswordDescription: "Modifier votre mot de passe actuel",
+      changePasswordButton: "Changer",
+      twoFactorTitle: "Authentification à deux facteurs",
+      twoFactorDescription: "Ajouter une couche de sécurité supplémentaire à votre compte",
+      twoFactorButton: "Activer",
+      sessionsTitle: "Sessions actives",
+      sessionsDescription: "Gérer les appareils connectés à votre compte",
+      sessionsButton: "Gérer",
+      signOutButton: "Se déconnecter",
+      signOutDescription: "Déconnectez-vous de votre compte sur cet appareil",
+    },
+    about: {
+      title: "À propos",
+      description: "Informations sur l'application",
+      appInfoTitle: "Informations de l'application",
+      appInfoDescription: "Détails et ressources de PromptForge",
+      versionTitle: "Version",
+      versionNumber: "1.0.0",
+      licenseTitle: "Licence",
+      licenseType: "MIT",
+      githubTitle: "Code source",
+      githubLink: "Voir sur GitHub",
+      documentationTitle: "Documentation",
+      documentationLink: "Consulter la documentation",
+      supportTitle: "Support & Communauté",
+      supportDescription: "Besoin d'aide ? Consultez notre FAQ ou rejoignez notre communauté",
+      viewFaqButton: "Voir la FAQ",
+      joinCommunityButton: "Rejoindre la communauté",
+    },
+    profile: {
+      pseudoLabel: "Pseudo",
+      pseudoDescription: "Votre nom d'affichage public",
+      savingButton: "Sauvegarde...",
+      saveButton: "Sauvegarder",
+      pseudoUpdated: "Pseudo mis à jour",
+      pseudoUpdatedDescription: "Votre pseudo a été modifié avec succès",
+      pseudoUpdateFailed: "Erreur lors de la mise à jour du pseudo",
+      pseudoRequired: "Le pseudo ne peut pas être vide",
+      pseudoTooShort: "Le pseudo doit contenir au moins 2 caractères",
+      pseudoTooLong: "Le pseudo ne peut pas dépasser 50 caractères",
+      pseudoInvalidChars: "Le pseudo ne peut contenir que des lettres, chiffres, tirets et underscores",
+      pseudoLengthError: "Le pseudo doit contenir entre 2 et 50 caractères",
+      pseudoAlreadyUsed: "Ce pseudo est déjà utilisé",
+      pseudoUpdateError: "Impossible de mettre à jour le pseudo",
+    },
+  },
+
+  // Editor
+  editor: {
+    title: "Éditeur",
+    preview: "Aperçu",
+    previewPlaceholder: "L'aperçu s'affichera ici...",
+    detectVariables: "Détecter variables",
+    detectVariablesAuto: "Détecter automatiquement",
+    variableValues: "Valeurs des variables",
+    promptContent: "Contenu du prompt",
+    variables: "Variables",
+    variableConfig: "Configuration des variables",
+    variableConfigInstructions: "Utilisez {{variable}} dans votre prompt. Exemples :\n• {{nom}} - texte simple\n• {{age}} - nombre\n• {{actif}} - booléen",
+  },
+} as const;
