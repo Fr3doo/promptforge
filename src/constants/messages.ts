@@ -1,5 +1,41 @@
 /**
- * Centralized message constants for the application
+ * ⚠️ FICHIER EN COURS DE DÉPRÉCIATION - NE PAS AJOUTER DE NOUVEAUX MESSAGES ICI
+ * ============================================================================
+ * 
+ * Ce fichier est progressivement remplacé par les modules dans /messages/
+ * 
+ * ÉTAT DE LA MIGRATION :
+ * ✅ MIGRÉ vers /messages/ :
+ * - common.ts : labels, placeholders, dialogs, buttons, permissions
+ * - prompts.ts : prompts, promptActions, promptList, shareBanner, sharedWith, conflict
+ * - variables.ts : variables, tooltips.variables, help.variables
+ * - versions.ts : versions, tooltips.versions
+ * - auth.ts : auth, errors.auth
+ * - ui.ts : ui (ErrorFallback), analyzer
+ * - app.ts : navigation, marketing, dashboard, settings, editor
+ * - system.ts : success, info, loading, actions, copy, system, analysis
+ * 
+ * ⏳ ENCORE UTILISÉ (via oldMessages dans index.ts) - ~450 lignes :
+ * - errors.* (~150 lignes) : Messages d'erreur spécifiques non migrés
+ *   - errors.save.*, errors.update.*, errors.delete.*, errors.duplicate.*
+ *   - errors.versions.*, errors.variables.*
+ * - tooltips.* (~200 lignes) : Tooltips non migrés
+ *   - tooltips.analyzer.*, tooltips.share.*, tooltips.*
+ * - help.* (~100 lignes) : Messages d'aide inline non migrés
+ *   - help.versions.*, help.*
+ * 
+ * TODO (Étape 10 - Migration Finale) :
+ * 1. Migrer errors.save/update/delete/duplicate → prompts.ts ou usePromptMessages
+ * 2. Migrer errors.versions → versions.ts
+ * 3. Migrer tooltips.analyzer → ui.ts
+ * 4. Migrer tooltips.share → prompts.ts
+ * 5. Migrer help.versions → versions.ts
+ * 6. Supprimer ce fichier et l'import oldMessages de index.ts
+ * 
+ * UTILISATION :
+ * ❌ NE PAS importer directement depuis ce fichier
+ * ✅ Utiliser : import { messages } from "@/constants/messages"
+ * 
  * Structured for future i18n implementation
  */
 
