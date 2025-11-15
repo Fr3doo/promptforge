@@ -14,7 +14,28 @@ import { authMessages } from './auth';
 import { uiMessages } from './ui';
 import { appMessages } from './app';
 import { systemMessages } from './system';
-// Import temporaire de l'ancien fichier pour les messages non encore migrés
+
+/**
+ * MIGRATION STATUS - TEMPORARY IMPORT
+ * ====================================
+ * 
+ * Import temporaire de l'ancien fichier messages.ts pour les sections non encore migrées.
+ * 
+ * SECTIONS ENCORE UTILISÉES DE oldMessages (~450 lignes) :
+ * - errors.* (~150 lignes) : Messages d'erreur spécifiques (save, update, delete, duplicate, etc.)
+ * - tooltips.* (~200 lignes) : Tooltips non migrés (analyzer, share, etc.)
+ * - help.* (~100 lignes) : Messages d'aide inline non migrés
+ * 
+ * MIGRATION FUTURE (Étape 10) :
+ * Ces sections seront progressivement migrées vers :
+ * - errors.save/update/delete → prompts.ts ou hook dédié
+ * - errors.versions → versions.ts
+ * - tooltips.analyzer → ui.ts
+ * - tooltips.share → prompts.ts
+ * - help.versions → versions.ts
+ * 
+ * TODO: Une fois la migration complète, supprimer cet import et le fichier messages.ts
+ */
 import { messages as oldMessages } from '../messages';
 
 // Assemblage progressif : common.ts + prompts.ts + reste de messages.ts
@@ -37,26 +58,75 @@ export const messages = {
   // Messages from variables.ts
   variables: variablesMessages.variables,
   
-  // Fusion manuelle des erreurs (common + auth + reste à migrer)
+  /**
+   * ERRORS - Fusion progressive (PARTIELLEMENT MIGRÉ)
+   * ==================================================
+   * 
+   * Structure actuelle :
+   * - ✅ commonMessages.errors : Erreurs génériques (generic, validation, network, database)
+   * - ✅ authMessages.errors.auth : Erreurs d'authentification (signOutFailed)
+   * - ⏳ oldMessages.errors : Erreurs spécifiques NON MIGRÉES (~150 lignes)
+   *   - errors.analysis.* : Erreurs d'analyse de prompt
+   *   - errors.save.* : Erreurs de sauvegarde de prompt
+   *   - errors.update.* : Erreurs de mise à jour de prompt
+   *   - errors.delete.* : Erreurs de suppression de prompt
+   *   - errors.duplicate.* : Erreurs de duplication de prompt
+   *   - errors.variables.* : Erreurs de variables
+   *   - errors.versions.* : Erreurs de versions
+   * 
+   * TODO (Étape 10) :
+   * - Migrer errors.save/update/delete/duplicate → prompts.ts ou usePromptMessages
+   * - Migrer errors.versions → versions.ts
+   * - Migrer errors.variables → variables.ts (si manquant)
+   */
   errors: {
-    ...commonMessages.errors,           // generic, validation, network, database
-    auth: authMessages.errors.auth,     // auth errors (signOutFailed)
-    ...oldMessages.errors,               // analysis, save, update, delete, etc. (from old file)
+    ...commonMessages.errors,           // ✅ generic, validation, network, database
+    auth: authMessages.errors.auth,     // ✅ auth errors (signOutFailed)
+    ...oldMessages.errors,               // ⏳ analysis, save, update, delete, etc. (À MIGRER)
   },
   
-  // Fusion manuelle des tooltips (prompts + variables + versions + reste à migrer)
+  /**
+   * TOOLTIPS - Fusion progressive (PARTIELLEMENT MIGRÉ)
+   * ====================================================
+   * 
+   * Structure actuelle :
+   * - ✅ promptsMessages.tooltips.prompts : Tooltips des prompts
+   * - ✅ variablesMessages.tooltips.variables : Tooltips des variables
+   * - ✅ versionsMessages.tooltips.versions : Tooltips des versions
+   * - ⏳ oldMessages.tooltips : Tooltips NON MIGRÉS (~200 lignes)
+   *   - tooltips.analyzer.* : Tooltips de l'analyseur
+   *   - tooltips.share.* : Tooltips du partage
+   *   - tooltips.* : Autres tooltips génériques
+   * 
+   * TODO (Étape 10) :
+   * - Migrer tooltips.analyzer → ui.ts
+   * - Migrer tooltips.share → prompts.ts
+   */
   tooltips: {
-    prompts: promptsMessages.tooltips.prompts,
-    variables: variablesMessages.tooltips.variables,
-    versions: versionsMessages.tooltips.versions,
-    ...oldMessages.tooltips,
+    prompts: promptsMessages.tooltips.prompts,     // ✅ Migrés
+    variables: variablesMessages.tooltips.variables, // ✅ Migrés
+    versions: versionsMessages.tooltips.versions,   // ✅ Migrés
+    ...oldMessages.tooltips,                        // ⏳ analyzer, share, etc. (À MIGRER)
   },
   
-  // Fusion manuelle des help (prompts + variables + reste à migrer)
+  /**
+   * HELP - Fusion progressive (PARTIELLEMENT MIGRÉ)
+   * ================================================
+   * 
+   * Structure actuelle :
+   * - ✅ promptsMessages.help.prompts : Aide inline des prompts
+   * - ✅ variablesMessages.help.variables : Aide inline des variables
+   * - ⏳ oldMessages.help : Messages d'aide NON MIGRÉS (~100 lignes)
+   *   - help.versions.* : Aide inline des versions
+   *   - help.* : Autres messages d'aide
+   * 
+   * TODO (Étape 10) :
+   * - Migrer help.versions → versions.ts
+   */
   help: {
-    prompts: promptsMessages.help.prompts,
-    variables: variablesMessages.help.variables,
-    ...oldMessages.help,
+    prompts: promptsMessages.help.prompts,       // ✅ Migrés
+    variables: variablesMessages.help.variables, // ✅ Migrés
+    ...oldMessages.help,                         // ⏳ versions, etc. (À MIGRER)
   },
   
   // Messages UI (composants réutilisables)
