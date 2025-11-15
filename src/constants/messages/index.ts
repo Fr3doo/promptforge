@@ -13,6 +13,7 @@ import { versionsMessages } from './versions';
 import { authMessages } from './auth';
 import { uiMessages } from './ui';
 import { appMessages } from './app';
+import { systemMessages } from './system';
 // Import temporaire de l'ancien fichier pour les messages non encore migrés
 import { messages as oldMessages } from '../messages';
 
@@ -72,16 +73,18 @@ export const messages = {
     variablesButton: variablesMessages.editor.variablesButton,
   },
   
-  // Le reste vient encore de l'ancien messages.ts (à migrer dans l'étape 9)
+  // Messages système (success, info, loading, actions, copy, system, analysis)
+  success: systemMessages.success,
+  info: systemMessages.info,
+  loading: systemMessages.loading,
+  actions: systemMessages.actions,
+  copy: systemMessages.copy,
+  system: systemMessages.system,
+  analysis: systemMessages.analysis,
+  
+  // Le reste vient encore de l'ancien messages.ts
   versions: versionsMessages.versions,
   auth: authMessages.auth,
-  success: oldMessages.success,
-  info: oldMessages.info,
-  loading: oldMessages.loading,
-  actions: oldMessages.actions,
-  copy: oldMessages.copy,
-  system: oldMessages.system,
-  analysis: oldMessages.analysis,
 } as const;
 
 export type MessageKey = typeof messages;
