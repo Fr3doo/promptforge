@@ -59,54 +59,57 @@ export const messages = {
   variables: variablesMessages.variables,
   
   /**
-   * ERRORS - Fusion progressive (PARTIELLEMENT MIGRÉ)
+   * ERRORS - Fusion progressive (PARTIELLEMENT MIGRÉ - Phase 1 Step 10.1, 10.6)
    * ==================================================
    * 
    * Structure actuelle :
-   * - ✅ commonMessages.errors : Erreurs génériques (generic, validation, network, database)
+   * - ✅ commonMessages.errors : Erreurs génériques, validation, network (Step 10.1), database
+   * - ✅ variablesMessages.errors.variables : Erreurs de variables (Step 10.6)
    * - ✅ authMessages.errors.auth : Erreurs d'authentification (signOutFailed)
-   * - ⏳ oldMessages.errors : Erreurs spécifiques NON MIGRÉES (~150 lignes)
-   *   - errors.analysis.* : Erreurs d'analyse de prompt
+   * - ⏳ oldMessages.errors : Erreurs spécifiques NON MIGRÉES (~120 lignes)
+   *   - errors.analysis.* : Erreurs d'analyse de prompt (déjà dans system.ts)
    *   - errors.save.* : Erreurs de sauvegarde de prompt
    *   - errors.update.* : Erreurs de mise à jour de prompt
    *   - errors.delete.* : Erreurs de suppression de prompt
    *   - errors.duplicate.* : Erreurs de duplication de prompt
-   *   - errors.variables.* : Erreurs de variables
-   *   - errors.versions.* : Erreurs de versions
+   *   - errors.version.* : Erreurs de versions
+   *   - errors.share.* : Erreurs de partage
    * 
-   * TODO (Étape 10) :
-   * - Migrer errors.save/update/delete/duplicate → prompts.ts ou usePromptMessages
-   * - Migrer errors.versions → versions.ts
-   * - Migrer errors.variables → variables.ts (si manquant)
+   * TODO (Phase 2-3) :
+   * - Migrer errors.save/update/delete/duplicate/share → prompts.ts
+   * - Migrer errors.version → versions.ts
    */
   errors: {
-    ...commonMessages.errors,           // ✅ generic, validation, network, database
-    auth: authMessages.errors.auth,     // ✅ auth errors (signOutFailed)
-    ...oldMessages.errors,               // ⏳ analysis, save, update, delete, etc. (À MIGRER)
+    ...commonMessages.errors,                    // ✅ generic, validation, network (Step 10.1), database
+    auth: authMessages.errors.auth,              // ✅ auth errors (signOutFailed)
+    variables: variablesMessages.errors.variables, // ✅ variables errors (Step 10.6)
+    ...oldMessages.errors,                       // ⏳ analysis, save, update, delete, etc. (À MIGRER Phase 2-3)
   },
   
   /**
-   * TOOLTIPS - Fusion progressive (PARTIELLEMENT MIGRÉ)
+   * TOOLTIPS - Fusion progressive (PARTIELLEMENT MIGRÉ - Phase 1 Step 10.2, 10.9)
    * ====================================================
    * 
    * Structure actuelle :
    * - ✅ promptsMessages.tooltips.prompts : Tooltips des prompts
    * - ✅ variablesMessages.tooltips.variables : Tooltips des variables
    * - ✅ versionsMessages.tooltips.versions : Tooltips des versions
-   * - ⏳ oldMessages.tooltips : Tooltips NON MIGRÉS (~200 lignes)
-   *   - tooltips.analyzer.* : Tooltips de l'analyseur
-   *   - tooltips.share.* : Tooltips du partage
-   *   - tooltips.* : Autres tooltips génériques
+   * - ✅ commonMessages.tooltips.search : Tooltips de recherche (Step 10.2)
+   * - ✅ uiMessages.tooltips.analyzer : Tooltips de l'analyseur (Step 10.9)
+   * - ⏳ oldMessages.tooltips : Tooltips NON MIGRÉS (~150 lignes)
+   *   - tooltips.sharing.* : Tooltips du partage
+   *   - tooltips.tags.* : Tooltips des tags
    * 
-   * TODO (Étape 10) :
-   * - Migrer tooltips.analyzer → ui.ts
-   * - Migrer tooltips.share → prompts.ts
+   * TODO (Phase 3) :
+   * - Migrer tooltips.sharing, tooltips.tags → prompts.ts
    */
   tooltips: {
-    prompts: promptsMessages.tooltips.prompts,     // ✅ Migrés
+    prompts: promptsMessages.tooltips.prompts,       // ✅ Migrés
     variables: variablesMessages.tooltips.variables, // ✅ Migrés
-    versions: versionsMessages.tooltips.versions,   // ✅ Migrés
-    ...oldMessages.tooltips,                        // ⏳ analyzer, share, etc. (À MIGRER)
+    versions: versionsMessages.tooltips.versions,    // ✅ Migrés
+    search: commonMessages.tooltips.search,          // ✅ Migrés (Step 10.2)
+    analyzer: uiMessages.tooltips.analyzer,          // ✅ Migrés (Step 10.9)
+    ...oldMessages.tooltips,                         // ⏳ sharing, tags, etc. (À MIGRER Phase 3)
   },
   
   /**

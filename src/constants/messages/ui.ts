@@ -59,4 +59,13 @@ export const uiMessages = {
     },
     noVariables: "Aucune variable détectée",
   },
+
+  // Tooltips (Migrated from Step 10.9)
+  tooltips: {
+    analyzer: {
+      start: "Analyser ce prompt",
+      export: "Exporter l'analyse",
+      clear: "Effacer l'analyse",
+    },
+  },
 } as const;

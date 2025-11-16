@@ -116,13 +116,18 @@ export const commonMessages = {
     noChangesToVersion: "Aucune modification à versionner",
   },
 
-  // Generic errors
+  // Error messages
   errors: {
+    // Generic errors
     generic: "Une erreur est survenue. Veuillez réessayer.",
+    
+    // Validation errors
     validation: {
       emptyPrompt: "Veuillez saisir un prompt",
       failed: "Validation échouée",
     },
+
+    // Network errors (Migrated from Step 10.1)
     network: {
       generic: "Erreur de connexion",
       timeout: "Délai d'attente dépassé",
@@ -178,6 +183,15 @@ export const commonMessages = {
       variableTooManyOptions: "Le nombre d'options ne peut pas dépasser 50",
       variableOptionTooLong: "Chaque option ne peut pas dépasser 100 caractères",
       variableCountExceeded: "Un prompt ne peut pas avoir plus de 50 variables",
+      unauthorizedAccess: "Accès non autorisé",
+    },
+  },
+
+  // Tooltips (Migrated from Step 10.2)
+  tooltips: {
+    search: {
+      clear: "Effacer la recherche",
+      filter: "Filtrer les résultats",
     },
   },
 } as const;
