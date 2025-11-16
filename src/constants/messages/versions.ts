@@ -80,4 +80,12 @@ export const versionsMessages = {
       currentVersionLocked: "Impossible de supprimer la version actuelle",
     },
   },
+
+  // Help messages for versions
+  help: {
+    versions: {
+      name: "Nom de cette version (optionnel)",
+      description: "Description des changements dans cette version",
+    },
+  },
 } as const;

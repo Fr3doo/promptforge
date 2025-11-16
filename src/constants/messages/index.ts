@@ -129,7 +129,8 @@ export const messages = {
   help: {
     prompts: promptsMessages.help.prompts,       // ✅ Migrés
     variables: variablesMessages.help.variables, // ✅ Migrés
-    ...oldMessages.help,                         // ⏳ versions, etc. (À MIGRER)
+    versions: versionsMessages.help.versions,    // ✅ Migrés (Step 10.8)
+    ...oldMessages.help,                         // ⏳ autres (À MIGRER)
   },
   
   // Messages UI (composants réutilisables)
