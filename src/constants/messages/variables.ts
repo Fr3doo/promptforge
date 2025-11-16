@@ -62,6 +62,13 @@ export const variablesMessages = {
     },
   },
 
+  // Error messages (Migrated from Step 10.6)
+  errors: {
+    variables: {
+      saveFailed: "Erreur d'enregistrement des variables",
+    },
+  },
+
   // Tooltips specific to variables
   tooltips: {
     variables: {
