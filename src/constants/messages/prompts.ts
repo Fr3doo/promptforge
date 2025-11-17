@@ -137,6 +137,29 @@ export const promptsMessages = {
         },
       },
     },
+
+    // Legacy error messages (pour rétrocompatibilité)
+    // TODO: Migrer les usages vers notifications.save.* dans une étape future
+    errors: {
+      save: {
+        failed: "Erreur de sauvegarde",
+        unexpected: "Une erreur inattendue s'est produite",
+        network: "Erreur de connexion lors de la sauvegarde",
+        validation: "Les données ne sont pas valides",
+      },
+      update: {
+        failed: "Erreur de mise à jour",
+      },
+      delete: {
+        failed: "Erreur de suppression",
+      },
+      duplicate: {
+        failed: "Erreur de duplication",
+      },
+      share: {
+        deleteSomeFailed: "Certains partages n'ont pas pu être supprimés",
+      },
+    },
   },
 
   // Prompt Actions Menu

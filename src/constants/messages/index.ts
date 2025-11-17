@@ -59,31 +59,36 @@ export const messages = {
   variables: variablesMessages.variables,
   
   /**
-   * ERRORS - Fusion progressive (PARTIELLEMENT MIGRÉ - Phase 1 Step 10.1, 10.6)
+   * ERRORS - Fusion progressive (PARTIELLEMENT MIGRÉ - Phase 1, 2, 3)
    * ==================================================
    * 
    * Structure actuelle :
    * - ✅ commonMessages.errors : Erreurs génériques, validation, network (Step 10.1), database
    * - ✅ variablesMessages.errors.variables : Erreurs de variables (Step 10.6)
    * - ✅ authMessages.errors.auth : Erreurs d'authentification (signOutFailed)
-   * - ⏳ oldMessages.errors : Erreurs spécifiques NON MIGRÉES (~120 lignes)
-   *   - errors.analysis.* : Erreurs d'analyse de prompt (déjà dans system.ts)
+   * - ✅ promptsMessages.prompts.errors : Erreurs prompts (Step 10.3 - Phase 3)
    *   - errors.save.* : Erreurs de sauvegarde de prompt
    *   - errors.update.* : Erreurs de mise à jour de prompt
    *   - errors.delete.* : Erreurs de suppression de prompt
    *   - errors.duplicate.* : Erreurs de duplication de prompt
-   *   - errors.version.* : Erreurs de versions
    *   - errors.share.* : Erreurs de partage
+   * - ⏳ oldMessages.errors : Erreurs NON MIGRÉES (fallback uniquement)
+   *   - errors.analysis.* : Erreurs d'analyse de prompt (déjà dans system.ts)
+   *   - errors.version.* : Erreurs de versions (déjà dans versions.ts)
    * 
-   * TODO (Phase 2-3) :
-   * - Migrer errors.save/update/delete/duplicate/share → prompts.ts
-   * - Migrer errors.version → versions.ts
+   * NOTE : L'ordre de fusion garantit la priorité des nouveaux messages
    */
   errors: {
-    ...commonMessages.errors,                    // ✅ generic, validation, network (Step 10.1), database
-    auth: authMessages.errors.auth,              // ✅ auth errors (signOutFailed)
-    variables: variablesMessages.errors.variables, // ✅ variables errors (Step 10.6)
-    ...oldMessages.errors,                       // ⏳ analysis, save, update, delete, etc. (À MIGRER Phase 2-3)
+    ...commonMessages.errors,                      // ✅ Migrés (network, database, generic)
+    auth: authMessages.errors.auth,                // ✅ Migrés
+    variables: variablesMessages.errors.variables, // ✅ Migrés
+    // Prompts errors (legacy compatibility - Step 10.3)
+    save: promptsMessages.prompts.errors.save,
+    update: promptsMessages.prompts.errors.update,
+    delete: promptsMessages.prompts.errors.delete,
+    duplicate: promptsMessages.prompts.errors.duplicate,
+    share: promptsMessages.prompts.errors.share,
+    ...oldMessages.errors,                         // ⏳ Fallback pour autres erreurs
   },
   
   /**
