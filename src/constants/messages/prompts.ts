@@ -217,6 +217,20 @@ export const promptsMessages = {
       saveConflict: "Conflit détecté - Rechargez le prompt",
       saveNoPermission: "Vous n'avez pas la permission d'éditer",
       saveInvalid: "Formulaire invalide - Vérifiez les champs",
+      
+      // Sharing tooltips
+      sharing: {
+        addUser: "Ajouter un utilisateur",
+        removeAccess: "Retirer l'accès",
+        changePermission: "Modifier la permission",
+        copyLink: "Copier le lien de partage",
+      },
+      
+      // Tags tooltips
+      tags: {
+        add: "Ajouter un tag (Entrée)",
+        remove: (tag: string) => `Retirer le tag ${tag}`,
+      },
     },
   },
 
