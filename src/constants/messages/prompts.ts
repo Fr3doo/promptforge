@@ -243,6 +243,12 @@ export const promptsMessages = {
       content: "Utilisez {{variable}} pour créer des variables dynamiques",
       visibility: "Le partage public permet à tous les utilisateurs de voir votre prompt",
       permissions: "Choisissez si les utilisateurs peuvent uniquement lire ou aussi modifier",
+      
+      // Sharing help messages
+      sharing: {
+        email: "Adresse email de l'utilisateur à ajouter",
+        permission: "Niveau d'accès accordé (lecture ou édition)",
+      },
     },
   },
 } as const;
