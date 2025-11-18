@@ -92,21 +92,20 @@ export const messages = {
   },
   
   /**
-   * TOOLTIPS - Fusion progressive (PARTIELLEMENT MIGRÉ - Phase 1 Step 10.2, 10.9)
-   * ====================================================
+   * TOOLTIPS - Migration complète (Phase 3 - Step 10.4 COMPLÉTÉ ✅)
+   * ================================================================
    * 
    * Structure actuelle :
-   * - ✅ promptsMessages.tooltips.prompts : Tooltips des prompts
+   * - ✅ promptsMessages.tooltips.prompts : Tooltips des prompts (base)
+   *   - ✅ tooltips.prompts.sharing : Tooltips du partage (Step 10.4)
+   *   - ✅ tooltips.prompts.tags : Tooltips des tags (Step 10.4)
    * - ✅ variablesMessages.tooltips.variables : Tooltips des variables
    * - ✅ versionsMessages.tooltips.versions : Tooltips des versions
    * - ✅ commonMessages.tooltips.search : Tooltips de recherche (Step 10.2)
    * - ✅ uiMessages.tooltips.analyzer : Tooltips de l'analyseur (Step 10.9)
-   * - ⏳ oldMessages.tooltips : Tooltips NON MIGRÉS (~150 lignes)
-   *   - tooltips.sharing.* : Tooltips du partage
-   *   - tooltips.tags.* : Tooltips des tags
+   * - ⏳ oldMessages.tooltips : Fallback temporaire (duplication, à nettoyer Phase 4)
    * 
-   * TODO (Phase 3) :
-   * - Migrer tooltips.sharing, tooltips.tags → prompts.ts
+   * NOTE : Phase 3 complète, tous les tooltips sont migrés. Phase 4 supprimera oldMessages.
    */
   tooltips: {
     prompts: promptsMessages.tooltips.prompts,       // ✅ Migrés
@@ -118,18 +117,17 @@ export const messages = {
   },
   
   /**
-   * HELP - Fusion progressive (PARTIELLEMENT MIGRÉ)
-   * ================================================
+   * HELP - Migration complète (Phase 3 - Step 10.5 COMPLÉTÉ ✅)
+   * ============================================================
    * 
    * Structure actuelle :
-   * - ✅ promptsMessages.help.prompts : Aide inline des prompts
+   * - ✅ promptsMessages.help.prompts : Aide inline des prompts (base)
+   *   - ✅ help.prompts.sharing : Aide du partage (Step 10.5)
    * - ✅ variablesMessages.help.variables : Aide inline des variables
-   * - ⏳ oldMessages.help : Messages d'aide NON MIGRÉS (~100 lignes)
-   *   - help.versions.* : Aide inline des versions
-   *   - help.* : Autres messages d'aide
+   * - ✅ versionsMessages.help.versions : Aide inline des versions (Step 10.8)
+   * - ⏳ oldMessages.help : Fallback temporaire (duplication, à nettoyer Phase 4)
    * 
-   * TODO (Étape 10) :
-   * - Migrer help.versions → versions.ts
+   * NOTE : Phase 3 complète, tous les messages help sont migrés. Phase 4 supprimera oldMessages.
    */
   help: {
     prompts: promptsMessages.help.prompts,       // ✅ Migrés
