@@ -197,6 +197,7 @@ La structure est feature-based avec séparation stricte UI / logique / data et u
 .
 ├── src
 │   ├── components         # Design system shadcn-ui
+│   ├── constants/messages # Architecture modulaire des messages UI (9 modules)
 │   ├── features           # Domaines fonctionnels (prompts, variables, versions)
 │   ├── hooks              # Hooks transverses (sauvegarde, conflits, filtres)
 │   ├── integrations       # Client Supabase & types générés
@@ -284,6 +285,8 @@ Husky exécute lint + tests pré-commit, Commitlint garantit des messages confor
 ## 📚 Documentation liée
 - [ARCHITECTURE.md](./ARCHITECTURE.md)
 - [TESTING.md](./TESTING.md)
+- [MESSAGES_MIGRATION_GUIDE.md](./MESSAGES_MIGRATION_GUIDE.md) - Migration architecture modulaire des messages
+- [docs/DEVELOPER_QUICK_START_MESSAGES.md](./docs/DEVELOPER_QUICK_START_MESSAGES.md) - Guide rapide hooks de messages
 - [docs/SHARING_GUIDE.md](./docs/SHARING_GUIDE.md)
 - [docs/ERROR_BOUNDARY.md](./docs/ERROR_BOUNDARY.md)
 - [docs/CIRCULAR_DEPENDENCIES.md](./docs/CIRCULAR_DEPENDENCIES.md)
