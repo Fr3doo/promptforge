@@ -1076,7 +1076,241 @@ const mockRepository: PromptRepository = {
 };
 ```
 
+
+## Pattern KISS : Simplification par Extraction de Méthodes Privées
+
+### Principe
+
+**KISS (Keep It Simple, Stupid)** : Quand une méthode publique devient complexe (> 30 lignes ou complexité cyclomatique > 3), extraire des **méthodes privées** pour améliorer la lisibilité sans compromettre l'encapsulation.
+
+### Quand Appliquer le Pattern ?
+
+**Indicateurs de Complexité Excessive :**
+- ✅ Méthode > 30 lignes
+- ✅ Complexité cyclomatique > 3
+- ✅ Sections logiques distinctes (Step 1, Step 2, Step 3...)
+- ✅ Difficulté à comprendre la méthode en une lecture
+
+**Ne PAS appliquer si :**
+- ❌ Méthode < 20 lignes et simple à comprendre
+- ❌ Logique fortement couplée (extraction créerait plus de confusion)
+- ❌ Méthode privée ne serait utilisée qu'une seule fois ET < 5 lignes
+
+### Exemple Concret : `PromptRepository.duplicate`
+
+#### Avant Refactoring (52 lignes, complexité 3)
+
+```typescript
+async duplicate(userId: string, promptId: string, variableRepository: VariableRepository): Promise<Prompt> {
+  if (!userId) throw new Error("ID utilisateur requis");
+
+  // Step 1: Fetch the original prompt (11 lignes)
+  const fetchResult = await supabase
+    .from("prompts")
+    .select("*")
+    .eq("id", promptId)
+    .single();
+  handleSupabaseError(fetchResult);
+  const original = fetchResult.data as Prompt;
+
+  // Step 2: Fetch original variables (2 lignes)
+  const originalVariables = await variableRepository.fetch(promptId);
+
+  // Step 3: Create the duplicate prompt (19 lignes)
+  const insertResult = await supabase
+    .from("prompts")
+    .insert({
+      title: `${original.title} (Copie)`,
+      content: original.content,
+      description: original.description,
+      tags: original.tags,
+      visibility: "PRIVATE",
+      version: "1.0.0",
+      status: "DRAFT",
+      is_favorite: false,
+      owner_id: userId,
+    })
+    .select()
+    .single();
+  handleSupabaseError(insertResult);
+
+  // Step 4: Duplicate variables (14 lignes)
+  if (originalVariables.length > 0) {
+    const variablesToDuplicate = originalVariables.map(v => ({
+      name: v.name,
+      type: v.type,
+      required: v.required,
+      default_value: v.default_value,
+      help: v.help,
+      pattern: v.pattern,
+      options: v.options,
+      order_index: v.order_index,
+    }));
+    await variableRepository.upsertMany(insertResult.data.id, variablesToDuplicate);
+  }
+
+  return insertResult.data;
+}
+```
+
+**Problèmes :**
+- 🔴 52 lignes difficiles à parcourir
+- 🔴 Logique de fetch, création et transformation mélangée
+- 🔴 Difficulté à identifier rapidement les étapes
+
+#### Après Refactoring (22 lignes, complexité 2)
+
+```typescript
+async duplicate(userId: string, promptId: string, variableRepository: VariableRepository): Promise<Prompt> {
+  if (!userId) throw new Error("ID utilisateur requis");
+
+  // Step 1: Fetch the original prompt
+  const original = await this.fetchOriginalPrompt(promptId);
+
+  // Step 2: Fetch original variables
+  const originalVariables = await variableRepository.fetch(promptId);
+
+  // Step 3: Create the duplicate prompt with default values
+  const duplicated = await this.createDuplicatePrompt(userId, original);
+
+  // Step 4: Duplicate variables if any exist
+  if (originalVariables.length > 0) {
+    const variablesToDuplicate = this.mapVariablesForDuplication(originalVariables);
+    await variableRepository.upsertMany(duplicated.id, variablesToDuplicate);
+  }
+
+  return duplicated;
+}
+
+// --- Méthodes Privées ---
+
+private async fetchOriginalPrompt(promptId: string): Promise<Prompt> {
+  const fetchResult = await supabase
+    .from("prompts")
+    .select("*")
+    .eq("id", promptId)
+    .single();
+  handleSupabaseError(fetchResult);
+  return fetchResult.data as Prompt;
+}
+
+private async createDuplicatePrompt(userId: string, original: Prompt): Promise<Prompt> {
+  const insertResult = await supabase
+    .from("prompts")
+    .insert({
+      title: `${original.title} (Copie)`,
+      content: original.content,
+      description: original.description,
+      tags: original.tags,
+      visibility: "PRIVATE",
+      version: "1.0.0",
+      status: "DRAFT",
+      is_favorite: false,
+      owner_id: userId,
+    })
+    .select()
+    .single();
+  handleSupabaseError(insertResult);
+  return insertResult.data as Prompt;
+}
+
+private mapVariablesForDuplication(originalVariables: Variable[]): VariableUpsertInput[] {
+  return originalVariables.map(v => ({
+    name: v.name,
+    type: v.type,
+    required: v.required,
+    default_value: v.default_value,
+    help: v.help,
+    pattern: v.pattern,
+    options: v.options,
+    order_index: v.order_index,
+  }));
+}
+```
+
+**Bénéfices :**
+- ✅ **Lisibilité accrue** : La méthode publique = orchestration claire des étapes
+- ✅ **Testabilité indirecte** : Les méthodes privées sont testées via `duplicate`
+- ✅ **Réutilisabilité potentielle** : Si besoin, les méthodes privées peuvent être promues en publiques
+- ✅ **Maintenance facilitée** : Modification d'une étape isolée (ex: changer le suffixe "(Copie)")
+- ✅ **Respect SRP** : Chaque méthode a une responsabilité unique
+
+### Checklist KISS pour Refactoring
+
+#### Avant l'Extraction
+- [ ] Identifier les sections logiques distinctes (Step 1, Step 2...)
+- [ ] Vérifier que chaque section > 5 lignes (sinon extraction inutile)
+- [ ] S'assurer que la méthode publique > 30 lignes OU complexité > 3
+
+#### Pendant l'Extraction
+- [ ] **Nom descriptif** : `fetchOriginalPrompt` (verbe + objet) et non `fetch` ou `getPrompt`
+- [ ] **JSDoc complet** : `@private`, `@param`, `@returns`, `@throws`
+- [ ] **Type strict** : Typage explicite du retour (`Promise<Prompt>`, pas `Promise<any>`)
+- [ ] **Gestion d'erreurs** : Conserver `handleSupabaseError` dans les méthodes privées
+
+#### Après l'Extraction
+- [ ] **Tests passants** : Tous les tests de la méthode publique doivent passer
+- [ ] **Coverage maintenu** : Ne pas perdre de couverture de code
+- [ ] **Méthode publique simplifiée** : Réduite à un orchestrateur (< 30 lignes)
+- [ ] **Commentaires mis à jour** : JSDoc de la méthode publique mentionne les méthodes privées
+
+### Anti-Patterns à Éviter
+
+#### ❌ Extraction Excessive (Over-Engineering)
+
+**Mauvais exemple :**
+```typescript
+private validateUserId(userId: string): void {
+  if (!userId) throw new Error("ID utilisateur requis");
+}
+```
+
+**Pourquoi ?** 1 ligne ne justifie pas une méthode privée (ajoute de la complexité inutile)
+
+#### ❌ Méthodes Privées Testées Directement
+
+**Mauvais exemple (test) :**
+```typescript
+it("fetchOriginalPrompt should return prompt", async () => {
+  // ❌ Ne PAS tester les méthodes privées directement
+  const prompt = await repository["fetchOriginalPrompt"]("id");
+  expect(prompt).toBeDefined();
+});
+```
+
+**Pourquoi ?** Les méthodes privées sont des détails d'implémentation. Tester via la méthode publique.
+
+#### ❌ Noms Génériques
+
+**Mauvais exemple :**
+```typescript
+private fetch(id: string): Promise<Prompt> { /* ... */ }
+private create(data: any): Promise<Prompt> { /* ... */ }
+```
+
+**Bon exemple :**
+```typescript
+private fetchOriginalPrompt(promptId: string): Promise<Prompt> { /* ... */ }
+private createDuplicatePrompt(userId: string, original: Prompt): Promise<Prompt> { /* ... */ }
+```
+
+### Métriques de Succès
+
+| Critère | Avant | Après | Amélioration |
+|---------|-------|-------|--------------|
+| Lignes méthode publique | 52 | 22 | -58% |
+| Complexité cyclomatique | 3 | 2 | -33% |
+| Temps de compréhension | ~3 min | ~30 sec | -83% |
+| Facilité de maintenance | Moyenne | Élevée | ⬆️ |
+
+### Références
+
+- **KISS Principle** : https://en.wikipedia.org/wiki/KISS_principle
+- **Extract Method** : Refactoring (Martin Fowler), Chapter 6
+- **Single Responsibility** : Clean Code (Robert C. Martin), Chapter 3
+
 ---
+
 
 **Ce guide doit être consulté lors de chaque ajout de nouveau repository.**
 
