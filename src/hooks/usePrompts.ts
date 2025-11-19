@@ -6,6 +6,7 @@ import { messages } from "@/constants/messages";
 import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
 import { usePromptFavoriteService } from "@/contexts/PromptFavoriteServiceContext";
 import { usePromptVisibilityService } from "@/contexts/PromptVisibilityServiceContext";
+import { usePromptDuplicationService } from "@/contexts/PromptDuplicationServiceContext";
 import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
 import { useAuth } from "@/hooks/useAuth";
 import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
@@ -181,14 +182,14 @@ export function useToggleFavorite() {
 // Hook pour dupliquer un prompt
 export function useDuplicatePrompt() {
   const queryClient = useQueryClient();
-  const repository = usePromptRepository();
+  const duplicationService = usePromptDuplicationService();
   const variableRepository = useVariableRepository();
   const { user } = useAuth();
   
   return useMutation({
     mutationFn: (promptId: string) => {
       if (!user) throw new Error("Non authentifié");
-      return repository.duplicate(user.id, promptId, variableRepository);
+      return duplicationService.duplicate(user.id, promptId, variableRepository);
     },
     retry: shouldRetryMutation,
     retryDelay: getRetryDelay,

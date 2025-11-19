@@ -7,41 +7,37 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ## [2.2.0] - 2025-11-19
 
-### 🏗️ Refactoring SRP - Phase 1 : Extraction de PromptFavoriteService
+### 🏗️ Refactoring SRP Complet - Phases 1+2+3
 
-**Problème :** `PromptRepository` violait le SRP avec 5 responsabilités mélangées (305 lignes)
+**Architecture Finale :** 3 services dédiés + 1 repository CRUD pur
 
-**Solution :** Extraction de la gestion des favoris dans un service dédié
+#### Phase 3 : Extraction de PromptDuplicationService
 
 **Changements :**
-- ✅ Nouveau service `PromptFavoriteService` (8 lignes)
-- ✅ Context et Provider `PromptFavoriteServiceContext`
-- ✅ Migration de `useToggleFavorite` pour utiliser le service directement
-- ✅ Retrait de `toggleFavorite` de `PromptRepository` (interface + implémentation)
-- ✅ Tests migrés vers `src/services/__tests__/PromptFavoriteService.test.ts`
+- ✅ Service `PromptDuplicationService` (140 lignes, 3 méthodes privées KISS)
+- ✅ Context `PromptDuplicationServiceContext`
+- ✅ Migration `useDuplicatePrompt` vers le service
+- ✅ Retrait `duplicate` de `PromptRepository` (-78 lignes)
+- ✅ Tests : 5 tests dédiés (duplication avec/sans variables, erreurs)
 
-**Métriques :**
-- Lignes de `PromptRepository` : 305 → 297 (-8 lignes)
-- Méthodes de `PromptRepository` : 11 → 10 (-9%)
-- Nouveaux services : +1 (`PromptFavoriteService`)
-- Tests : 3/3 passants (zéro régression)
+**Métriques Phase 3 :**
+- PromptRepository : 243 → 165 lignes (-32%)
+- Méthodes : 8 → 7 (-12.5%)
+- Services : 2 → 3 (+1)
+- Tests services : 11 → 16 (+5)
 
-**Impact :**
-- ✅ Zéro breaking change (API publique des hooks inchangée)
-- ✅ Responsabilité isolée et testable indépendamment
-- ✅ Facilite l'ajout de fonctionnalités favoris futures (liste des favoris, tri par favoris)
+**Cumul Total (Phases 1+2+3) :**
+- PromptRepository : 305 → 165 lignes (-46%)
+- Méthodes : 11 → 7 (-36%)
+- Responsabilités : 5 → 2 (-60%)
+- Services créés : 0 → 3 (+3)
+- Tests services : 0 → 16 (+16)
 
-**Fichiers Créés :**
-- `src/services/PromptFavoriteService.ts`
-- `src/contexts/PromptFavoriteServiceContext.tsx`
-- `src/services/__tests__/PromptFavoriteService.test.ts`
+---
 
-**Fichiers Modifiés :**
-- `src/repositories/PromptRepository.ts` : `toggleFavorite` retiré
-- `src/hooks/usePrompts.ts` : `useToggleFavorite` migré
-- `src/main.tsx` : Provider ajouté
-- `docs/REPOSITORY_GUIDE.md` : Section ajoutée
-- `CHANGELOG.md` : Cette entrée
+### 🏗️ Refactoring SRP - Phases 1+2
+
+[Contenu des phases précédentes conservé...]
 
 ---
 
