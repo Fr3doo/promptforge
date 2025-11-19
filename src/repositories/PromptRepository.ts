@@ -124,6 +124,24 @@ export class SupabasePromptRepository implements PromptRepository {
   }
 
   /**
+   * Fetches the original prompt to be duplicated
+   * @private
+   * @param promptId - ID of the prompt to fetch
+   * @returns The original prompt
+   * @throws Error if prompt not found or database error
+   */
+  private async fetchOriginalPrompt(promptId: string): Promise<Prompt> {
+    const fetchResult = await supabase
+      .from("prompts")
+      .select("*")
+      .eq("id", promptId)
+      .single();
+    
+    handleSupabaseError(fetchResult);
+    return fetchResult.data as Prompt;
+  }
+
+  /**
    * Duplicates a prompt and its variables
    * Uses VariableRepository for clean separation of concerns
    * 
@@ -136,13 +154,7 @@ export class SupabasePromptRepository implements PromptRepository {
     if (!userId) throw new Error("ID utilisateur requis");
 
     // Step 1: Fetch the original prompt
-    const fetchResult = await supabase
-      .from("prompts")
-      .select("*")
-      .eq("id", promptId)
-      .single();
-    
-    handleSupabaseError(fetchResult);
+    const original = await this.fetchOriginalPrompt(promptId);
 
     // Step 2: Fetch original variables using VariableRepository
     const originalVariables = await variableRepository.fetch(promptId);
@@ -151,10 +163,10 @@ export class SupabasePromptRepository implements PromptRepository {
     const insertResult = await supabase
       .from("prompts")
       .insert({
-        title: `${fetchResult.data.title} (Copie)`,
-        content: fetchResult.data.content,
-        description: fetchResult.data.description,
-        tags: fetchResult.data.tags,
+        title: `${original.title} (Copie)`,
+        content: original.content,
+        description: original.description,
+        tags: original.tags,
         visibility: "PRIVATE",
         version: "1.0.0",
         status: "DRAFT",
