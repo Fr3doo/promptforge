@@ -133,7 +133,7 @@ export const messages = {
     prompts: promptsMessages.help.prompts,       // ✅ Migrés
     variables: variablesMessages.help.variables, // ✅ Migrés
     versions: versionsMessages.help.versions,    // ✅ Migrés (Step 10.8)
-    ...oldMessages.help,                         // ⏳ autres (À MIGRER)
+    // ✅ Phase 4.3 : oldMessages.help supprimé (100% migré vers modules)
   },
   
   // Messages UI (composants réutilisables)
