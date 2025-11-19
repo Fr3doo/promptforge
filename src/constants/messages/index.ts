@@ -151,7 +151,10 @@ export const messages = {
   },
   
   // Messages système (success, info, loading, actions, copy, system, analysis)
-  success: systemMessages.success,
+  success: {
+    ...systemMessages.success,
+    signedOut: authMessages.success.signedOut,
+  },
   info: systemMessages.info,
   loading: systemMessages.loading,
   actions: systemMessages.actions,

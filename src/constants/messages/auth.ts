@@ -28,6 +28,11 @@ export const authMessages = {
     logout: "Déconnexion",
   },
 
+  // Success messages
+  success: {
+    signedOut: "Déconnexion réussie",
+  },
+
   // Authentication errors
   errors: {
     auth: {
