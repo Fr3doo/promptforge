@@ -12,10 +12,15 @@ import type { Prompt } from "@/repositories/PromptRepository";
 // Hook de lecture - liste complète (tous les prompts accessibles)
 export function usePrompts() {
   const repository = usePromptRepository();
+  const { user } = useAuth();
   
   return useQuery({
-    queryKey: ["prompts"],
-    queryFn: () => repository.fetchAll(),
+    queryKey: ["prompts", user?.id],
+    queryFn: () => {
+      if (!user) throw new Error("Utilisateur non authentifié");
+      return repository.fetchAll(user.id);
+    },
+    enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
@@ -23,10 +28,15 @@ export function usePrompts() {
 // Hook de lecture - seulement les prompts possédés par l'utilisateur
 export function useOwnedPrompts() {
   const repository = usePromptRepository();
+  const { user } = useAuth();
   
   return useQuery({
-    queryKey: ["prompts", "owned"],
-    queryFn: () => repository.fetchOwned(),
+    queryKey: ["prompts", "owned", user?.id],
+    queryFn: () => {
+      if (!user) throw new Error("Utilisateur non authentifié");
+      return repository.fetchOwned(user.id);
+    },
+    enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
@@ -34,10 +44,15 @@ export function useOwnedPrompts() {
 // Hook de lecture - prompts partagés avec moi (partage privé)
 export function useSharedWithMePrompts() {
   const repository = usePromptRepository();
+  const { user } = useAuth();
   
   return useQuery({
-    queryKey: ["prompts", "shared-with-me"],
-    queryFn: () => repository.fetchSharedWithMe(),
+    queryKey: ["prompts", "shared-with-me", user?.id],
+    queryFn: () => {
+      if (!user) throw new Error("Utilisateur non authentifié");
+      return repository.fetchSharedWithMe(user.id);
+    },
+    enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }

@@ -6,9 +6,9 @@ import type { VariableRepository } from "./VariableRepository";
 export type Prompt = Tables<"prompts"> & { share_count?: number };
 
 export interface PromptRepository {
-  fetchAll(): Promise<Prompt[]>;
-  fetchOwned(): Promise<Prompt[]>;
-  fetchSharedWithMe(): Promise<Prompt[]>;
+  fetchAll(userId: string): Promise<Prompt[]>;
+  fetchOwned(userId: string): Promise<Prompt[]>;
+  fetchSharedWithMe(userId: string): Promise<Prompt[]>;
   fetchById(id: string): Promise<Prompt>;
   create(userId: string, promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt>;
   update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
@@ -20,9 +20,8 @@ export interface PromptRepository {
 }
 
 export class SupabasePromptRepository implements PromptRepository {
-  async fetchAll(): Promise<Prompt[]> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Utilisateur non authentifié");
+  async fetchAll(userId: string): Promise<Prompt[]> {
+    if (!userId) throw new Error("ID utilisateur requis");
     
     const result = await supabase
       .from("prompts_with_share_count")
@@ -33,29 +32,27 @@ export class SupabasePromptRepository implements PromptRepository {
     return result.data as Prompt[];
   }
 
-  async fetchOwned(): Promise<Prompt[]> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Utilisateur non authentifié");
+  async fetchOwned(userId: string): Promise<Prompt[]> {
+    if (!userId) throw new Error("ID utilisateur requis");
     
     const result = await supabase
       .from("prompts_with_share_count")
       .select("*")
-      .eq("owner_id", user.id)
+      .eq("owner_id", userId)
       .order("updated_at", { ascending: false });
     
     handleSupabaseError(result);
     return result.data as Prompt[];
   }
 
-  async fetchSharedWithMe(): Promise<Prompt[]> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Utilisateur non authentifié");
+  async fetchSharedWithMe(userId: string): Promise<Prompt[]> {
+    if (!userId) throw new Error("ID utilisateur requis");
     
     // Fetch prompt_ids shared with the current user
     const sharesResult = await supabase
       .from("prompt_shares")
       .select("prompt_id")
-      .eq("shared_with_user_id", user.id);
+      .eq("shared_with_user_id", userId);
     
     handleSupabaseError(sharesResult);
     

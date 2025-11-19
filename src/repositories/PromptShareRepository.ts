@@ -15,9 +15,9 @@ export interface PromptShareWithProfile extends PromptShare {
 
 export interface PromptShareRepository {
   getShares(promptId: string): Promise<PromptShareWithProfile[]>;
-  addShare(promptId: string, sharedWithUserId: string, permission: "READ" | "WRITE"): Promise<void>;
-  updateSharePermission(shareId: string, permission: "READ" | "WRITE"): Promise<void>;
-  deleteShare(shareId: string): Promise<void>;
+  addShare(promptId: string, sharedWithUserId: string, permission: "READ" | "WRITE", currentUserId: string): Promise<void>;
+  updateSharePermission(shareId: string, permission: "READ" | "WRITE", currentUserId: string): Promise<void>;
+  deleteShare(shareId: string, currentUserId: string): Promise<void>;
   getUserByEmail(email: string): Promise<{ id: string } | null>;
   isPromptOwner(promptId: string, userId: string): Promise<boolean>;
   getShareById(shareId: string): Promise<PromptShare | null>;
@@ -65,20 +65,16 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
     return result.data ? { id: result.data } : null;
   }
 
-  async addShare(promptId: string, sharedWithUserId: string, permission: "READ" | "WRITE"): Promise<void> {
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      throw new Error("SESSION_EXPIRED");
-    }
+  async addShare(promptId: string, sharedWithUserId: string, permission: "READ" | "WRITE", currentUserId: string): Promise<void> {
+    if (!currentUserId) throw new Error("SESSION_EXPIRED");
 
     // Prevent sharing with oneself
-    if (sharedWithUserId === user.id) {
+    if (sharedWithUserId === currentUserId) {
       throw new Error("SELF_SHARE");
     }
 
     // Verify that the user is the prompt owner
-    const isOwner = await this.isPromptOwner(promptId, user.id);
+    const isOwner = await this.isPromptOwner(promptId, currentUserId);
     if (!isOwner) {
       throw new Error("NOT_PROMPT_OWNER");
     }
@@ -89,18 +85,14 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
         prompt_id: promptId,
         shared_with_user_id: sharedWithUserId,
         permission,
-        shared_by: user.id,
+        shared_by: currentUserId,
       });
 
     handleSupabaseError(result);
   }
 
-  async updateSharePermission(shareId: string, permission: "READ" | "WRITE"): Promise<void> {
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      throw new Error("SESSION_EXPIRED");
-    }
+  async updateSharePermission(shareId: string, permission: "READ" | "WRITE", currentUserId: string): Promise<void> {
+    if (!currentUserId) throw new Error("SESSION_EXPIRED");
 
     // Get share details
     const share = await this.getShareById(shareId);
@@ -109,8 +101,8 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
     }
 
     // Verify authorization: user must be either the share creator or the prompt owner
-    const isSharedBy = share.shared_by === user.id;
-    const isPromptOwner = await this.isPromptOwner(share.prompt_id, user.id);
+    const isSharedBy = share.shared_by === currentUserId;
+    const isPromptOwner = await this.isPromptOwner(share.prompt_id, currentUserId);
 
     if (!isSharedBy && !isPromptOwner) {
       throw new Error("UNAUTHORIZED_UPDATE");
@@ -124,12 +116,8 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
     handleSupabaseError(result);
   }
 
-  async deleteShare(shareId: string): Promise<void> {
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      throw new Error("SESSION_EXPIRED");
-    }
+  async deleteShare(shareId: string, currentUserId: string): Promise<void> {
+    if (!currentUserId) throw new Error("SESSION_EXPIRED");
 
     // Get share details
     const share = await this.getShareById(shareId);
@@ -138,8 +126,8 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
     }
 
     // Verify authorization: user must be either the share creator or the prompt owner
-    const isSharedBy = share.shared_by === user.id;
-    const isPromptOwner = await this.isPromptOwner(share.prompt_id, user.id);
+    const isSharedBy = share.shared_by === currentUserId;
+    const isPromptOwner = await this.isPromptOwner(share.prompt_id, currentUserId);
 
     if (!isSharedBy && !isPromptOwner) {
       throw new Error("UNAUTHORIZED_DELETE");
