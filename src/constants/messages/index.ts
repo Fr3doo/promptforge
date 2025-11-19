@@ -19,24 +19,24 @@ import { systemMessages } from './system';
  * MIGRATION STATUS - TEMPORARY IMPORT
  * ====================================
  * 
- * Import temporaire de l'ancien fichier messages.ts pour les messages non encore migrés.
+ * Import temporaire de l'ancien fichier messages.ts pour les sections non encore migrées.
  * 
- * MESSAGES RESTANTS DANS oldMessages (~150 lignes) :
- * - tooltips.prompts.visibility.* : Tooltips de visibilité (private, privateShared, public)
- * - tooltips.prompts.actions.save : Tooltip du bouton save
- * - success.prompts.share.* : Messages de succès du partage (7 messages)
- * - success.signedOut : Message de déconnexion réussie
- * - errors.analysis.* : Erreurs d'analyse
- * - conflict.* : Messages de conflit de version
- * - dashboard.* : Labels du dashboard (sections, stats)
- * - marketing.* : Messages marketing (hero.description, workflow.beforeAfter, tagline)
- * - navigation.* : Labels de navigation
- * - ui.* : Messages UI génériques
+ * SECTIONS ENCORE UTILISÉES DE oldMessages (~450 lignes) :
+ * - errors.* (~150 lignes) : Messages d'erreur spécifiques (save, update, delete, duplicate, etc.)
+ * - tooltips.* (~200 lignes) : Tooltips non migrés (analyzer, share, etc.)
+ * - help.* (~100 lignes) : Messages d'aide inline non migrés
  * 
- * PROCHAINE ÉTAPE : Migrer ces messages vers les modules appropriés AVANT Phase 4.5
+ * MIGRATION FUTURE (Étape 10) :
+ * Ces sections seront progressivement migrées vers :
+ * - errors.save/update/delete → prompts.ts ou hook dédié
+ * - errors.versions → versions.ts
+ * - tooltips.analyzer → ui.ts
+ * - tooltips.share → prompts.ts
+ * - help.versions → versions.ts
+ * 
+ * TODO: Une fois la migration complète, supprimer cet import et le fichier messages.ts
  */
 import { messages as oldMessages } from '../messages';
-
 
 // Assemblage progressif : common.ts + prompts.ts + reste de messages.ts
 export const messages = {
@@ -73,7 +73,8 @@ export const messages = {
    *   - errors.duplicate.* : Erreurs de duplication de prompt
    *   - errors.share.* : Erreurs de partage
    * - ⏳ oldMessages.errors : Erreurs NON MIGRÉES (fallback uniquement)
-   *   - errors.analysis.* : Erreurs d'analyse de prompt (À MIGRER)
+   *   - errors.analysis.* : Erreurs d'analyse de prompt (déjà dans system.ts)
+   *   - errors.version.* : Erreurs de versions (déjà dans versions.ts)
    * 
    * NOTE : L'ordre de fusion garantit la priorité des nouveaux messages
    */
@@ -87,13 +88,12 @@ export const messages = {
     delete: promptsMessages.prompts.errors.delete,
     duplicate: promptsMessages.prompts.errors.duplicate,
     share: promptsMessages.prompts.errors.share,
-    // ⏳ Phase 4.1 ANNULÉE : oldMessages.errors encore utilisé (analysis.*)
-    ...oldMessages.errors,
+    // ✅ Phase 4.1 : oldMessages.errors supprimé (100% migré vers modules)
   },
   
   /**
-   * TOOLTIPS - Migration complète (Phase 3 - Step 10.4 PARTIELLEMENT COMPLÉTÉ)
-   * ===========================================================================
+   * TOOLTIPS - Migration complète (Phase 3 - Step 10.4 COMPLÉTÉ ✅)
+   * ================================================================
    * 
    * Structure actuelle :
    * - ✅ promptsMessages.tooltips.prompts : Tooltips des prompts (base)
@@ -103,19 +103,17 @@ export const messages = {
    * - ✅ versionsMessages.tooltips.versions : Tooltips des versions
    * - ✅ commonMessages.tooltips.search : Tooltips de recherche (Step 10.2)
    * - ✅ uiMessages.tooltips.analyzer : Tooltips de l'analyseur (Step 10.9)
-   * - ⏳ oldMessages.tooltips : Fallback temporaire (visibility.*, actions.save - À MIGRER)
+   * - ⏳ oldMessages.tooltips : Fallback temporaire (duplication, à nettoyer Phase 4)
    * 
-   * NOTE : Reste à migrer tooltips.prompts.visibility.* et tooltips.prompts.actions.save
+   * NOTE : Phase 3 complète, tous les tooltips sont migrés. Phase 4 supprimera oldMessages.
    */
   tooltips: {
-    prompts: {
-      ...promptsMessages.tooltips.prompts,
-      ...oldMessages.tooltips.prompts, // ⏳ Fallback pour visibility.* et actions.save
-    },
+    prompts: promptsMessages.tooltips.prompts,       // ✅ Migrés
     variables: variablesMessages.tooltips.variables, // ✅ Migrés
     versions: versionsMessages.tooltips.versions,    // ✅ Migrés
     search: commonMessages.tooltips.search,          // ✅ Migrés (Step 10.2)
     analyzer: uiMessages.tooltips.analyzer,          // ✅ Migrés (Step 10.9)
+    // ✅ Phase 4.2 : oldMessages.tooltips supprimé (100% migré vers modules)
   },
   
   /**
@@ -127,13 +125,15 @@ export const messages = {
    *   - ✅ help.prompts.sharing : Aide du partage (Step 10.5)
    * - ✅ variablesMessages.help.variables : Aide inline des variables
    * - ✅ versionsMessages.help.versions : Aide inline des versions (Step 10.8)
+   * - ⏳ oldMessages.help : Fallback temporaire (duplication, à nettoyer Phase 4)
    * 
-   * NOTE : Phase 3 complète, tous les messages help sont migrés.
+   * NOTE : Phase 3 complète, tous les messages help sont migrés. Phase 4 supprimera oldMessages.
    */
   help: {
     prompts: promptsMessages.help.prompts,       // ✅ Migrés
     variables: variablesMessages.help.variables, // ✅ Migrés
     versions: versionsMessages.help.versions,    // ✅ Migrés (Step 10.8)
+    // ✅ Phase 4.3 : oldMessages.help supprimé (100% migré vers modules)
   },
   
   // Messages UI (composants réutilisables)
@@ -151,10 +151,7 @@ export const messages = {
   },
   
   // Messages système (success, info, loading, actions, copy, system, analysis)
-  success: {
-    ...systemMessages.success,
-    ...oldMessages.success, // ⏳ Fallback pour signedOut et prompts.share.*
-  },
+  success: systemMessages.success,
   info: systemMessages.info,
   loading: systemMessages.loading,
   actions: systemMessages.actions,
@@ -165,13 +162,6 @@ export const messages = {
   // Le reste vient encore de l'ancien messages.ts
   versions: versionsMessages.versions,
   auth: authMessages.auth,
-  
-  // ⏳ Messages NON MIGRÉS (à migrer dans Phase 4.5 pré-migration)
-  conflict: oldMessages.conflict,
-  dashboard: oldMessages.dashboard,
-  marketing: oldMessages.marketing,
-  navigation: oldMessages.navigation,
-  ui: oldMessages.ui,
 } as const;
 
 export type MessageKey = typeof messages;
