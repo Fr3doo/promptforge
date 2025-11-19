@@ -30,8 +30,8 @@ const Dashboard = () => {
     emptyComponent: (
       <Card>
         <CardHeader>
-          <CardTitle>{messages.dashboard.noDataAvailable}</CardTitle>
-          <CardDescription>{messages.dashboard.noDataDescription}</CardDescription>
+          <CardTitle>{messages.dashboard.emptyState.title}</CardTitle>
+          <CardDescription>{messages.dashboard.emptyState.description}</CardDescription>
         </CardHeader>
       </Card>
     ),
@@ -59,7 +59,7 @@ const Dashboard = () => {
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4">
           <h1 className="text-2xl font-bold">{messages.dashboard.title}</h1>
-          <p className="text-muted-foreground">{messages.dashboard.subtitle}</p>
+          <p className="text-muted-foreground">{messages.dashboard.pageDescription}</p>
         </div>
       </div>
 
@@ -69,23 +69,23 @@ const Dashboard = () => {
           <section>
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">{messages.dashboard.mostUsedPrompts}</h2>
+              <h2 className="text-xl font-semibold">{messages.dashboard.sections.usage}</h2>
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {dashboardData.usageStats.map((stat) => (
                 <Card key={stat.promptId}>
                   <CardHeader>
                     <CardTitle className="text-base">{stat.title}</CardTitle>
-                    <CardDescription>{messages.dashboard.usageStatistics}</CardDescription>
+                    <CardDescription>Statistiques d'utilisation</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">{messages.dashboard.usages}</span>
+                        <span className="text-sm text-muted-foreground">Utilisations</span>
                         <span className="font-semibold">{stat.usageCount}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">{messages.dashboard.successRate}</span>
+                        <span className="text-sm text-muted-foreground">Taux de succès</span>
                         <span className="font-semibold">{stat.successRate.toFixed(0)}%</span>
                       </div>
                     </div>
@@ -101,7 +101,7 @@ const Dashboard = () => {
           <section>
             <div className="flex items-center gap-2 mb-4">
               <Clock className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">{messages.dashboard.recentlyModified}</h2>
+              <h2 className="text-xl font-semibold">{messages.dashboard.sections.recent}</h2>
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {dashboardData.recentPrompts.map((prompt) => (
@@ -131,7 +131,7 @@ const Dashboard = () => {
           <section>
             <div className="flex items-center gap-2 mb-4">
               <Star className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">{messages.dashboard.favoritePrompts}</h2>
+              <h2 className="text-xl font-semibold">{messages.dashboard.sections.favorites}</h2>
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {dashboardData.favoritePrompts.map((prompt) => (
@@ -162,7 +162,7 @@ const Dashboard = () => {
           <section>
             <div className="flex items-center gap-2 mb-4">
               <Share2 className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">{messages.dashboard.communityShared}</h2>
+              <h2 className="text-xl font-semibold">{messages.dashboard.sections.shared}</h2>
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {dashboardData.sharedPrompts.map((prompt) => (

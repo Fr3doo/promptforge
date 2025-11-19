@@ -47,9 +47,9 @@ export function useAddPromptShare(promptId: string) {
     },
     retry: shouldRetryMutation,
     retryDelay: getRetryDelay,
-    onSuccess: ({ email, permission }) => {
+    onSuccess: ({ email }) => {
       queryClient.invalidateQueries({ queryKey: ["prompt-shares", promptId] });
-      promptMessages.showShareAdded(email, permission);
+      promptMessages.showShareAdded(email);
     },
     onError: (error: any) => {
       if (error.message === "USER_NOT_FOUND") {
