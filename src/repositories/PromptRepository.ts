@@ -1,7 +1,7 @@
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { handleSupabaseError } from "@/lib/errorHandler";
-import type { VariableRepository } from "./VariableRepository";
+import type { VariableRepository, VariableUpsertInput, Variable } from "./VariableRepository";
 
 export type Prompt = Tables<"prompts"> & { share_count?: number };
 
@@ -171,6 +171,26 @@ export class SupabasePromptRepository implements PromptRepository {
   }
 
   /**
+   * Maps original variables to the format needed for duplication
+   * Removes id and prompt_id to allow creation of new variable records
+   * @private
+   * @param originalVariables - The variables from the original prompt
+   * @returns Array of variable data ready for upsertMany
+   */
+  private mapVariablesForDuplication(originalVariables: Variable[]): VariableUpsertInput[] {
+    return originalVariables.map(v => ({
+      name: v.name,
+      type: v.type,
+      required: v.required,
+      default_value: v.default_value,
+      help: v.help,
+      pattern: v.pattern,
+      options: v.options,
+      order_index: v.order_index,
+    }));
+  }
+
+  /**
    * Duplicates a prompt and its variables
    * Uses VariableRepository for clean separation of concerns
    * 
@@ -191,19 +211,9 @@ export class SupabasePromptRepository implements PromptRepository {
     // Step 3: Create the duplicate prompt with default values
     const duplicated = await this.createDuplicatePrompt(userId, original);
 
-    // Step 4: Duplicate variables using VariableRepository.upsertMany
+    // Step 4: Duplicate variables if any exist
     if (originalVariables.length > 0) {
-      const variablesToDuplicate = originalVariables.map(v => ({
-        name: v.name,
-        type: v.type,
-        required: v.required,
-        default_value: v.default_value,
-        help: v.help,
-        pattern: v.pattern,
-        options: v.options,
-        order_index: v.order_index,
-      }));
-
+      const variablesToDuplicate = this.mapVariablesForDuplication(originalVariables);
       await variableRepository.upsertMany(duplicated.id, variablesToDuplicate);
     }
 
