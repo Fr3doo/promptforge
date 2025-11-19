@@ -1466,8 +1466,32 @@ await visibilityService.updatePublicPermission("prompt-id", "WRITE");
 
 ---
 
+## PromptDuplicationService
+
+**Responsabilité Unique :** Duplication complète de prompts avec leurs variables
+
+**Interface :**
+```typescript
+interface PromptDuplicationService {
+  duplicate(userId: string, promptId: string, variableRepository: VariableRepository): Promise<Prompt>;
+}
+```
+
+**Comportement :**
+- Titre : `${original} (Copie)`
+- Visibilité : PRIVATE (toujours)
+- Status : DRAFT (toujours)
+- Version : 1.0.0 (reset)
+- Variables : Copiées avec nouveaux IDs
+
+**Bénéfices :**
+- ✅ Responsabilité isolée (duplication)
+- ✅ Testable indépendamment (5 tests)
+- ✅ Pattern KISS (3 méthodes privées)
+
+---
 
 **Ce guide doit être consulté lors de chaque ajout de nouveau repository.**
 
-**Dernière mise à jour :** 2025-01-21  
+**Dernière mise à jour :** 2025-11-19
 **Responsable :** Équipe Architecture PromptForge

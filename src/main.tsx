@@ -7,6 +7,7 @@ import { AnalysisRepositoryProvider } from "./contexts/AnalysisRepositoryContext
 import { PromptShareRepositoryProvider } from "./contexts/PromptShareRepositoryContext.tsx";
 import { PromptFavoriteServiceProvider } from "./contexts/PromptFavoriteServiceContext.tsx";
 import { PromptVisibilityServiceProvider } from "./contexts/PromptVisibilityServiceContext.tsx";
+import { PromptDuplicationServiceProvider } from "./contexts/PromptDuplicationServiceContext.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 
 createRoot(document.getElementById("root")!).render(
@@ -17,7 +18,9 @@ createRoot(document.getElementById("root")!).render(
           <PromptShareRepositoryProvider>
             <PromptFavoriteServiceProvider>
               <PromptVisibilityServiceProvider>
-                <App />
+                <PromptDuplicationServiceProvider>
+                  <App />
+                </PromptDuplicationServiceProvider>
               </PromptVisibilityServiceProvider>
             </PromptFavoriteServiceProvider>
           </PromptShareRepositoryProvider>
