@@ -588,34 +588,89 @@ export const createVariableRepository = (): VariableRepository => {
 ```typescript
 // src/repositories/PromptRepository.ts (extrait)
 export interface PromptRepository {
-  // CRUD standard
-  fetchAll(): Promise<Prompt[]>;
+  // IMPORTANT: Toutes les méthodes de lecture nécessitent userId pour RLS
+  fetchAll(userId: string): Promise<Prompt[]>;
+  fetchOwned(userId: string): Promise<Prompt[]>;
+  fetchSharedWithMe(userId: string): Promise<Prompt[]>;
   fetchById(id: string): Promise<Prompt>;
   
-  // IMPORTANT: userId passé en paramètre, pas récupéré via auth
+  // IMPORTANT: userId passé en paramètre, JAMAIS récupéré via supabase.auth
   create(userId: string, promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt>;
   
   update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
   delete(id: string): Promise<void>;
   
-  // Opérations métier - userId en paramètre
+  // Opérations métier - userId en paramètre quand nécessaire
   duplicate(userId: string, promptId: string, variableRepository: VariableRepository): Promise<Prompt>;
   toggleFavorite(id: string, currentState: boolean): Promise<void>;
-  toggleVisibility(id: string, currentVisibility: "PRIVATE" | "SHARED"): Promise<"PRIVATE" | "SHARED">;
+  toggleVisibility(id: string, currentVisibility: "PRIVATE" | "SHARED", publicPermission?: "READ" | "WRITE"): Promise<"PRIVATE" | "SHARED">;
+  updatePublicPermission(id: string, permission: "READ" | "WRITE"): Promise<void>;
 }
 
 export class SupabasePromptRepository implements PromptRepository {
-  // ... méthodes CRUD ...
+  async fetchAll(userId: string): Promise<Prompt[]> {
+    // Validation du paramètre SANS appeler supabase.auth
+    if (!userId) throw new Error("ID utilisateur requis");
+    
+    const result = await supabase
+      .from("prompts_with_share_count")
+      .select("*")
+      .order("updated_at", { ascending: false });
+    
+    handleSupabaseError(result);
+    return result.data as Prompt[];
+  }
+
+  async fetchOwned(userId: string): Promise<Prompt[]> {
+    if (!userId) throw new Error("ID utilisateur requis");
+    
+    const result = await supabase
+      .from("prompts_with_share_count")
+      .select("*")
+      .eq("owner_id", userId)
+      .order("updated_at", { ascending: false });
+    
+    handleSupabaseError(result);
+    return result.data as Prompt[];
+  }
+
+  async fetchSharedWithMe(userId: string): Promise<Prompt[]> {
+    if (!userId) throw new Error("ID utilisateur requis");
+    
+    // 1. Récupérer les IDs des prompts partagés
+    const sharesResult = await supabase
+      .from("prompt_shares")
+      .select("prompt_id")
+      .eq("shared_with_user_id", userId);
+    
+    handleSupabaseError(sharesResult);
+    
+    if (!sharesResult.data || sharesResult.data.length === 0) {
+      return [];
+    }
+    
+    const promptIds = sharesResult.data.map(share => share.prompt_id);
+    
+    // 2. Récupérer les prompts correspondants
+    const result = await supabase
+      .from("prompts_with_share_count")
+      .select("*")
+      .in("id", promptIds)
+      .order("updated_at", { ascending: false });
+    
+    handleSupabaseError(result);
+    return result.data as Prompt[];
+  }
 
   async create(userId: string, promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt> {
-    // Valider userId SANS appeler supabase.auth
+    // Validation du paramètre SANS appeler supabase.auth
     if (!userId) throw new Error("ID utilisateur requis");
-
+    
     const result = await supabase
       .from("prompts")
       .insert({
         ...promptData,
-        owner_id: userId, // Utiliser le userId fourni
+        owner_id: userId,
       })
       .select()
       .single();
@@ -624,66 +679,14 @@ export class SupabasePromptRepository implements PromptRepository {
     return result.data;
   }
 
-  async duplicate(
-    userId: string,
-    promptId: string,
-    variableRepository: VariableRepository
-  ): Promise<Prompt> {
-    // Valider userId SANS appeler supabase.auth
+  async duplicate(userId: string, promptId: string, variableRepository: VariableRepository): Promise<Prompt> {
     if (!userId) throw new Error("ID utilisateur requis");
-
-    // 1. Récupérer le prompt original
-    const original = await this.fetchById(promptId);
-
-    // 2. Créer une copie avec le userId fourni
-    const copy = await supabase
-      .from("prompts")
-      .insert({
-        title: `${original.title} (Copie)`,
-        content: original.content,
-        description: original.description,
-        tags: original.tags,
-        status: "DRAFT",
-        visibility: "PRIVATE",
-        owner_id: userId, // Utiliser le userId fourni
-      })
-      .select()
-      .single();
-
-    handleSupabaseError(copy);
-
-    // 3. Dupliquer les variables associées
-    const variables = await variableRepository.fetch(promptId);
     
-    if (variables.length > 0) {
-      const variablesCopy = variables.map(v => ({
-        prompt_id: copy.data.id,
-        name: v.name,
-        type: v.type,
-        default_value: v.default_value,
-        required: v.required,
-        help: v.help,
-        options: v.options,
-        order_index: v.order_index,
-      }));
-
-      await variableRepository.upsertMany(copy.data.id, variablesCopy);
-    }
-
-    return copy.data;
-  }
-
-  async toggleFavorite(id: string, currentState: boolean): Promise<void> {
-    await this.update(id, { is_favorite: !currentState });
-  }
-
-  async toggleVisibility(
-    id: string,
-    currentVisibility: "PRIVATE" | "SHARED"
-  ): Promise<"PRIVATE" | "SHARED"> {
-    const newVisibility = currentVisibility === "PRIVATE" ? "SHARED" : "PRIVATE";
-    await this.update(id, { visibility: newVisibility });
-    return newVisibility;
+    // ... logique de duplication utilisant userId
+    const duplicatedPrompt = await this.create(userId, promptData);
+    await variableRepository.bulkUpsert(duplicatedPrompt.id, duplicatedVariables);
+    
+    return duplicatedPrompt;
   }
 }
 ```
@@ -901,9 +904,11 @@ Lors de la revue d'un PR ajoutant un nouveau repository, vérifier :
 - [ ] Un contexte `{Entity}RepositoryContext` est créé avec provider et hook
 - [ ] Le provider est ajouté à l'application (main.tsx ou App.tsx)
 - [ ] Aucun import direct de Supabase en dehors du repository (ESLint ne doit pas alerter)
-- [ ] **CRITIQUE:** Le repository n'appelle JAMAIS `supabase.auth.*`
-- [ ] Les méthodes nécessitant un `userId` le reçoivent en paramètre
-- [ ] L'authentification est gérée par `useAuth` dans les hooks/composants
+- [ ] **CRITIQUE:** Le repository n'appelle JAMAIS `supabase.auth.getUser()` ou `supabase.auth.getSession()`
+- [ ] **CRITIQUE:** Toutes les méthodes nécessitant un `userId` le reçoivent en paramètre (create, duplicate, fetchAll, fetchOwned, fetchSharedWithMe)
+- [ ] **CRITIQUE:** Validation explicite de `userId` : `if (!userId) throw new Error("ID utilisateur requis")`
+- [ ] L'authentification est gérée par `useAuth()` dans les hooks/composants
+- [ ] Les queries React Query ont `enabled: !!user` pour éviter les requêtes sans utilisateur
 
 ### Qualité du code
 
@@ -926,7 +931,9 @@ Lors de la revue d'un PR ajoutant un nouveau repository, vérifier :
 - [ ] Tests unitaires du repository créés (`__tests__/{Entity}Repository.test.ts`)
 - [ ] Tous les cas nominaux sont testés (fetchAll, create, update, delete)
 - [ ] Les cas d'erreur sont testés
-- [ ] **Test que `supabase.auth.getUser` n'est PAS appelé**
+- [ ] **CRITIQUE:** Test que `supabase.auth.getUser` n'est PAS appelé (expect(mockSupabase.auth.getUser).not.toHaveBeenCalled())
+- [ ] Tests des méthodes avec `userId` vérifient qu'une erreur est levée si `userId` est vide
+- [ ] Aucun mock de `supabase.auth` n'est nécessaire dans les tests du repository
 - [ ] Les méthodes spécifiques métier sont testées
 - [ ] Couverture de code ≥ 70%
 
