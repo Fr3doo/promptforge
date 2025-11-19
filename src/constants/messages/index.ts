@@ -15,28 +15,6 @@ import { uiMessages } from './ui';
 import { appMessages } from './app';
 import { systemMessages } from './system';
 
-/**
- * MIGRATION STATUS - TEMPORARY IMPORT
- * ====================================
- * 
- * Import temporaire de l'ancien fichier messages.ts pour les sections non encore migrées.
- * 
- * SECTIONS ENCORE UTILISÉES DE oldMessages (~450 lignes) :
- * - errors.* (~150 lignes) : Messages d'erreur spécifiques (save, update, delete, duplicate, etc.)
- * - tooltips.* (~200 lignes) : Tooltips non migrés (analyzer, share, etc.)
- * - help.* (~100 lignes) : Messages d'aide inline non migrés
- * 
- * MIGRATION FUTURE (Étape 10) :
- * Ces sections seront progressivement migrées vers :
- * - errors.save/update/delete → prompts.ts ou hook dédié
- * - errors.versions → versions.ts
- * - tooltips.analyzer → ui.ts
- * - tooltips.share → prompts.ts
- * - help.versions → versions.ts
- * 
- * TODO: Une fois la migration complète, supprimer cet import et le fichier messages.ts
- */
-import { messages as oldMessages } from '../messages';
 
 // Assemblage progressif : common.ts + prompts.ts + reste de messages.ts
 export const messages = {
