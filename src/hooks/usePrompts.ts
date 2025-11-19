@@ -5,6 +5,7 @@ import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { messages } from "@/constants/messages";
 import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
 import { usePromptFavoriteService } from "@/contexts/PromptFavoriteServiceContext";
+import { usePromptVisibilityService } from "@/contexts/PromptVisibilityServiceContext";
 import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
 import { useAuth } from "@/hooks/useAuth";
 import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
@@ -205,7 +206,7 @@ export function useDuplicatePrompt() {
 // Hook pour basculer la visibilité d'un prompt
 export function useToggleVisibility() {
   const queryClient = useQueryClient();
-  const repository = usePromptRepository();
+  const visibilityService = usePromptVisibilityService();
   const promptMessages = usePromptMessages();
 
   return useMutation({
@@ -218,7 +219,7 @@ export function useToggleVisibility() {
       currentVisibility: "PRIVATE" | "SHARED";
       publicPermission?: "READ" | "WRITE";
     }) =>
-      repository.toggleVisibility(id, currentVisibility, publicPermission),
+      visibilityService.toggleVisibility(id, currentVisibility, publicPermission),
     retry: shouldRetryMutation,
     retryDelay: getRetryDelay,
     onMutate: async ({ id, currentVisibility, publicPermission }) => {
@@ -257,12 +258,12 @@ export function useToggleVisibility() {
 // Hook pour mettre à jour uniquement le niveau de permission publique
 export function useUpdatePublicPermission() {
   const queryClient = useQueryClient();
-  const repository = usePromptRepository();
+  const visibilityService = usePromptVisibilityService();
   const promptMessages = usePromptMessages();
 
   return useMutation({
     mutationFn: ({ id, permission }: { id: string; permission: "READ" | "WRITE" }) =>
-      repository.updatePublicPermission(id, permission),
+      visibilityService.updatePublicPermission(id, permission),
     onMutate: async ({ id, permission }) => {
       await queryClient.cancelQueries({ queryKey: ["prompts"] });
       const previous = queryClient.getQueryData(["prompts"]);
