@@ -209,8 +209,10 @@ export const promptsMessages = {
   // Prompts-specific tooltips
   tooltips: {
     prompts: {
-      favorite: "Ajouter aux favoris",
-      unfavorite: "Retirer des favoris",
+      favorite: {
+        add: "Ajouter aux favoris",
+        remove: "Retirer des favoris",
+      },
       visibility: "Gérer le partage public",
       actions: "Plus d'actions",
       saveDisabled: "Sauvegarde désactivée",
