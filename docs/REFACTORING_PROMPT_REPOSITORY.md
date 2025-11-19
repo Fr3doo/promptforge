@@ -124,6 +124,162 @@ export function useDuplicatePrompt() {
 }
 ```
 
+**Nouvelles méthodes avec userId (ajoutées lors du refactoring SRP complet) :**
+
+```typescript
+// Méthodes de lecture nécessitant userId
+async fetchAll(userId: string): Promise<Prompt[]> {
+  if (!userId) throw new Error("ID utilisateur requis"); // ✅ Validation du paramètre
+  
+  const result = await supabase
+    .from("prompts_with_share_count")
+    .select("*")
+    .order("updated_at", { ascending: false });
+  
+  handleSupabaseError(result);
+  return result.data as Prompt[];
+}
+
+async fetchOwned(userId: string): Promise<Prompt[]> {
+  if (!userId) throw new Error("ID utilisateur requis");
+  
+  const result = await supabase
+    .from("prompts_with_share_count")
+    .select("*")
+    .eq("owner_id", userId) // ✅ Utilise le userId fourni
+    .order("updated_at", { ascending: false });
+  
+  handleSupabaseError(result);
+  return result.data as Prompt[];
+}
+
+async fetchSharedWithMe(userId: string): Promise<Prompt[]> {
+  if (!userId) throw new Error("ID utilisateur requis");
+  
+  // 1. Récupérer les IDs des prompts partagés avec l'utilisateur
+  const sharesResult = await supabase
+    .from("prompt_shares")
+    .select("prompt_id")
+    .eq("shared_with_user_id", userId); // ✅ Utilise le userId fourni
+  
+  handleSupabaseError(sharesResult);
+  
+  if (!sharesResult.data || sharesResult.data.length === 0) {
+    return [];
+  }
+  
+  const promptIds = sharesResult.data.map(share => share.prompt_id);
+  
+  // 2. Récupérer les prompts correspondants
+  const result = await supabase
+    .from("prompts_with_share_count")
+    .select("*")
+    .in("id", promptIds)
+    .order("updated_at", { ascending: false});
+  
+  handleSupabaseError(result);
+  return result.data as Prompt[];
+}
+```
+
+### 3.5. PromptShareRepository - Refactoring SRP
+
+Le `PromptShareRepository` a également été refactorisé pour supprimer les appels à `supabase.auth.getUser()`.
+
+**Méthodes impactées :**
+
+1. **`addShare`**
+2. **`updateSharePermission`**
+3. **`deleteShare`**
+
+**Avant :**
+```typescript
+async addShare(promptId: string, sharedWithUserId: string, permission: "READ" | "WRITE"): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser(); // ❌ Appel direct à auth
+  if (!user) throw new Error("SESSION_EXPIRED");
+
+  // Empêcher le partage avec soi-même
+  if (sharedWithUserId === user.id) {
+    throw new Error("SELF_SHARE");
+  }
+
+  // Vérifier que l'utilisateur est propriétaire
+  const isOwner = await this.isPromptOwner(promptId, user.id);
+  if (!isOwner) {
+    throw new Error("NOT_PROMPT_OWNER");
+  }
+
+  const result = await supabase
+    .from("prompt_shares")
+    .insert({
+      prompt_id: promptId,
+      shared_with_user_id: sharedWithUserId,
+      permission,
+      shared_by: user.id,
+    });
+
+  handleSupabaseError(result);
+}
+```
+
+**Après :**
+```typescript
+async addShare(
+  promptId: string, 
+  sharedWithUserId: string, 
+  permission: "READ" | "WRITE", 
+  currentUserId: string // ✅ Paramètre ajouté
+): Promise<void> {
+  if (!currentUserId) throw new Error("SESSION_EXPIRED"); // ✅ Validation du paramètre
+
+  // Empêcher le partage avec soi-même
+  if (sharedWithUserId === currentUserId) { // ✅ Utilise le paramètre
+    throw new Error("SELF_SHARE");
+  }
+
+  // Vérifier que l'utilisateur est propriétaire
+  const isOwner = await this.isPromptOwner(promptId, currentUserId); // ✅ Utilise le paramètre
+  if (!isOwner) {
+    throw new Error("NOT_PROMPT_OWNER");
+  }
+
+  const result = await supabase
+    .from("prompt_shares")
+    .insert({
+      prompt_id: promptId,
+      shared_with_user_id: sharedWithUserId,
+      permission,
+      shared_by: currentUserId, // ✅ Utilise le paramètre
+    });
+
+  handleSupabaseError(result);
+}
+```
+
+**Hook d'utilisation (usePromptShares.ts) :**
+```typescript
+export function useAddPromptShare() {
+  const repository = usePromptShareRepository();
+  const { user } = useAuth(); // ✅ Récupération de l'utilisateur via useAuth
+  
+  return useMutation({
+    mutationFn: ({ promptId, sharedWithUserId, permission }: ShareInput) => {
+      if (!user) throw new Error("Non authentifié");
+      // ✅ Passe currentUserId au repository
+      return repository.addShare(promptId, sharedWithUserId, permission, user.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["prompt-shares"] });
+    },
+  });
+}
+```
+
+**Bénéfices identiques à `PromptRepository` :**
+- ✅ Respect du SRP
+- ✅ Testabilité améliorée (pas de mock de `supabase.auth`)
+- ✅ Flexibilité (admin peut gérer les partages d'autres utilisateurs)
+
 ### 4. Tests (PromptRepository.test.ts)
 
 **Ajouts de tests :**
@@ -285,9 +441,17 @@ Tous les composants continuent de fonctionner de la même manière. Seule l'arch
 
 ### Code
 
-- **Lignes modifiées** : ~60 lignes
-- **Fichiers impactés** : 4 fichiers
-- **Complexité cyclomatique** : Réduite (moins de conditions)
+- **Lignes modifiées** : ~180 lignes
+- **Fichiers impactés** : 8 fichiers
+  - Repositories : 2 (`PromptRepository.ts`, `PromptShareRepository.ts`)
+  - Hooks : 2 (`usePrompts.ts`, `usePromptShares.ts`)
+  - Contextes : 3 (`PromptRepositoryContext.tsx`, `PromptShareRepositoryContext.tsx`, `VariableRepositoryContext.tsx`)
+  - Tests : 1 (`PromptRepository.test.ts`)
+- **Méthodes refactorisées** : 9 méthodes au total
+  - `PromptRepository` : `create`, `duplicate`, `fetchAll`, `fetchOwned`, `fetchSharedWithMe` (5 méthodes)
+  - `PromptShareRepository` : `addShare`, `updateSharePermission`, `deleteShare` (3 méthodes)
+  - `VariableRepository` : Contexte mis à jour (injection de dépendances)
+- **Complexité cyclomatique** : Réduite (moins de conditions, validation centralisée)
 
 ## Migration pour futurs repositories
 
