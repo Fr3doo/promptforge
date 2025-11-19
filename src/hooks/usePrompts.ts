@@ -4,6 +4,7 @@ import { successToast, errorToast } from "@/lib/toastUtils";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { messages } from "@/constants/messages";
 import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
+import { usePromptFavoriteService } from "@/contexts/PromptFavoriteServiceContext";
 import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
 import { useAuth } from "@/hooks/useAuth";
 import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
@@ -149,11 +150,11 @@ export function useDeletePrompt() {
 // Hook toggle favori avec optimistic update
 export function useToggleFavorite() {
   const queryClient = useQueryClient();
-  const repository = usePromptRepository();
+  const favoriteService = usePromptFavoriteService();
   
   return useMutation({
     mutationFn: ({ id, currentState }: { id: string; currentState: boolean }) =>
-      repository.toggleFavorite(id, currentState),
+      favoriteService.toggleFavorite(id, currentState),
     retry: shouldRetryMutation,
     retryDelay: getRetryDelay,
     onMutate: async ({ id, currentState }) => {

@@ -1077,6 +1077,38 @@ const mockRepository: PromptRepository = {
 ```
 
 
+## Extraction de Services - Pattern SRP
+
+### PromptFavoriteService
+
+**Responsabilité Unique :** Gestion du statut favori des prompts
+
+**Méthodes :**
+- `toggleFavorite(id: string, currentState: boolean): Promise<void>`
+
+**Utilisation :**
+```typescript
+import { usePromptFavoriteService } from "@/contexts/PromptFavoriteServiceContext";
+
+const favoriteService = usePromptFavoriteService();
+await favoriteService.toggleFavorite("prompt-id", false);
+```
+
+**Bénéfices :**
+- ✅ Responsabilité isolée (SRP)
+- ✅ Testable indépendamment
+- ✅ Réutilisable dans d'autres contextes
+
+**Tests :**
+```typescript
+import { SupabasePromptFavoriteService } from "@/services/PromptFavoriteService";
+
+const service = new SupabasePromptFavoriteService();
+await service.toggleFavorite("prompt-123", false);
+```
+
+---
+
 ## Pattern KISS : Simplification par Extraction de Méthodes Privées
 
 ### Principe
