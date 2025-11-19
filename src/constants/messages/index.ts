@@ -88,7 +88,7 @@ export const messages = {
     delete: promptsMessages.prompts.errors.delete,
     duplicate: promptsMessages.prompts.errors.duplicate,
     share: promptsMessages.prompts.errors.share,
-    ...oldMessages.errors,                         // ⏳ Fallback pour autres erreurs
+    // ✅ Phase 4.1 : oldMessages.errors supprimé (100% migré vers modules)
   },
   
   /**
