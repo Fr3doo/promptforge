@@ -238,8 +238,11 @@ export const promptsMessages = {
   help: {
     prompts: {
       title: "Le titre doit être unique et descriptif",
-      description: "Décrivez l'objectif et le contexte d'utilisation de ce prompt",
-      tags: "Ajoutez des tags pour faciliter la recherche (max 10)",
+      description: (currentLength: number, maxLength: number) => 
+        `Décrivez l'objectif et le contexte d'utilisation de ce prompt (${currentLength}/${maxLength})`,
+      tags: (currentCount: number, maxCount: number) => 
+        `Ajoutez des tags pour faciliter la recherche (${currentCount}/${maxCount} max)`,
+      tagsEdit: "Modifiez les tags dans l'éditeur principal",
       content: "Utilisez {{variable}} pour créer des variables dynamiques",
       visibility: "Le partage public permet à tous les utilisateurs de voir votre prompt",
       permissions: "Choisissez si les utilisateurs peuvent uniquement lire ou aussi modifier",

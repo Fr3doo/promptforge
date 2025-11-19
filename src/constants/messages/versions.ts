@@ -12,14 +12,24 @@
 export const versionsMessages = {
   // Main versions messages
   versions: {
-    // Type labels
+    // Flat properties for backward compatibility
+    typeLabel: "Type de version",
+    messageLabel: "Message de version",
+    typeMajor: "Major",
+    typeMinor: "Minor",
+    typePatch: "Patch",
+    typeMajorDescription: "Changements incompatibles avec les versions précédentes",
+    typeMinorDescription: "Nouvelles fonctionnalités compatibles avec les versions précédentes",
+    typePatchDescription: "Corrections de bugs et améliorations mineures",
+    
+    // Type labels (structured - retained for future use)
     typeLabels: {
       major: "Major",
       minor: "Minor",
       patch: "Patch",
     },
     
-    // Type descriptions
+    // Type descriptions (structured - retained for future use)
     typeDescriptions: {
       major: "Changements incompatibles avec les versions précédentes",
       minor: "Nouvelles fonctionnalités compatibles avec les versions précédentes",
