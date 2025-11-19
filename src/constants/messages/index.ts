@@ -113,7 +113,7 @@ export const messages = {
     versions: versionsMessages.tooltips.versions,    // ✅ Migrés
     search: commonMessages.tooltips.search,          // ✅ Migrés (Step 10.2)
     analyzer: uiMessages.tooltips.analyzer,          // ✅ Migrés (Step 10.9)
-    ...oldMessages.tooltips,                         // ⏳ sharing, tags, etc. (À MIGRER Phase 3)
+    // ✅ Phase 4.2 : oldMessages.tooltips supprimé (100% migré vers modules)
   },
   
   /**
