@@ -1,0 +1,109 @@
+import { supabase } from "@/integrations/supabase/client";
+import { handleSupabaseError } from "@/lib/errorHandler";
+
+/**
+ * Service dédié à la gestion de la visibilité et des permissions publiques des prompts
+ * 
+ * Responsabilité unique : Gérer le cycle de vie de la visibilité (PRIVATE/SHARED)
+ * et les permissions d'accès public (READ/WRITE)
+ * 
+ * @example
+ * ```typescript
+ * const service = new SupabasePromptVisibilityService();
+ * 
+ * // Toggle visibilité
+ * const newVisibility = await service.toggleVisibility("prompt-id", "PRIVATE", "READ");
+ * // => "SHARED" (avec status=PUBLISHED et public_permission=READ)
+ * 
+ * // Mettre à jour permission
+ * await service.updatePublicPermission("prompt-id", "WRITE");
+ * ```
+ */
+export interface PromptVisibilityService {
+  /**
+   * Bascule la visibilité d'un prompt entre PRIVATE et SHARED
+   * 
+   * @param id - ID du prompt
+   * @param currentVisibility - Visibilité actuelle (PRIVATE ou SHARED)
+   * @param publicPermission - Permission à appliquer si passage en SHARED (défaut: READ)
+   * @returns Nouvelle visibilité (PRIVATE ou SHARED)
+   * 
+   * @remarks
+   * - PRIVATE → SHARED : Force status=PUBLISHED et applique publicPermission
+   * - SHARED → PRIVATE : Réinitialise public_permission à READ
+   */
+  toggleVisibility(
+    id: string,
+    currentVisibility: "PRIVATE" | "SHARED",
+    publicPermission?: "READ" | "WRITE"
+  ): Promise<"PRIVATE" | "SHARED">;
+
+  /**
+   * Met à jour uniquement la permission publique d'un prompt SHARED
+   * 
+   * @param id - ID du prompt
+   * @param permission - Nouvelle permission (READ ou WRITE)
+   * @throws {Error} "PERMISSION_UPDATE_ON_PRIVATE_PROMPT" si le prompt est PRIVATE
+   * 
+   * @remarks
+   * Cette méthode ne change PAS la visibilité, seulement la permission.
+   * Le prompt doit être SHARED, sinon une erreur est levée.
+   */
+  updatePublicPermission(id: string, permission: "READ" | "WRITE"): Promise<void>;
+}
+
+export class SupabasePromptVisibilityService implements PromptVisibilityService {
+  async toggleVisibility(
+    id: string,
+    currentVisibility: "PRIVATE" | "SHARED",
+    publicPermission?: "READ" | "WRITE"
+  ): Promise<"PRIVATE" | "SHARED"> {
+    // Toggle PRIVATE <-> SHARED
+    const newVisibility = currentVisibility === "PRIVATE" ? "SHARED" : "PRIVATE";
+    
+    const updateData: {
+      visibility: "PRIVATE" | "SHARED";
+      status?: "PUBLISHED";
+      public_permission: "READ" | "WRITE";
+    } = {
+      visibility: newVisibility,
+      public_permission: "READ", // Reset to default
+    };
+
+    // Force PUBLISHED status and set permission when going public
+    if (newVisibility === "SHARED") {
+      updateData.status = "PUBLISHED";
+      updateData.public_permission = publicPermission || "READ";
+    }
+
+    const result = await supabase
+      .from("prompts")
+      .update(updateData)
+      .eq("id", id);
+
+    handleSupabaseError(result);
+    return newVisibility;
+  }
+
+  async updatePublicPermission(id: string, permission: "READ" | "WRITE"): Promise<void> {
+    // First, check if the prompt is SHARED (public permission only applies to SHARED prompts)
+    const promptResult = await supabase
+      .from("prompts")
+      .select("visibility")
+      .eq("id", id)
+      .single();
+
+    handleSupabaseError(promptResult);
+
+    if (promptResult.data?.visibility !== "SHARED") {
+      throw new Error("PERMISSION_UPDATE_ON_PRIVATE_PROMPT");
+    }
+
+    const result = await supabase
+      .from("prompts")
+      .update({ public_permission: permission })
+      .eq("id", id);
+
+    handleSupabaseError(result);
+  }
+}

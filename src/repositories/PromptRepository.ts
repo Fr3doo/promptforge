@@ -14,8 +14,6 @@ export interface PromptRepository {
   update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
   delete(id: string): Promise<void>;
   duplicate(userId: string, promptId: string, variableRepository: VariableRepository): Promise<Prompt>;
-  toggleVisibility(id: string, currentVisibility: "PRIVATE" | "SHARED", publicPermission?: "READ" | "WRITE"): Promise<"PRIVATE" | "SHARED">;
-  updatePublicPermission(id: string, permission: "READ" | "WRITE"): Promise<void>;
 }
 
 export class SupabasePromptRepository implements PromptRepository {
@@ -240,57 +238,4 @@ export class SupabasePromptRepository implements PromptRepository {
   }
 
 
-  async toggleVisibility(
-    id: string, 
-    currentVisibility: "PRIVATE" | "SHARED",
-    publicPermission?: "READ" | "WRITE"
-  ): Promise<"PRIVATE" | "SHARED"> {
-    // Toggle PRIVATE <-> SHARED
-    const newVisibility = currentVisibility === "PRIVATE" ? "SHARED" : "PRIVATE";
-    
-    const updateData: { 
-      visibility: "PRIVATE" | "SHARED"; 
-      status?: "PUBLISHED";
-      public_permission: "READ" | "WRITE";
-    } = {
-      visibility: newVisibility,
-      public_permission: "READ" // Reset to default
-    };
-
-    // Force PUBLISHED status and set permission when going public
-    if (newVisibility === "SHARED") {
-      updateData.status = "PUBLISHED";
-      updateData.public_permission = publicPermission || "READ";
-    }
-    
-    const result = await supabase
-      .from("prompts")
-      .update(updateData)
-      .eq("id", id);
-    
-    handleSupabaseError(result);
-    return newVisibility;
-  }
-
-  async updatePublicPermission(id: string, permission: "READ" | "WRITE"): Promise<void> {
-    // First, check if the prompt is SHARED (public permission only applies to SHARED prompts)
-    const promptResult = await supabase
-      .from("prompts")
-      .select("visibility")
-      .eq("id", id)
-      .single();
-    
-    handleSupabaseError(promptResult);
-    
-    if (promptResult.data?.visibility !== "SHARED") {
-      throw new Error("PERMISSION_UPDATE_ON_PRIVATE_PROMPT");
-    }
-    
-    const result = await supabase
-      .from("prompts")
-      .update({ public_permission: permission })
-      .eq("id", id);
-    
-    handleSupabaseError(result);
-  }
 }

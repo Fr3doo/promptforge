@@ -1343,6 +1343,129 @@ private createDuplicatePrompt(userId: string, original: Prompt): Promise<Prompt>
 
 ---
 
+## Extraction de Services - Pattern SRP
+
+### PromptFavoriteService
+
+**Responsabilité Unique :** Gestion du statut favori des prompts
+
+**Méthodes :**
+- `toggleFavorite(id: string, currentState: boolean): Promise<void>`
+
+**Utilisation :**
+```typescript
+import { usePromptFavoriteService } from "@/contexts/PromptFavoriteServiceContext";
+
+const favoriteService = usePromptFavoriteService();
+await favoriteService.toggleFavorite("prompt-id", false);
+```
+
+**Bénéfices :**
+- ✅ Responsabilité isolée (SRP)
+- ✅ Testable indépendamment
+- ✅ Réutilisable dans d'autres contextes
+
+---
+
+### PromptVisibilityService
+
+**Responsabilité Unique :** Gestion de la visibilité (PRIVATE/SHARED) et des permissions publiques (READ/WRITE)
+
+**Interface :**
+```typescript
+interface PromptVisibilityService {
+  toggleVisibility(
+    id: string,
+    currentVisibility: "PRIVATE" | "SHARED",
+    publicPermission?: "READ" | "WRITE"
+  ): Promise<"PRIVATE" | "SHARED">;
+  
+  updatePublicPermission(id: string, permission: "READ" | "WRITE"): Promise<void>;
+}
+```
+
+**Méthodes :**
+
+#### `toggleVisibility`
+Bascule la visibilité d'un prompt entre PRIVATE et SHARED.
+
+**Comportement :**
+- **PRIVATE → SHARED :**
+  - Force `status` à `PUBLISHED`
+  - Applique `publicPermission` (défaut: `READ`)
+  - Retourne `"SHARED"`
+
+- **SHARED → PRIVATE :**
+  - Réinitialise `public_permission` à `READ`
+  - Préserve le `status` (ne force PAS à DRAFT)
+  - Retourne `"PRIVATE"`
+
+**Exemple :**
+```typescript
+const visibilityService = usePromptVisibilityService();
+
+// Rendre public avec permission READ (défaut)
+const newVisibility = await visibilityService.toggleVisibility(
+  "prompt-id",
+  "PRIVATE"
+);
+console.log(newVisibility); // "SHARED"
+
+// Rendre public avec permission WRITE
+await visibilityService.toggleVisibility(
+  "prompt-id",
+  "PRIVATE",
+  "WRITE"
+);
+
+// Repasser en privé
+await visibilityService.toggleVisibility("prompt-id", "SHARED");
+```
+
+---
+
+#### `updatePublicPermission`
+Met à jour uniquement la permission publique (READ/WRITE) d'un prompt **déjà SHARED**.
+
+**Validation :**
+- ✅ Le prompt doit être `SHARED`
+- ❌ Erreur `PERMISSION_UPDATE_ON_PRIVATE_PROMPT` si `PRIVATE`
+
+**Exemple :**
+```typescript
+// Mettre à jour permission (prompt doit être SHARED)
+await visibilityService.updatePublicPermission("prompt-id", "WRITE");
+
+// Erreur si prompt PRIVATE
+try {
+  await visibilityService.updatePublicPermission("private-prompt-id", "WRITE");
+} catch (error) {
+  console.error(error.message); // "PERMISSION_UPDATE_ON_PRIVATE_PROMPT"
+}
+```
+
+---
+
+**Utilisation dans les Hooks :**
+```typescript
+import { usePromptVisibilityService } from "@/contexts/PromptVisibilityServiceContext";
+
+// Toggle visibilité
+const visibilityService = usePromptVisibilityService();
+await visibilityService.toggleVisibility("prompt-id", "PRIVATE", "READ");
+
+// Mettre à jour permission
+await visibilityService.updatePublicPermission("prompt-id", "WRITE");
+```
+
+**Bénéfices :**
+- ✅ Responsabilité isolée (gestion visibilité/permissions)
+- ✅ Validation métier centralisée (prompt SHARED requis)
+- ✅ Testable indépendamment (8 tests dédiés)
+- ✅ Réutilisable dans d'autres contextes (ex: admin panel)
+
+---
+
 
 **Ce guide doit être consulté lors de chaque ajout de nouveau repository.**
 
