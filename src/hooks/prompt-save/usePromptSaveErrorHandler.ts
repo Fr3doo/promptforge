@@ -51,7 +51,7 @@ export function usePromptSaveErrorHandler() {
 
     // 3. Erreurs de permissions
     if (error?.code === "PGRST116" || error?.message?.includes("permission")) {
-      promptMessages.showPermissionDenied("ce prompt");
+      promptMessages.showPermissionDenied();
       return;
     }
 

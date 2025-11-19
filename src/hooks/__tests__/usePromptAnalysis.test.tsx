@@ -147,7 +147,7 @@ describe('usePromptAnalysis', () => {
 
     expect(toastUtils.errorToast).toHaveBeenCalledWith(
       'Erreur',
-      messages.errors.analysis.failed
+      messages.analysis.notifications.errors.failed
     );
   });
 

@@ -95,7 +95,7 @@ export class SupabaseAnalysisRepository implements AnalysisRepository {
       // Detect AbortError (timeout triggered)
       if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
         throw new AnalysisTimeoutError(
-          messages.errors.analysis.timeout(TIMING.ANALYSIS_CLIENT_TIMEOUT / 1000)
+          messages.analysis.notifications.errors.timeout.description
         );
       }
 

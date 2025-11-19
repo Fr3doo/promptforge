@@ -14,7 +14,7 @@ interface VisibilityBadgeProps {
 }
 
 export const VisibilityBadge = ({ sharingState, shareCount }: VisibilityBadgeProps) => {
-  const tooltips = messages.tooltips.prompts.visibility;
+  const tooltips = messages.tooltips.prompts;
   
   const configs = {
     PRIVATE: {
@@ -22,21 +22,21 @@ export const VisibilityBadge = ({ sharingState, shareCount }: VisibilityBadgePro
       label: "Privé",
       variant: "secondary" as const,
       className: "bg-muted/50 text-muted-foreground border-muted",
-      tooltip: tooltips.private
+      tooltip: "Ce prompt est privé et uniquement visible par vous"
     },
     PRIVATE_SHARED: {
       icon: Users,
       label: shareCount ? `Partagé (${shareCount})` : "Partagé",
       variant: "outline" as const,
       className: "bg-blue-500/10 text-blue-600 border-blue-500/30 dark:text-blue-400",
-      tooltip: shareCount ? tooltips.privateShared(shareCount) : "Partagé avec des utilisateurs spécifiques"
+      tooltip: shareCount ? `Partagé avec ${shareCount} utilisateur(s)` : "Partagé avec des utilisateurs spécifiques"
     },
     PUBLIC: {
       icon: Globe,
       label: "Public",
       variant: "outline" as const,
       className: "bg-green-500/10 text-green-600 border-green-500/30 dark:text-green-400",
-      tooltip: tooltips.public
+      tooltip: "Ce prompt est visible par tous les utilisateurs"
     }
   };
 

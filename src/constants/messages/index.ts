@@ -16,27 +16,20 @@ import { appMessages } from './app';
 import { systemMessages } from './system';
 
 /**
- * MIGRATION STATUS - TEMPORARY IMPORT
- * ====================================
+ * ✅ MIGRATION COMPLÈTE (Phase 5.10)
+ * ===================================
  * 
- * Import temporaire de l'ancien fichier messages.ts pour les sections non encore migrées.
- * 
- * SECTIONS ENCORE UTILISÉES DE oldMessages (~450 lignes) :
- * - errors.* (~150 lignes) : Messages d'erreur spécifiques (save, update, delete, duplicate, etc.)
- * - tooltips.* (~200 lignes) : Tooltips non migrés (analyzer, share, etc.)
- * - help.* (~100 lignes) : Messages d'aide inline non migrés
- * 
- * MIGRATION FUTURE (Étape 10) :
- * Ces sections seront progressivement migrées vers :
- * - errors.save/update/delete → prompts.ts ou hook dédié
- * - errors.versions → versions.ts
- * - tooltips.analyzer → ui.ts
- * - tooltips.share → prompts.ts
- * - help.versions → versions.ts
- * 
- * TODO: Une fois la migration complète, supprimer cet import et le fichier messages.ts
+ * Le fichier messages.ts a été supprimé avec succès.
+ * Tous les messages ont été migrés vers les modules spécialisés :
+ * - common.ts : Messages génériques, validation, network, database
+ * - prompts.ts : Messages des prompts, CRUD, partage
+ * - variables.ts : Messages des variables
+ * - versions.ts : Messages des versions
+ * - auth.ts : Messages d'authentification
+ * - ui.ts : Messages UI (composants réutilisables)
+ * - app.ts : Messages App (pages de l'application)
+ * - system.ts : Messages système (success, info, loading, actions, analysis)
  */
-import { messages as oldMessages } from '../messages';
 
 // Assemblage progressif : common.ts + prompts.ts + reste de messages.ts
 export const messages = {
@@ -59,81 +52,58 @@ export const messages = {
   variables: variablesMessages.variables,
   
   /**
-   * ERRORS - Fusion progressive (PARTIELLEMENT MIGRÉ - Phase 1, 2, 3)
-   * ==================================================
+   * ERRORS - Migration complète (Phase 5.10 ✅)
+   * ============================================
    * 
-   * Structure actuelle :
-   * - ✅ commonMessages.errors : Erreurs génériques, validation, network (Step 10.1), database
-   * - ✅ variablesMessages.errors.variables : Erreurs de variables (Step 10.6)
-   * - ✅ authMessages.errors.auth : Erreurs d'authentification (signOutFailed)
-   * - ✅ promptsMessages.prompts.errors : Erreurs prompts (Step 10.3 - Phase 3)
-   *   - errors.save.* : Erreurs de sauvegarde de prompt
-   *   - errors.update.* : Erreurs de mise à jour de prompt
-   *   - errors.delete.* : Erreurs de suppression de prompt
-   *   - errors.duplicate.* : Erreurs de duplication de prompt
-   *   - errors.share.* : Erreurs de partage
-   * - ⏳ oldMessages.errors : Erreurs NON MIGRÉES (fallback uniquement)
-   *   - errors.analysis.* : Erreurs d'analyse de prompt (déjà dans system.ts)
-   *   - errors.version.* : Erreurs de versions (déjà dans versions.ts)
-   * 
-   * NOTE : L'ordre de fusion garantit la priorité des nouveaux messages
+   * Structure finale :
+   * - ✅ commonMessages.errors : Erreurs génériques, validation, network, database
+   * - ✅ variablesMessages.errors.variables : Erreurs de variables
+   * - ✅ authMessages.errors.auth : Erreurs d'authentification
+   * - ✅ promptsMessages.prompts.errors : Erreurs prompts (CRUD, partage)
    */
   errors: {
-    ...commonMessages.errors,                      // ✅ Migrés (network, database, generic)
-    auth: authMessages.errors.auth,                // ✅ Migrés
-    variables: variablesMessages.errors.variables, // ✅ Migrés
-    // Prompts errors (legacy compatibility - Step 10.3)
+    ...commonMessages.errors,
+    auth: authMessages.errors.auth,
+    variables: variablesMessages.errors.variables,
     save: promptsMessages.prompts.errors.save,
     update: promptsMessages.prompts.errors.update,
     delete: promptsMessages.prompts.errors.delete,
     duplicate: promptsMessages.prompts.errors.duplicate,
     share: promptsMessages.prompts.errors.share,
-    // ✅ Phase 4.1 : oldMessages.errors supprimé (100% migré vers modules)
   },
   
   /**
-   * TOOLTIPS - Migration complète (Phase 3 - Step 10.4 COMPLÉTÉ ✅)
-   * ================================================================
+   * TOOLTIPS - Migration complète (Phase 5.10 ✅)
+   * ==============================================
    * 
-   * Structure actuelle :
-   * - ✅ promptsMessages.tooltips.prompts : Tooltips des prompts (base)
-   *   - ✅ tooltips.prompts.sharing : Tooltips du partage (Step 10.4)
-   *   - ✅ tooltips.prompts.tags : Tooltips des tags (Step 10.4)
+   * Structure finale :
+   * - ✅ promptsMessages.tooltips.prompts : Tooltips des prompts (base + sharing + tags)
    * - ✅ variablesMessages.tooltips.variables : Tooltips des variables
    * - ✅ versionsMessages.tooltips.versions : Tooltips des versions
-   * - ✅ commonMessages.tooltips.search : Tooltips de recherche (Step 10.2)
-   * - ✅ uiMessages.tooltips.analyzer : Tooltips de l'analyseur (Step 10.9)
-   * - ⏳ oldMessages.tooltips : Fallback temporaire (duplication, à nettoyer Phase 4)
-   * 
-   * NOTE : Phase 3 complète, tous les tooltips sont migrés. Phase 4 supprimera oldMessages.
+   * - ✅ commonMessages.tooltips.search : Tooltips de recherche
+   * - ✅ uiMessages.tooltips.analyzer : Tooltips de l'analyseur
    */
   tooltips: {
-    prompts: promptsMessages.tooltips.prompts,       // ✅ Migrés
-    variables: variablesMessages.tooltips.variables, // ✅ Migrés
-    versions: versionsMessages.tooltips.versions,    // ✅ Migrés
-    search: commonMessages.tooltips.search,          // ✅ Migrés (Step 10.2)
-    analyzer: uiMessages.tooltips.analyzer,          // ✅ Migrés (Step 10.9)
-    // ✅ Phase 4.2 : oldMessages.tooltips supprimé (100% migré vers modules)
+    prompts: promptsMessages.tooltips.prompts,
+    variables: variablesMessages.tooltips.variables,
+    versions: versionsMessages.tooltips.versions,
+    search: commonMessages.tooltips.search,
+    analyzer: uiMessages.tooltips.analyzer,
   },
   
   /**
-   * HELP - Migration complète (Phase 3 - Step 10.5 COMPLÉTÉ ✅)
-   * ============================================================
+   * HELP - Migration complète (Phase 5.10 ✅)
+   * ==========================================
    * 
-   * Structure actuelle :
-   * - ✅ promptsMessages.help.prompts : Aide inline des prompts (base)
-   *   - ✅ help.prompts.sharing : Aide du partage (Step 10.5)
+   * Structure finale :
+   * - ✅ promptsMessages.help.prompts : Aide inline des prompts (base + sharing)
    * - ✅ variablesMessages.help.variables : Aide inline des variables
-   * - ✅ versionsMessages.help.versions : Aide inline des versions (Step 10.8)
-   * - ⏳ oldMessages.help : Fallback temporaire (duplication, à nettoyer Phase 4)
-   * 
-   * NOTE : Phase 3 complète, tous les messages help sont migrés. Phase 4 supprimera oldMessages.
+   * - ✅ versionsMessages.help.versions : Aide inline des versions
    */
   help: {
-    prompts: promptsMessages.help.prompts,       // ✅ Migrés
-    variables: variablesMessages.help.variables, // ✅ Migrés
-    versions: versionsMessages.help.versions,    // ✅ Migrés (Step 10.8)
-    // ✅ Phase 4.3 : oldMessages.help supprimé (100% migré vers modules)
+    prompts: promptsMessages.help.prompts,
+    variables: variablesMessages.help.variables,
+    versions: versionsMessages.help.versions,
   },
   
   // Messages UI (composants réutilisables)

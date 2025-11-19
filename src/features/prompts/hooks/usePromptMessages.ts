@@ -78,62 +78,62 @@ export function usePromptMessages() {
       });
     },
 
-    showPermissionDenied: (resource: string) => {
+    showPermissionDenied: () => {
       const msg = messages.prompts.notifications.save.permissionDenied;
-      notifyError(msg.title, msg.description(resource), { duration: 5000 });
+      notifyError(msg.title, msg.description, { duration: 5000 });
     },
 
     // ========== PARTAGE PRIVÉ ==========
 
-    showShareAdded: (email: string, permission: "READ" | "WRITE") => {
-      const msg = messages.prompts.notifications.share.added;
-      notifySuccess(msg.title, msg.description(email, permission));
+    showShareAdded: (email: string) => {
+      const msg = messages.prompts.notifications.privateShare.added;
+      notifySuccess(msg.title, msg.description(email));
     },
 
     showSharePermissionUpdated: () => {
-      const msg = messages.prompts.notifications.share.permissionUpdated;
+      const msg = messages.prompts.notifications.privateShare.permissionUpdated;
       notifySuccess(msg.title, msg.description);
     },
 
     showShareDeleted: () => {
-      const msg = messages.prompts.notifications.share.deleted;
+      const msg = messages.prompts.notifications.privateShare.deleted;
       notifySuccess(msg.title, msg.description);
     },
 
     // Erreurs de partage
     showUserNotFoundError: () => {
-      const msg = messages.prompts.notifications.share.errors.userNotFound;
+      const msg = messages.prompts.notifications.privateShare.errors.userNotFound;
       notifyError(msg.title, msg.description, { duration: 6000 });
     },
 
     showSelfShareError: () => {
-      const msg = messages.prompts.notifications.share.errors.selfShare;
+      const msg = messages.prompts.notifications.privateShare.errors.selfShare;
       notifyError(msg.title, msg.description);
     },
 
     showNotOwnerError: () => {
-      const msg = messages.prompts.notifications.share.errors.notOwner;
-      notifyError(msg.title, msg.description);
+      const msg = messages.prompts.notifications.privateShare.errors.notOwner;
+      notifyError(msg.title, msg.description, { duration: 5000 });
     },
 
     showAlreadySharedError: () => {
-      const msg = messages.prompts.notifications.share.errors.alreadyShared;
+      const msg = messages.prompts.notifications.privateShare.errors.alreadyShared;
       notifyError(msg.title, msg.description);
     },
 
     showShareNotFoundError: () => {
-      const msg = messages.prompts.notifications.share.errors.shareNotFound;
+      const msg = messages.prompts.notifications.privateShare.errors.shareNotFound;
       notifyError(msg.title, msg.description);
     },
 
     showUnauthorizedUpdateError: () => {
-      const msg = messages.prompts.notifications.share.errors.unauthorizedUpdate;
-      notifyError(msg.title, msg.description);
+      const msg = messages.prompts.notifications.privateShare.errors.unauthorizedUpdate;
+      notifyError(msg.title, msg.description, { duration: 5000 });
     },
 
     showUnauthorizedDeleteError: () => {
-      const msg = messages.prompts.notifications.share.errors.unauthorizedDelete;
-      notifyError(msg.title, msg.description);
+      const msg = messages.prompts.notifications.privateShare.errors.unauthorizedDelete;
+      notifyError(msg.title, msg.description, { duration: 5000 });
     },
 
     // ========== VISIBILITÉ PUBLIQUE ==========

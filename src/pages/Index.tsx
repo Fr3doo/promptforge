@@ -53,7 +53,7 @@ const Index = () => {
                 {messages.marketing.hero.subtitle}
               </p>
               <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
-                {messages.marketing.hero.description}
+                {messages.marketing.tagline}
               </p>
             </div>
 
@@ -70,8 +70,8 @@ const Index = () => {
                   <div className="h-16 w-16 rounded-full bg-destructive/20 flex items-center justify-center mx-auto">
                     <FileText className="h-8 w-8 text-destructive" />
                   </div>
-                  <p className="font-semibold">{messages.marketing.beforeAfter.before}</p>
-                  <p className="text-sm text-muted-foreground">{messages.marketing.beforeAfter.beforePoint1}</p>
+                  <p className="font-semibold">{messages.marketing.workflow.before.title}</p>
+                  <p className="text-sm text-muted-foreground">{messages.marketing.workflow.before.problem1}</p>
                 </div>
                 <div className="flex justify-center">
                   <div className="h-0.5 w-12 bg-primary md:rotate-0 rotate-90" />
@@ -80,8 +80,8 @@ const Index = () => {
                   <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
                     <Code2 className="h-8 w-8 text-primary" />
                   </div>
-                  <p className="font-semibold">{messages.marketing.beforeAfter.after}</p>
-                  <p className="text-sm text-muted-foreground">{messages.marketing.beforeAfter.afterPoint1}</p>
+                  <p className="font-semibold">{messages.marketing.workflow.after.title}</p>
+                  <p className="text-sm text-muted-foreground">{messages.marketing.workflow.after.solution1}</p>
                 </div>
               </div>
             </div>
@@ -178,7 +178,7 @@ const Index = () => {
           <div className="text-center space-y-4">
             <h1 className="text-3xl sm:text-4xl font-bold">{messages.marketing.hero.welcomeBack(profile?.pseudo || user.email)}</h1>
             <p className="text-lg sm:text-xl text-muted-foreground">
-              {messages.marketing.hero.welcomeDescription}
+              {messages.marketing.tagline}
             </p>
           </div>
 
