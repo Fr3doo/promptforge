@@ -233,6 +233,12 @@ export const promptsMessages = {
         add: "Ajouter un tag (Entrée)",
         remove: (tag: string) => `Retirer le tag ${tag}`,
       },
+      
+      // Save button tooltips
+      save: {
+        disabled: "Veuillez corriger les erreurs avant d'enregistrer",
+        readOnly: "Mode lecture seule - Vous ne pouvez pas modifier ce prompt",
+      },
     },
   },
 
