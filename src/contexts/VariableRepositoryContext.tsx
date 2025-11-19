@@ -3,9 +3,15 @@ import { VariableRepository, SupabaseVariableRepository } from "@/repositories/V
 
 const VariableRepositoryContext = createContext<VariableRepository | null>(null);
 
-export function VariableRepositoryProvider({ children }: { children: ReactNode }) {
-  const repository = new SupabaseVariableRepository();
-  
+interface VariableRepositoryProviderProps {
+  children: ReactNode;
+  repository?: VariableRepository;
+}
+
+export function VariableRepositoryProvider({ 
+  children, 
+  repository = new SupabaseVariableRepository() 
+}: VariableRepositoryProviderProps) {
   return (
     <VariableRepositoryContext.Provider value={repository}>
       {children}

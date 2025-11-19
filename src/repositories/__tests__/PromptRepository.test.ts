@@ -73,7 +73,7 @@ describe("SupabasePromptRepository", () => {
         select: mockSelect,
       });
 
-      const result = await repository.fetchAll();
+      const result = await repository.fetchAll("user-123");
 
       expect(mockSupabase.from).toHaveBeenCalledWith("prompts");
       expect(mockSelect).toHaveBeenCalledWith("*");
@@ -97,7 +97,7 @@ describe("SupabasePromptRepository", () => {
         select: mockSelect,
       });
 
-      await expect(repository.fetchAll()).rejects.toThrow(mockError);
+      await expect(repository.fetchAll("user-123")).rejects.toThrow(mockError);
     });
   });
 

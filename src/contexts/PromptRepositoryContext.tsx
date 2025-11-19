@@ -3,9 +3,15 @@ import { PromptRepository, SupabasePromptRepository } from "@/repositories/Promp
 
 const PromptRepositoryContext = createContext<PromptRepository | null>(null);
 
-export function PromptRepositoryProvider({ children }: { children: ReactNode }) {
-  const repository = new SupabasePromptRepository();
-  
+interface PromptRepositoryProviderProps {
+  children: ReactNode;
+  repository?: PromptRepository;
+}
+
+export function PromptRepositoryProvider({ 
+  children, 
+  repository = new SupabasePromptRepository() 
+}: PromptRepositoryProviderProps) {
   return (
     <PromptRepositoryContext.Provider value={repository}>
       {children}

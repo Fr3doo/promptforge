@@ -3,6 +3,7 @@ import { usePromptShareRepository } from "@/contexts/PromptShareRepositoryContex
 import { usePromptMessages } from "@/features/prompts/hooks/usePromptMessages";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
+import { useAuth } from "@/hooks/useAuth";
 
 // Hook to fetch shares for a prompt
 export function usePromptShares(promptId: string | undefined) {
@@ -23,6 +24,7 @@ export function useAddPromptShare(promptId: string) {
   const queryClient = useQueryClient();
   const repository = usePromptShareRepository();
   const promptMessages = usePromptMessages();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({
@@ -32,6 +34,8 @@ export function useAddPromptShare(promptId: string) {
       email: string;
       permission: "READ" | "WRITE";
     }) => {
+      if (!user) throw new Error("SESSION_EXPIRED");
+      
       // Normaliser l'email : trim + lowercase pour cohérence avec la RPC
       const normalizedEmail = email.trim().toLowerCase();
       
@@ -42,7 +46,7 @@ export function useAddPromptShare(promptId: string) {
       }
 
       // Create share
-      await repository.addShare(promptId, userData.id, permission);
+      await repository.addShare(promptId, userData.id, permission, user.id);
       return { email: normalizedEmail, permission };
     },
     retry: shouldRetryMutation,
@@ -74,10 +78,12 @@ export function useUpdatePromptShare(promptId: string) {
   const queryClient = useQueryClient();
   const repository = usePromptShareRepository();
   const promptMessages = usePromptMessages();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ shareId, permission }: { shareId: string; permission: "READ" | "WRITE" }) => {
-      await repository.updateSharePermission(shareId, permission);
+      if (!user) throw new Error("SESSION_EXPIRED");
+      await repository.updateSharePermission(shareId, permission, user.id);
     },
     retry: shouldRetryMutation,
     retryDelay: getRetryDelay,
@@ -104,9 +110,13 @@ export function useDeletePromptShare(promptId: string) {
   const queryClient = useQueryClient();
   const repository = usePromptShareRepository();
   const promptMessages = usePromptMessages();
+  const { user } = useAuth();
 
   return useMutation({
-    mutationFn: (shareId: string) => repository.deleteShare(shareId),
+    mutationFn: (shareId: string) => {
+      if (!user) throw new Error("SESSION_EXPIRED");
+      return repository.deleteShare(shareId, user.id);
+    },
     retry: shouldRetryMutation,
     retryDelay: getRetryDelay,
     onSuccess: () => {

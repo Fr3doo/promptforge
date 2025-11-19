@@ -3,9 +3,15 @@ import { SupabasePromptShareRepository, type PromptShareRepository } from "@/rep
 
 const PromptShareRepositoryContext = createContext<PromptShareRepository | null>(null);
 
-export function PromptShareRepositoryProvider({ children }: { children: ReactNode }) {
-  const repository = new SupabasePromptShareRepository();
+interface PromptShareRepositoryProviderProps {
+  children: ReactNode;
+  repository?: PromptShareRepository;
+}
 
+export function PromptShareRepositoryProvider({ 
+  children, 
+  repository = new SupabasePromptShareRepository() 
+}: PromptShareRepositoryProviderProps) {
   return (
     <PromptShareRepositoryContext.Provider value={repository}>
       {children}
