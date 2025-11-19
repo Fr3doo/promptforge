@@ -114,12 +114,8 @@ export const messages = {
   
   // Messages App (pages de l'application)
   navigation: appMessages.navigation,
-  marketing: {
-    ...appMessages.marketing,
-  },
-  dashboard: {
-    ...appMessages.dashboard,
-  },
+  marketing: appMessages.marketing,
+  dashboard: appMessages.dashboard,
   settings: appMessages.settings,
   editor: {
     ...appMessages.editor,
