@@ -16,11 +16,11 @@ import { appMessages } from './app';
 import { systemMessages } from './system';
 
 /**
- * ✅ MIGRATION COMPLÈTE (Phase 5.10)
+ * ✅ MIGRATION COMPLÈTE (Phase 5.11)
  * ===================================
  * 
- * Le fichier messages.ts a été supprimé avec succès.
- * Tous les messages ont été migrés vers les modules spécialisés :
+ * Le fichier messages.ts a été supprimé et tous les commentaires obsolètes ont été nettoyés.
+ * Architecture finale des modules de messages :
  * - common.ts : Messages génériques, validation, network, database
  * - prompts.ts : Messages des prompts, CRUD, partage
  * - variables.ts : Messages des variables
@@ -29,9 +29,11 @@ import { systemMessages } from './system';
  * - ui.ts : Messages UI (composants réutilisables)
  * - app.ts : Messages App (pages de l'application)
  * - system.ts : Messages système (success, info, loading, actions, analysis)
+ * 
+ * Aucune référence à l'ancien messages.ts ne subsiste.
  */
 
-// Assemblage progressif : common.ts + prompts.ts + reste de messages.ts
+// Assemblage final des modules de messages spécialisés
 export const messages = {
   // Messages from common.ts
   labels: commonMessages.labels,
@@ -136,7 +138,7 @@ export const messages = {
   system: systemMessages.system,
   analysis: systemMessages.analysis,
   
-  // Le reste vient encore de l'ancien messages.ts
+  // Messages de versioning et d'authentification
   versions: versionsMessages.versions,
   auth: authMessages.auth,
 } as const;
