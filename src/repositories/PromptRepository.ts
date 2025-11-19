@@ -142,24 +142,14 @@ export class SupabasePromptRepository implements PromptRepository {
   }
 
   /**
-   * Duplicates a prompt and its variables
-   * Uses VariableRepository for clean separation of concerns
-   * 
-   * @param userId - ID of the authenticated user creating the duplicate
-   * @param promptId - ID of the prompt to duplicate
-   * @param variableRepository - Repository for managing variables
+   * Creates a duplicate prompt with default values
+   * @private
+   * @param userId - ID of the user creating the duplicate
+   * @param original - The original prompt to duplicate
    * @returns The newly created duplicate prompt
+   * @throws Error if creation fails
    */
-  async duplicate(userId: string, promptId: string, variableRepository: VariableRepository): Promise<Prompt> {
-    if (!userId) throw new Error("ID utilisateur requis");
-
-    // Step 1: Fetch the original prompt
-    const original = await this.fetchOriginalPrompt(promptId);
-
-    // Step 2: Fetch original variables using VariableRepository
-    const originalVariables = await variableRepository.fetch(promptId);
-
-    // Step 3: Create the duplicate prompt
+  private async createDuplicatePrompt(userId: string, original: Prompt): Promise<Prompt> {
     const insertResult = await supabase
       .from("prompts")
       .insert({
@@ -177,6 +167,29 @@ export class SupabasePromptRepository implements PromptRepository {
       .single();
     
     handleSupabaseError(insertResult);
+    return insertResult.data as Prompt;
+  }
+
+  /**
+   * Duplicates a prompt and its variables
+   * Uses VariableRepository for clean separation of concerns
+   * 
+   * @param userId - ID of the authenticated user creating the duplicate
+   * @param promptId - ID of the prompt to duplicate
+   * @param variableRepository - Repository for managing variables
+   * @returns The newly created duplicate prompt
+   */
+  async duplicate(userId: string, promptId: string, variableRepository: VariableRepository): Promise<Prompt> {
+    if (!userId) throw new Error("ID utilisateur requis");
+
+    // Step 1: Fetch the original prompt
+    const original = await this.fetchOriginalPrompt(promptId);
+
+    // Step 2: Fetch original variables using VariableRepository
+    const originalVariables = await variableRepository.fetch(promptId);
+
+    // Step 3: Create the duplicate prompt with default values
+    const duplicated = await this.createDuplicatePrompt(userId, original);
 
     // Step 4: Duplicate variables using VariableRepository.upsertMany
     if (originalVariables.length > 0) {
@@ -191,10 +204,10 @@ export class SupabasePromptRepository implements PromptRepository {
         order_index: v.order_index,
       }));
 
-      await variableRepository.upsertMany(insertResult.data.id, variablesToDuplicate);
+      await variableRepository.upsertMany(duplicated.id, variablesToDuplicate);
     }
 
-    return insertResult.data;
+    return duplicated;
   }
 
   async toggleFavorite(id: string, currentState: boolean): Promise<void> {
