@@ -5,6 +5,46 @@ Toutes les modifications notables du projet PromptForge seront documentées dans
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
+## [2.2.0] - 2025-11-19
+
+### 🏗️ Refactoring SRP - Phase 1 : Extraction de PromptFavoriteService
+
+**Problème :** `PromptRepository` violait le SRP avec 5 responsabilités mélangées (305 lignes)
+
+**Solution :** Extraction de la gestion des favoris dans un service dédié
+
+**Changements :**
+- ✅ Nouveau service `PromptFavoriteService` (8 lignes)
+- ✅ Context et Provider `PromptFavoriteServiceContext`
+- ✅ Migration de `useToggleFavorite` pour utiliser le service directement
+- ✅ Retrait de `toggleFavorite` de `PromptRepository` (interface + implémentation)
+- ✅ Tests migrés vers `src/services/__tests__/PromptFavoriteService.test.ts`
+
+**Métriques :**
+- Lignes de `PromptRepository` : 305 → 297 (-8 lignes)
+- Méthodes de `PromptRepository` : 11 → 10 (-9%)
+- Nouveaux services : +1 (`PromptFavoriteService`)
+- Tests : 3/3 passants (zéro régression)
+
+**Impact :**
+- ✅ Zéro breaking change (API publique des hooks inchangée)
+- ✅ Responsabilité isolée et testable indépendamment
+- ✅ Facilite l'ajout de fonctionnalités favoris futures (liste des favoris, tri par favoris)
+
+**Fichiers Créés :**
+- `src/services/PromptFavoriteService.ts`
+- `src/contexts/PromptFavoriteServiceContext.tsx`
+- `src/services/__tests__/PromptFavoriteService.test.ts`
+
+**Fichiers Modifiés :**
+- `src/repositories/PromptRepository.ts` : `toggleFavorite` retiré
+- `src/hooks/usePrompts.ts` : `useToggleFavorite` migré
+- `src/main.tsx` : Provider ajouté
+- `docs/REPOSITORY_GUIDE.md` : Section ajoutée
+- `CHANGELOG.md` : Cette entrée
+
+---
+
 ## [2.1.2] - 2025-11-19
 
 ### 🔧 Amélioration - Refactoring KISS : `PromptRepository.duplicate`

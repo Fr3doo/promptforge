@@ -14,7 +14,6 @@ export interface PromptRepository {
   update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
   delete(id: string): Promise<void>;
   duplicate(userId: string, promptId: string, variableRepository: VariableRepository): Promise<Prompt>;
-  toggleFavorite(id: string, currentState: boolean): Promise<void>;
   toggleVisibility(id: string, currentVisibility: "PRIVATE" | "SHARED", publicPermission?: "READ" | "WRITE"): Promise<"PRIVATE" | "SHARED">;
   updatePublicPermission(id: string, permission: "READ" | "WRITE"): Promise<void>;
 }
@@ -240,14 +239,6 @@ export class SupabasePromptRepository implements PromptRepository {
     return duplicated;
   }
 
-  async toggleFavorite(id: string, currentState: boolean): Promise<void> {
-    const result = await supabase
-      .from("prompts")
-      .update({ is_favorite: !currentState })
-      .eq("id", id);
-    
-    handleSupabaseError(result);
-  }
 
   async toggleVisibility(
     id: string, 
