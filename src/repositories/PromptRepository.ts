@@ -194,10 +194,30 @@ export class SupabasePromptRepository implements PromptRepository {
    * Duplicates a prompt and its variables
    * Uses VariableRepository for clean separation of concerns
    * 
+   * Implementation is split into private methods for better readability (KISS principle):
+   * - {@link fetchOriginalPrompt} - Retrieves the source prompt from database
+   * - {@link createDuplicatePrompt} - Creates the new prompt with default values (PRIVATE, DRAFT, version 1.0.0)
+   * - {@link mapVariablesForDuplication} - Transforms variables for insertion (removes id and prompt_id)
+   * 
    * @param userId - ID of the authenticated user creating the duplicate
    * @param promptId - ID of the prompt to duplicate
    * @param variableRepository - Repository for managing variables
    * @returns The newly created duplicate prompt
+   * @throws {Error} If userId is missing ("ID utilisateur requis")
+   * @throws {Error} If original prompt not found (propagated from fetchOriginalPrompt)
+   * @throws {Error} If duplication fails (propagated from createDuplicatePrompt or upsertMany)
+   * 
+   * @example
+   * ```typescript
+   * const duplicated = await promptRepository.duplicate(
+   *   "user-uuid",
+   *   "prompt-uuid",
+   *   variableRepository
+   * );
+   * console.log(duplicated.title); // "Original Title (Copie)"
+   * console.log(duplicated.visibility); // "PRIVATE"
+   * console.log(duplicated.version); // "1.0.0"
+   * ```
    */
   async duplicate(userId: string, promptId: string, variableRepository: VariableRepository): Promise<Prompt> {
     if (!userId) throw new Error("ID utilisateur requis");
