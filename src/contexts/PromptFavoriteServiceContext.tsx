@@ -1,5 +1,6 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { SupabasePromptFavoriteService, type PromptFavoriteService } from "@/services/PromptFavoriteService";
+import { usePromptRepository } from "./PromptRepositoryContext";
 
 const PromptFavoriteServiceContext = createContext<PromptFavoriteService | null>(null);
 
@@ -10,10 +11,16 @@ interface PromptFavoriteServiceProviderProps {
 
 export function PromptFavoriteServiceProvider({ 
   children, 
-  service = new SupabasePromptFavoriteService() 
+  service 
 }: PromptFavoriteServiceProviderProps) {
+  const promptRepository = usePromptRepository();
+  const defaultService = useMemo(
+    () => service || new SupabasePromptFavoriteService(promptRepository),
+    [service, promptRepository]
+  );
+
   return (
-    <PromptFavoriteServiceContext.Provider value={service}>
+    <PromptFavoriteServiceContext.Provider value={defaultService}>
       {children}
     </PromptFavoriteServiceContext.Provider>
   );

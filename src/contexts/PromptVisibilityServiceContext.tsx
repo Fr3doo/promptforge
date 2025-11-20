@@ -1,8 +1,9 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import {
   SupabasePromptVisibilityService,
   type PromptVisibilityService,
 } from "@/services/PromptVisibilityService";
+import { usePromptRepository } from "./PromptRepositoryContext";
 
 const PromptVisibilityServiceContext = createContext<PromptVisibilityService | null>(null);
 
@@ -23,10 +24,16 @@ interface PromptVisibilityServiceProviderProps {
  */
 export function PromptVisibilityServiceProvider({
   children,
-  service = new SupabasePromptVisibilityService(),
+  service,
 }: PromptVisibilityServiceProviderProps) {
+  const promptRepository = usePromptRepository();
+  const defaultService = useMemo(
+    () => service || new SupabasePromptVisibilityService(promptRepository),
+    [service, promptRepository]
+  );
+
   return (
-    <PromptVisibilityServiceContext.Provider value={service}>
+    <PromptVisibilityServiceContext.Provider value={defaultService}>
       {children}
     </PromptVisibilityServiceContext.Provider>
   );
