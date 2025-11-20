@@ -1,8 +1,9 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import {
   SupabasePromptDuplicationService,
   type PromptDuplicationService,
 } from "@/services/PromptDuplicationService";
+import { usePromptRepository } from "./PromptRepositoryContext";
 
 const PromptDuplicationServiceContext = createContext<PromptDuplicationService | null>(null);
 
@@ -23,10 +24,16 @@ interface PromptDuplicationServiceProviderProps {
  */
 export function PromptDuplicationServiceProvider({
   children,
-  service = new SupabasePromptDuplicationService(),
+  service,
 }: PromptDuplicationServiceProviderProps) {
+  const promptRepository = usePromptRepository();
+  const defaultService = useMemo(
+    () => service || new SupabasePromptDuplicationService(promptRepository),
+    [service, promptRepository]
+  );
+
   return (
-    <PromptDuplicationServiceContext.Provider value={service}>
+    <PromptDuplicationServiceContext.Provider value={defaultService}>
       {children}
     </PromptDuplicationServiceContext.Provider>
   );

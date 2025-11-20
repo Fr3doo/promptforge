@@ -1491,7 +1491,222 @@ interface PromptDuplicationService {
 
 ---
 
-**Ce guide doit être consulté lors de chaque ajout de nouveau repository.**
+## 🔓 OCP (Open/Closed Principle) Compliance
 
-**Dernière mise à jour :** 2025-11-19
+### Principe
+Les Services **ne dépendent jamais directement de Supabase** mais délèguent aux Repositories.
+Cela permet de changer de backend (Supabase → API REST) en créant une nouvelle implémentation de Repository, **sans modifier les Services**.
+
+### Architecture 3-Tiers
+```
+UI Components (useXxxService)
+   ↓ dépend de
+Services (logique métier)
+   ↓ dépend de
+Repositories (abstraction)
+   ↓ implémenté par
+SupabaseRepository | RESTRepository | GraphQLRepository
+```
+
+### Exemple : PromptDuplicationService
+
+❌ **Avant (couplage direct à Supabase - violation OCP)**
+```typescript
+export class SupabasePromptDuplicationService {
+  // Appel direct à Supabase dans une méthode privée
+  private async fetchOriginalPrompt(id: string) {
+    const result = await supabase.from("prompts").select("*").eq("id", id).single();
+    handleSupabaseError(result);
+    return result.data;
+  }
+
+  private async createDuplicatePrompt(userId: string, original: Prompt) {
+    const result = await supabase.from("prompts").insert({
+      title: `${original.title} (Copie)`,
+      // ...
+    }).select().single();
+    return result.data;
+  }
+
+  async duplicate(...) {
+    const original = await this.fetchOriginalPrompt(id);  // Couplage
+    const duplicate = await this.createDuplicatePrompt(...); // Couplage
+    // ...
+  }
+}
+```
+
+**Problème :** 
+- 🔴 Migration backend (Supabase → API REST) nécessite de réécrire **tous les services** (3 fichiers)
+- 🔴 Méthodes privées couplées à l'infrastructure (violation DIP)
+- 🔴 Tests complexes (mock de `supabase.from()`)
+
+---
+
+✅ **Après (délégation au Repository - OCP respecté)**
+```typescript
+export class SupabasePromptDuplicationService {
+  constructor(private promptRepository: PromptRepository) {} // Injection
+
+  async duplicate(userId: string, promptId: string, variableRepository: VariableRepository) {
+    // Délégation au repository
+    const original = await this.promptRepository.fetchById(promptId);
+    const duplicate = await this.promptRepository.create(userId, {
+      title: `${original.title} (Copie)`,
+      // ...
+    });
+    
+    // Duplication variables
+    const variables = await variableRepository.fetch(promptId);
+    if (variables.length > 0) {
+      await variableRepository.upsertMany(duplicate.id, variables);
+    }
+    
+    return duplicate;
+  }
+
+  // Suppression des 2 méthodes privées fetchOriginalPrompt et createDuplicatePrompt
+  // Logique déléguée au PromptRepository (SRP + OCP)
+}
+```
+
+**Bénéfices :**
+- ✅ Migration backend sans modifier Services (1 fichier `SupabasePromptRepository` au lieu de 3+)
+- ✅ Tests simplifiés (mock `PromptRepository` au lieu de `supabase`)
+- ✅ Services purement métier (0 dépendance infrastructure)
+- ✅ Conformité SOLID (OCP + DIP + SRP)
+
+---
+
+### Application aux 3 Services
+
+#### PromptFavoriteService
+**Avant :** 
+```typescript
+async toggleFavorite(id: string, currentState: boolean) {
+  const result = await supabase.from("prompts").update({ is_favorite: !currentState }).eq("id", id);
+  handleSupabaseError(result);
+}
+```
+
+**Après :**
+```typescript
+constructor(private promptRepository: PromptRepository) {}
+
+async toggleFavorite(id: string, currentState: boolean) {
+  await this.promptRepository.update(id, { is_favorite: !currentState }); // Délégation
+}
+```
+
+---
+
+#### PromptVisibilityService
+**Avant :** 
+```typescript
+async updatePublicPermission(id: string, permission: "READ" | "WRITE") {
+  const prompt = await supabase.from("prompts").select("visibility").eq("id", id).single();
+  if (prompt.data?.visibility !== "SHARED") throw new Error("...");
+  
+  await supabase.from("prompts").update({ public_permission: permission }).eq("id", id);
+}
+```
+
+**Après :**
+```typescript
+constructor(private promptRepository: PromptRepository) {}
+
+async updatePublicPermission(id: string, permission: "READ" | "WRITE") {
+  const prompt = await this.promptRepository.fetchById(id); // Délégation
+  if (prompt.visibility !== "SHARED") throw new Error("...");
+  
+  await this.promptRepository.update(id, { public_permission: permission }); // Délégation
+}
+```
+
+---
+
+### Métriques d'Impact (Phase 4)
+
+| Service | Méthodes privées supprimées | Appels Supabase éliminés | Lignes réduites |
+|---------|----------------------------|--------------------------|-----------------|
+| PromptFavoriteService | 0 | 1 update | -3 lignes |
+| PromptVisibilityService | 0 | 2 (select + update) | -8 lignes |
+| PromptDuplicationService | **2** (fetchOriginal, createDuplicate) | 2 (select + insert) | **-49 lignes** |
+| **TOTAL** | **2** | **5** | **-60 lignes** |
+
+### Tests Simplifiés
+
+**Avant (mock Supabase) :**
+```typescript
+const mockEq = vi.fn().mockResolvedValue({ data: null, error: null });
+const mockUpdate = vi.fn().mockReturnValue({ eq: mockEq });
+mockSupabase.from.mockReturnValue({ update: mockUpdate });
+
+await service.toggleFavorite("id", false);
+expect(mockSupabase.from).toHaveBeenCalledWith("prompts");
+expect(mockUpdate).toHaveBeenCalledWith({ is_favorite: true });
+```
+
+**Après (mock Repository) :**
+```typescript
+const mockRepository: PromptRepository = { update: vi.fn(), /* ... */ };
+
+await service.toggleFavorite("id", false);
+expect(mockRepository.update).toHaveBeenCalledWith("id", { is_favorite: true });
+```
+
+**Gain :** -75% lignes de setup mock, tests 3x plus lisibles
+
+---
+
+### Checklist OCP Compliance
+
+Lors de la création d'un nouveau service :
+
+- [ ] **Injection de dépendance** : Le service reçoit ses repositories via le constructeur
+- [ ] **Aucun import Supabase** : Le fichier service ne contient **jamais** `import { supabase }`
+- [ ] **Délégation complète** : Toutes les opérations DB passent par les repositories
+- [ ] **Méthodes privées pures** : Les méthodes privées ne doivent contenir que de la logique métier (mapping, validation), pas d'appels DB
+- [ ] **Context avec useMemo** : Le provider utilise `useMemo` avec le repository en dépendance
+- [ ] **Tests avec mock Repository** : Les tests mockent les repositories, pas Supabase directement
+
+---
+
+### Anti-Pattern à Éviter
+
+❌ **Service hybride (OCP violé)**
+```typescript
+export class MixedService {
+  constructor(private promptRepository: PromptRepository) {}
+
+  async someMethod() {
+    // ❌ MAUVAIS : Mix délégation + appel direct
+    const prompt = await this.promptRepository.fetchById("id");
+    const result = await supabase.from("variables").select("*"); // Violation OCP !
+    return { prompt, variables: result.data };
+  }
+}
+```
+
+✅ **Solution :** Injecter également `VariableRepository`
+```typescript
+export class CleanService {
+  constructor(
+    private promptRepository: PromptRepository,
+    private variableRepository: VariableRepository // Injection complète
+  ) {}
+
+  async someMethod() {
+    const prompt = await this.promptRepository.fetchById("id");
+    const variables = await this.variableRepository.fetch("id"); // OCP respecté
+    return { prompt, variables };
+  }
+}
+```
+
+---
+
+**Ce guide doit être consulté lors de chaque ajout de nouveau repository ou service.**
+
+**Dernière mise à jour :** 2025-11-19  
 **Responsable :** Équipe Architecture PromptForge

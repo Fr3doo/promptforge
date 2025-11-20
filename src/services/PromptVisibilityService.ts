@@ -1,5 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
-import { handleSupabaseError } from "@/lib/errorHandler";
+import type { PromptRepository } from "@/repositories/PromptRepository";
 
 /**
  * Service dédié à la gestion de la visibilité et des permissions publiques des prompts
@@ -53,6 +52,8 @@ export interface PromptVisibilityService {
 }
 
 export class SupabasePromptVisibilityService implements PromptVisibilityService {
+  constructor(private promptRepository: PromptRepository) {}
+
   async toggleVisibility(
     id: string,
     currentVisibility: "PRIVATE" | "SHARED",
@@ -76,34 +77,18 @@ export class SupabasePromptVisibilityService implements PromptVisibilityService 
       updateData.public_permission = publicPermission || "READ";
     }
 
-    const result = await supabase
-      .from("prompts")
-      .update(updateData)
-      .eq("id", id);
-
-    handleSupabaseError(result);
+    await this.promptRepository.update(id, updateData);
     return newVisibility;
   }
 
   async updatePublicPermission(id: string, permission: "READ" | "WRITE"): Promise<void> {
     // First, check if the prompt is SHARED (public permission only applies to SHARED prompts)
-    const promptResult = await supabase
-      .from("prompts")
-      .select("visibility")
-      .eq("id", id)
-      .single();
+    const prompt = await this.promptRepository.fetchById(id);
 
-    handleSupabaseError(promptResult);
-
-    if (promptResult.data?.visibility !== "SHARED") {
+    if (prompt.visibility !== "SHARED") {
       throw new Error("PERMISSION_UPDATE_ON_PRIVATE_PROMPT");
     }
 
-    const result = await supabase
-      .from("prompts")
-      .update({ public_permission: permission })
-      .eq("id", id);
-
-    handleSupabaseError(result);
+    await this.promptRepository.update(id, { public_permission: permission });
   }
 }

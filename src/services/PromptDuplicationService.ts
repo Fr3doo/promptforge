@@ -1,6 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
-import { handleSupabaseError } from "@/lib/errorHandler";
-import type { Prompt } from "@/repositories/PromptRepository";
+import type { PromptRepository, Prompt } from "@/repositories/PromptRepository";
 import type { VariableRepository, VariableUpsertInput, Variable } from "@/repositories/VariableRepository";
 
 /**
@@ -51,6 +49,8 @@ export interface PromptDuplicationService {
 }
 
 export class SupabasePromptDuplicationService implements PromptDuplicationService {
+  constructor(private promptRepository: PromptRepository) {}
+
   async duplicate(
     userId: string,
     promptId: string,
@@ -58,14 +58,24 @@ export class SupabasePromptDuplicationService implements PromptDuplicationServic
   ): Promise<Prompt> {
     if (!userId) throw new Error("ID utilisateur requis");
 
-    // Step 1: Fetch original prompt
-    const originalPrompt = await this.fetchOriginalPrompt(promptId);
+    // Step 1: Fetch original prompt (delegated to repository)
+    const originalPrompt = await this.promptRepository.fetchById(promptId);
 
     // Step 2: Fetch original variables
     const originalVariables = await variableRepository.fetch(promptId);
 
-    // Step 3: Create duplicate prompt
-    const duplicatedPrompt = await this.createDuplicatePrompt(userId, originalPrompt);
+    // Step 3: Create duplicate prompt (delegated to repository)
+    const duplicatedPrompt = await this.promptRepository.create(userId, {
+      title: `${originalPrompt.title} (Copie)`,
+      content: originalPrompt.content,
+      description: originalPrompt.description,
+      tags: originalPrompt.tags,
+      visibility: "PRIVATE",
+      version: "1.0.0",
+      status: "DRAFT",
+      is_favorite: false,
+      public_permission: "READ",
+    });
 
     // Step 4: Duplicate variables if any exist
     if (originalVariables.length > 0) {
@@ -74,53 +84,6 @@ export class SupabasePromptDuplicationService implements PromptDuplicationServic
     }
 
     return duplicatedPrompt;
-  }
-
-  /**
-   * Fetches the original prompt to be duplicated
-   * @private
-   * @param promptId - ID of the prompt to fetch
-   * @returns The original prompt data
-   */
-  private async fetchOriginalPrompt(promptId: string): Promise<Prompt> {
-    const result = await supabase
-      .from("prompts")
-      .select("*")
-      .eq("id", promptId)
-      .single();
-
-    handleSupabaseError(result);
-    return result.data as Prompt;
-  }
-
-  /**
-   * Creates a new prompt as a duplicate of the original
-   * @private
-   * @param userId - ID of the user creating the duplicate
-   * @param originalPrompt - The original prompt data
-   * @returns The newly created duplicated prompt
-   */
-  private async createDuplicatePrompt(userId: string, originalPrompt: Prompt): Promise<Prompt> {
-    const duplicatedTitle = `${originalPrompt.title} (Copie)`;
-
-    const result = await supabase
-      .from("prompts")
-      .insert({
-        title: duplicatedTitle,
-        content: originalPrompt.content,
-        description: originalPrompt.description,
-        tags: originalPrompt.tags,
-        visibility: "PRIVATE",
-        version: "1.0.0",
-        status: "DRAFT",
-        is_favorite: false,
-        owner_id: userId,
-      })
-      .select()
-      .single();
-
-    handleSupabaseError(result);
-    return result.data as Prompt;
   }
 
   /**

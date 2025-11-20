@@ -1,5 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
-import { handleSupabaseError } from "@/lib/errorHandler";
+import type { PromptRepository } from "@/repositories/PromptRepository";
 
 /**
  * Service dédié à la gestion des favoris de prompts
@@ -10,12 +9,9 @@ export interface PromptFavoriteService {
 }
 
 export class SupabasePromptFavoriteService implements PromptFavoriteService {
+  constructor(private promptRepository: PromptRepository) {}
+
   async toggleFavorite(id: string, currentState: boolean): Promise<void> {
-    const result = await supabase
-      .from("prompts")
-      .update({ is_favorite: !currentState })
-      .eq("id", id);
-    
-    handleSupabaseError(result);
+    await this.promptRepository.update(id, { is_favorite: !currentState });
   }
 }

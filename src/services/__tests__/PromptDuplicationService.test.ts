@@ -1,15 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SupabasePromptDuplicationService } from "../PromptDuplicationService";
+import type { PromptRepository, Prompt } from "@/repositories/PromptRepository";
 import type { VariableRepository } from "@/repositories/VariableRepository";
 
-// Mock Supabase client
-const mockSupabase = {
-  from: vi.fn(),
+// Mock PromptRepository
+const mockPromptRepository: PromptRepository = {
+  fetchAll: vi.fn(),
+  fetchOwned: vi.fn(),
+  fetchSharedWithMe: vi.fn(),
+  fetchById: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
 };
-
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: mockSupabase,
-}));
 
 // Mock VariableRepository
 const mockVariableRepository: VariableRepository = {
@@ -24,13 +27,13 @@ describe("PromptDuplicationService", () => {
   let service: SupabasePromptDuplicationService;
 
   beforeEach(() => {
-    service = new SupabasePromptDuplicationService();
+    service = new SupabasePromptDuplicationService(mockPromptRepository);
     vi.clearAllMocks();
   });
 
   describe("duplicate", () => {
     it("duplique un prompt avec ses variables", async () => {
-      const originalPrompt = {
+      const originalPrompt: Prompt = {
         id: "prompt-original",
         title: "Prompt Original",
         content: "Contenu {{var1}}",
@@ -46,7 +49,7 @@ describe("PromptDuplicationService", () => {
         public_permission: "WRITE",
       };
 
-      const duplicatedPrompt = {
+      const duplicatedPrompt: Prompt = {
         id: "prompt-duplicate",
         title: "Prompt Original (Copie)",
         content: "Contenu {{var1}}",
@@ -78,10 +81,9 @@ describe("PromptDuplicationService", () => {
         },
       ];
 
-      // Mock VariableRepository.fetch
+      (mockPromptRepository.fetchById as ReturnType<typeof vi.fn>).mockResolvedValue(originalPrompt);
+      (mockPromptRepository.create as ReturnType<typeof vi.fn>).mockResolvedValue(duplicatedPrompt);
       vi.mocked(mockVariableRepository.fetch).mockResolvedValue(originalVariables as any);
-
-      // Mock VariableRepository.upsertMany
       vi.mocked(mockVariableRepository.upsertMany).mockResolvedValue([
         {
           ...originalVariables[0],
@@ -90,54 +92,21 @@ describe("PromptDuplicationService", () => {
         },
       ] as any);
 
-      // Mock Supabase fetch (select original prompt)
-      const mockSingleFetch = vi.fn().mockResolvedValue({
-        data: originalPrompt,
-        error: null,
-      });
-
-      const mockEqFetch = vi.fn().mockReturnValue({
-        single: mockSingleFetch,
-      });
-
-      const mockSelectFetch = vi.fn().mockReturnValue({
-        eq: mockEqFetch,
-      });
-
-      // Mock Supabase insert (create duplicate)
-      const mockSingleInsert = vi.fn().mockResolvedValue({
-        data: duplicatedPrompt,
-        error: null,
-      });
-
-      const mockSelectInsert = vi.fn().mockReturnValue({
-        single: mockSingleInsert,
-      });
-
-      const mockInsert = vi.fn().mockReturnValue({
-        select: mockSelectInsert,
-      });
-
-      mockSupabase.from
-        .mockReturnValueOnce({ select: mockSelectFetch }) // Fetch original
-        .mockReturnValueOnce({ insert: mockInsert }); // Insert duplicate
-
       const result = await service.duplicate("user-123", "prompt-original", mockVariableRepository);
 
-      // Vérifications
-      expect(mockSupabase.from).toHaveBeenCalledWith("prompts");
-      expect(mockVariableRepository.fetch).toHaveBeenCalledWith("prompt-original");
-      expect(mockInsert).toHaveBeenCalledWith({
+      expect(mockPromptRepository.fetchById).toHaveBeenCalledWith("prompt-original");
+      expect(mockPromptRepository.create).toHaveBeenCalledWith("user-123", {
         title: "Prompt Original (Copie)",
-        content: originalPrompt.content,
-        description: originalPrompt.description,
-        tags: originalPrompt.tags,
+        content: "Contenu {{var1}}",
+        description: "Description",
+        tags: ["tag1", "tag2"],
         visibility: "PRIVATE",
         version: "1.0.0",
         status: "DRAFT",
         is_favorite: false,
-        owner_id: "user-123",
+        public_permission: "READ",
       });
+      expect(mockVariableRepository.fetch).toHaveBeenCalledWith("prompt-original");
       expect(mockVariableRepository.upsertMany).toHaveBeenCalledWith("prompt-duplicate", [
         {
           name: "var1",
@@ -154,12 +123,12 @@ describe("PromptDuplicationService", () => {
     });
 
     it("duplique un prompt sans variables", async () => {
-      const originalPrompt = {
-        id: "prompt-no-vars",
+      const originalPrompt: Prompt = {
+        id: "prompt-original",
         title: "Prompt Sans Variables",
-        content: "Contenu simple",
-        description: null,
-        tags: null,
+        content: "Contenu sans variable",
+        description: "Description",
+        tags: ["tag1"],
         visibility: "PRIVATE",
         version: "1.0.0",
         status: "DRAFT",
@@ -170,93 +139,73 @@ describe("PromptDuplicationService", () => {
         public_permission: "READ",
       };
 
-      const duplicatedPrompt = {
-        ...originalPrompt,
-        id: "prompt-duplicate-no-vars",
+      const duplicatedPrompt: Prompt = {
+        id: "prompt-duplicate",
         title: "Prompt Sans Variables (Copie)",
+        content: "Contenu sans variable",
+        description: "Description",
+        tags: ["tag1"],
+        visibility: "PRIVATE",
+        version: "1.0.0",
+        status: "DRAFT",
+        is_favorite: false,
         owner_id: "user-123",
+        created_at: "2024-01-02T00:00:00Z",
+        updated_at: "2024-01-02T00:00:00Z",
+        public_permission: "READ",
       };
 
-      // Mock VariableRepository.fetch (empty array)
+      (mockPromptRepository.fetchById as ReturnType<typeof vi.fn>).mockResolvedValue(originalPrompt);
+      (mockPromptRepository.create as ReturnType<typeof vi.fn>).mockResolvedValue(duplicatedPrompt);
       vi.mocked(mockVariableRepository.fetch).mockResolvedValue([]);
 
-      // Mock Supabase
-      const mockSingleFetch = vi.fn().mockResolvedValue({
-        data: originalPrompt,
-        error: null,
+      const result = await service.duplicate("user-123", "prompt-original", mockVariableRepository);
+
+      expect(mockPromptRepository.fetchById).toHaveBeenCalledWith("prompt-original");
+      expect(mockPromptRepository.create).toHaveBeenCalledWith("user-123", {
+        title: "Prompt Sans Variables (Copie)",
+        content: "Contenu sans variable",
+        description: "Description",
+        tags: ["tag1"],
+        visibility: "PRIVATE",
+        version: "1.0.0",
+        status: "DRAFT",
+        is_favorite: false,
+        public_permission: "READ",
       });
-
-      const mockEqFetch = vi.fn().mockReturnValue({
-        single: mockSingleFetch,
-      });
-
-      const mockSelectFetch = vi.fn().mockReturnValue({
-        eq: mockEqFetch,
-      });
-
-      const mockSingleInsert = vi.fn().mockResolvedValue({
-        data: duplicatedPrompt,
-        error: null,
-      });
-
-      const mockSelectInsert = vi.fn().mockReturnValue({
-        single: mockSingleInsert,
-      });
-
-      const mockInsert = vi.fn().mockReturnValue({
-        select: mockSelectInsert,
-      });
-
-      mockSupabase.from
-        .mockReturnValueOnce({ select: mockSelectFetch })
-        .mockReturnValueOnce({ insert: mockInsert });
-
-      const result = await service.duplicate("user-123", "prompt-no-vars", mockVariableRepository);
-
-      // Vérifier que upsertMany n'est PAS appelé (pas de variables)
+      expect(mockVariableRepository.fetch).toHaveBeenCalledWith("prompt-original");
       expect(mockVariableRepository.upsertMany).not.toHaveBeenCalled();
       expect(result).toEqual(duplicatedPrompt);
     });
 
-    it("lance une erreur si userId est manquant", async () => {
-      await expect(service.duplicate("", "prompt-id", mockVariableRepository)).rejects.toThrow(
-        "ID utilisateur requis"
-      );
+    it("rejette si userId est manquant", async () => {
+      await expect(
+        service.duplicate("", "prompt-123", mockVariableRepository)
+      ).rejects.toThrow("ID utilisateur requis");
 
-      // Vérifier qu'aucune requête Supabase n'est faite
-      expect(mockSupabase.from).not.toHaveBeenCalled();
+      expect(mockPromptRepository.fetchById).not.toHaveBeenCalled();
+      expect(mockPromptRepository.create).not.toHaveBeenCalled();
     });
 
-    it("gère les erreurs Supabase lors du fetch du prompt original", async () => {
-      const mockError = new Error("Prompt not found");
-
-      const mockSingleFetch = vi.fn().mockResolvedValue({
-        data: null,
-        error: mockError,
-      });
-
-      const mockEqFetch = vi.fn().mockReturnValue({
-        single: mockSingleFetch,
-      });
-
-      const mockSelectFetch = vi.fn().mockReturnValue({
-        eq: mockEqFetch,
-      });
-
-      mockSupabase.from.mockReturnValue({ select: mockSelectFetch });
+    it("gère les erreurs lors de la récupération du prompt original", async () => {
+      const mockError = new Error("Fetch failed");
+      (mockPromptRepository.fetchById as ReturnType<typeof vi.fn>).mockRejectedValue(mockError);
 
       await expect(
-        service.duplicate("user-123", "invalid-prompt", mockVariableRepository)
+        service.duplicate("user-123", "prompt-original", mockVariableRepository)
       ).rejects.toThrow(mockError);
+
+      expect(mockPromptRepository.fetchById).toHaveBeenCalledWith("prompt-original");
+      expect(mockPromptRepository.create).not.toHaveBeenCalled();
     });
 
-    it("gère les erreurs Supabase lors de la création du duplicata", async () => {
-      const originalPrompt = {
+    it("gère les erreurs lors de la création du duplicata", async () => {
+      const originalPrompt: Prompt = {
         id: "prompt-original",
         title: "Prompt Original",
         content: "Contenu",
-        description: null,
-        tags: null,
+        description: "Description",
+        tags: [],
         visibility: "PRIVATE",
         version: "1.0.0",
         status: "DRAFT",
@@ -267,46 +216,17 @@ describe("PromptDuplicationService", () => {
         public_permission: "READ",
       };
 
-      // Mock fetch (succès)
-      const mockSingleFetch = vi.fn().mockResolvedValue({
-        data: originalPrompt,
-        error: null,
-      });
-
-      const mockEqFetch = vi.fn().mockReturnValue({
-        single: mockSingleFetch,
-      });
-
-      const mockSelectFetch = vi.fn().mockReturnValue({
-        eq: mockEqFetch,
-      });
-
-      // Mock insert (erreur)
       const mockError = new Error("Insert failed");
-
-      const mockSingleInsert = vi.fn().mockResolvedValue({
-        data: null,
-        error: mockError,
-      });
-
-      const mockSelectInsert = vi.fn().mockReturnValue({
-        single: mockSingleInsert,
-      });
-
-      const mockInsert = vi.fn().mockReturnValue({
-        select: mockSelectInsert,
-      });
-
-      // Mock VariableRepository.fetch
+      (mockPromptRepository.fetchById as ReturnType<typeof vi.fn>).mockResolvedValue(originalPrompt);
+      (mockPromptRepository.create as ReturnType<typeof vi.fn>).mockRejectedValue(mockError);
       vi.mocked(mockVariableRepository.fetch).mockResolvedValue([]);
-
-      mockSupabase.from
-        .mockReturnValueOnce({ select: mockSelectFetch })
-        .mockReturnValueOnce({ insert: mockInsert });
 
       await expect(
         service.duplicate("user-123", "prompt-original", mockVariableRepository)
       ).rejects.toThrow(mockError);
+
+      expect(mockPromptRepository.fetchById).toHaveBeenCalledWith("prompt-original");
+      expect(mockPromptRepository.create).toHaveBeenCalled();
     });
   });
 });
