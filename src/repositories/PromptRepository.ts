@@ -1,20 +1,31 @@
-import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { handleSupabaseError } from "@/lib/errorHandler";
+import type {
+  Prompt,
+  PromptQueryRepository,
+  PromptCommandRepository,
+  PromptMutationRepository,
+  PromptRepository,
+} from "./PromptRepository.interfaces";
 
-export type Prompt = Tables<"prompts"> & { share_count?: number };
+// Re-export types pour backward compatibility
+export type { Prompt } from "./PromptRepository.interfaces";
+export type {
+  PromptQueryRepository,
+  PromptCommandRepository,
+  PromptMutationRepository,
+  PromptRepository,
+} from "./PromptRepository.interfaces";
 
-export interface PromptRepository {
-  fetchAll(userId: string): Promise<Prompt[]>;
-  fetchOwned(userId: string): Promise<Prompt[]>;
-  fetchSharedWithMe(userId: string): Promise<Prompt[]>;
-  fetchById(id: string): Promise<Prompt>;
-  create(userId: string, promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt>;
-  update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
-  delete(id: string): Promise<void>;
-}
-
-export class SupabasePromptRepository implements PromptRepository {
+/**
+ * Implémentation Supabase des interfaces ségrégées
+ * Implémente Query + Command + Mutation pour pouvoir être injectée partout
+ * 
+ * Principe ISP : Une classe peut implémenter plusieurs interfaces
+ * Les consommateurs choisissent l'interface minimale dont ils ont besoin
+ */
+export class SupabasePromptRepository 
+  implements PromptQueryRepository, PromptCommandRepository, PromptMutationRepository {
   async fetchAll(userId: string): Promise<Prompt[]> {
     if (!userId) throw new Error("ID utilisateur requis");
     

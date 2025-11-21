@@ -3,7 +3,8 @@ import {
   SupabasePromptVisibilityService,
   type PromptVisibilityService,
 } from "@/services/PromptVisibilityService";
-import { usePromptRepository } from "./PromptRepositoryContext";
+import { usePromptQueryRepository } from "./PromptQueryRepositoryContext";
+import { usePromptMutationRepository } from "./PromptMutationRepositoryContext";
 
 const PromptVisibilityServiceContext = createContext<PromptVisibilityService | null>(null);
 
@@ -22,14 +23,31 @@ interface PromptVisibilityServiceProviderProps {
  * </PromptVisibilityServiceProvider>
  * ```
  */
+/**
+ * Provider pour le service de gestion de visibilité des prompts
+ * 
+ * Principe ISP : Injecte Query + Mutation (5 méthodes) au lieu de Repository complet (7)
+ * 
+ * @example
+ * ```tsx
+ * <PromptVisibilityServiceProvider>
+ *   <VisibilityBadge />
+ * </PromptVisibilityServiceProvider>
+ * ```
+ */
 export function PromptVisibilityServiceProvider({
   children,
   service,
 }: PromptVisibilityServiceProviderProps) {
-  const promptRepository = usePromptRepository();
+  const promptQueryRepository = usePromptQueryRepository();
+  const promptMutationRepository = usePromptMutationRepository();
+  
   const defaultService = useMemo(
-    () => service || new SupabasePromptVisibilityService(promptRepository),
-    [service, promptRepository]
+    () => service || new SupabasePromptVisibilityService(
+      promptQueryRepository,
+      promptMutationRepository
+    ),
+    [service, promptQueryRepository, promptMutationRepository]
   );
 
   return (

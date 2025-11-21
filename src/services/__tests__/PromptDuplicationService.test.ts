@@ -1,34 +1,38 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SupabasePromptDuplicationService } from "../PromptDuplicationService";
-import type { PromptRepository, Prompt } from "@/repositories/PromptRepository";
+import type { 
+  PromptQueryRepository, 
+  PromptCommandRepository,
+  Prompt 
+} from "@/repositories/PromptRepository.interfaces";
 import type { VariableRepository } from "@/repositories/VariableRepository";
 
-// Mock PromptRepository
-const mockPromptRepository: PromptRepository = {
+const mockQueryRepository: PromptQueryRepository = {
   fetchAll: vi.fn(),
   fetchOwned: vi.fn(),
   fetchSharedWithMe: vi.fn(),
   fetchById: vi.fn(),
+};
+
+const mockCommandRepository: PromptCommandRepository = {
   create: vi.fn(),
   update: vi.fn(),
   delete: vi.fn(),
 };
 
-// Mock VariableRepository
 const mockVariableRepository: VariableRepository = {
   fetch: vi.fn(),
-  create: vi.fn(),
-  update: vi.fn(),
-  deleteMany: vi.fn(),
   upsertMany: vi.fn(),
+  deleteMany: vi.fn(),
+  bulkUpdateOrder: vi.fn(),
 };
 
 describe("PromptDuplicationService", () => {
   let service: SupabasePromptDuplicationService;
 
   beforeEach(() => {
-    service = new SupabasePromptDuplicationService(mockPromptRepository);
     vi.clearAllMocks();
+    service = new SupabasePromptDuplicationService(mockQueryRepository, mockCommandRepository);
   });
 
   describe("duplicate", () => {
@@ -81,8 +85,8 @@ describe("PromptDuplicationService", () => {
         },
       ];
 
-      (mockPromptRepository.fetchById as ReturnType<typeof vi.fn>).mockResolvedValue(originalPrompt);
-      (mockPromptRepository.create as ReturnType<typeof vi.fn>).mockResolvedValue(duplicatedPrompt);
+      (mockQueryRepository.fetchById as ReturnType<typeof vi.fn>).mockResolvedValue(originalPrompt);
+      (mockCommandRepository.create as ReturnType<typeof vi.fn>).mockResolvedValue(duplicatedPrompt);
       vi.mocked(mockVariableRepository.fetch).mockResolvedValue(originalVariables as any);
       vi.mocked(mockVariableRepository.upsertMany).mockResolvedValue([
         {
@@ -94,8 +98,8 @@ describe("PromptDuplicationService", () => {
 
       const result = await service.duplicate("user-123", "prompt-original", mockVariableRepository);
 
-      expect(mockPromptRepository.fetchById).toHaveBeenCalledWith("prompt-original");
-      expect(mockPromptRepository.create).toHaveBeenCalledWith("user-123", {
+      expect(mockQueryRepository.fetchById).toHaveBeenCalledWith("prompt-original");
+      expect(mockCommandRepository.create).toHaveBeenCalledWith("user-123", {
         title: "Prompt Original (Copie)",
         content: "Contenu {{var1}}",
         description: "Description",
@@ -155,14 +159,14 @@ describe("PromptDuplicationService", () => {
         public_permission: "READ",
       };
 
-      (mockPromptRepository.fetchById as ReturnType<typeof vi.fn>).mockResolvedValue(originalPrompt);
-      (mockPromptRepository.create as ReturnType<typeof vi.fn>).mockResolvedValue(duplicatedPrompt);
+      (mockQueryRepository.fetchById as ReturnType<typeof vi.fn>).mockResolvedValue(originalPrompt);
+      (mockCommandRepository.create as ReturnType<typeof vi.fn>).mockResolvedValue(duplicatedPrompt);
       vi.mocked(mockVariableRepository.fetch).mockResolvedValue([]);
 
       const result = await service.duplicate("user-123", "prompt-original", mockVariableRepository);
 
-      expect(mockPromptRepository.fetchById).toHaveBeenCalledWith("prompt-original");
-      expect(mockPromptRepository.create).toHaveBeenCalledWith("user-123", {
+      expect(mockQueryRepository.fetchById).toHaveBeenCalledWith("prompt-original");
+      expect(mockCommandRepository.create).toHaveBeenCalledWith("user-123", {
         title: "Prompt Sans Variables (Copie)",
         content: "Contenu sans variable",
         description: "Description",
@@ -183,20 +187,20 @@ describe("PromptDuplicationService", () => {
         service.duplicate("", "prompt-123", mockVariableRepository)
       ).rejects.toThrow("ID utilisateur requis");
 
-      expect(mockPromptRepository.fetchById).not.toHaveBeenCalled();
-      expect(mockPromptRepository.create).not.toHaveBeenCalled();
+      expect(mockQueryRepository.fetchById).not.toHaveBeenCalled();
+      expect(mockCommandRepository.create).not.toHaveBeenCalled();
     });
 
     it("gère les erreurs lors de la récupération du prompt original", async () => {
       const mockError = new Error("Fetch failed");
-      (mockPromptRepository.fetchById as ReturnType<typeof vi.fn>).mockRejectedValue(mockError);
+      (mockQueryRepository.fetchById as ReturnType<typeof vi.fn>).mockRejectedValue(mockError);
 
       await expect(
         service.duplicate("user-123", "prompt-original", mockVariableRepository)
       ).rejects.toThrow(mockError);
 
-      expect(mockPromptRepository.fetchById).toHaveBeenCalledWith("prompt-original");
-      expect(mockPromptRepository.create).not.toHaveBeenCalled();
+      expect(mockQueryRepository.fetchById).toHaveBeenCalledWith("prompt-original");
+      expect(mockCommandRepository.create).not.toHaveBeenCalled();
     });
 
     it("gère les erreurs lors de la création du duplicata", async () => {
@@ -217,16 +221,16 @@ describe("PromptDuplicationService", () => {
       };
 
       const mockError = new Error("Insert failed");
-      (mockPromptRepository.fetchById as ReturnType<typeof vi.fn>).mockResolvedValue(originalPrompt);
-      (mockPromptRepository.create as ReturnType<typeof vi.fn>).mockRejectedValue(mockError);
+      (mockQueryRepository.fetchById as ReturnType<typeof vi.fn>).mockResolvedValue(originalPrompt);
+      (mockCommandRepository.create as ReturnType<typeof vi.fn>).mockRejectedValue(mockError);
       vi.mocked(mockVariableRepository.fetch).mockResolvedValue([]);
 
       await expect(
         service.duplicate("user-123", "prompt-original", mockVariableRepository)
       ).rejects.toThrow(mockError);
 
-      expect(mockPromptRepository.fetchById).toHaveBeenCalledWith("prompt-original");
-      expect(mockPromptRepository.create).toHaveBeenCalled();
+      expect(mockQueryRepository.fetchById).toHaveBeenCalledWith("prompt-original");
+      expect(mockCommandRepository.create).toHaveBeenCalled();
     });
   });
 });
