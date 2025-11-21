@@ -1,4 +1,4 @@
-import type { PromptMutationRepository } from "@/repositories/PromptRepository.interfaces";
+import type { PromptRepository } from "@/repositories/PromptRepository";
 
 /**
  * Service dédié à la gestion des favoris de prompts
@@ -9,14 +9,9 @@ export interface PromptFavoriteService {
 }
 
 export class SupabasePromptFavoriteService implements PromptFavoriteService {
-  /**
-   * Injection ISP : Reçoit uniquement PromptMutationRepository (1 méthode)
-   * Au lieu de PromptRepository complet (7 méthodes)
-   * Réduction d'exposition : -86% (7 → 1)
-   */
-  constructor(private promptMutationRepository: PromptMutationRepository) {}
+  constructor(private promptRepository: PromptRepository) {}
 
   async toggleFavorite(id: string, currentState: boolean): Promise<void> {
-    await this.promptMutationRepository.update(id, { is_favorite: !currentState });
+    await this.promptRepository.update(id, { is_favorite: !currentState });
   }
 }

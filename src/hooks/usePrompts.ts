@@ -3,27 +3,25 @@ import { usePromptMessages } from "@/features/prompts/hooks/usePromptMessages";
 import { successToast, errorToast } from "@/lib/toastUtils";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { messages } from "@/constants/messages";
-import { usePromptQueryRepository } from "@/contexts/PromptQueryRepositoryContext";
-import { usePromptCommandRepository } from "@/contexts/PromptCommandRepositoryContext";
+import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
 import { usePromptFavoriteService } from "@/contexts/PromptFavoriteServiceContext";
 import { usePromptVisibilityService } from "@/contexts/PromptVisibilityServiceContext";
 import { usePromptDuplicationService } from "@/contexts/PromptDuplicationServiceContext";
 import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
 import { useAuth } from "@/hooks/useAuth";
 import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
-import type { Prompt } from "@/repositories/PromptRepository.interfaces";
+import type { Prompt } from "@/repositories/PromptRepository";
 
 // Hook de lecture - liste complète (tous les prompts accessibles)
-// ISP : Utilise uniquement PromptQueryRepository (4 méthodes au lieu de 7)
 export function usePrompts() {
-  const queryRepository = usePromptQueryRepository();
+  const repository = usePromptRepository();
   const { user } = useAuth();
   
   return useQuery({
     queryKey: ["prompts", user?.id],
     queryFn: () => {
       if (!user) throw new Error("Utilisateur non authentifié");
-      return queryRepository.fetchAll(user.id);
+      return repository.fetchAll(user.id);
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -31,16 +29,15 @@ export function usePrompts() {
 }
 
 // Hook de lecture - seulement les prompts possédés par l'utilisateur
-// ISP : Utilise uniquement PromptQueryRepository (4 méthodes au lieu de 7)
 export function useOwnedPrompts() {
-  const queryRepository = usePromptQueryRepository();
+  const repository = usePromptRepository();
   const { user } = useAuth();
   
   return useQuery({
     queryKey: ["prompts", "owned", user?.id],
     queryFn: () => {
       if (!user) throw new Error("Utilisateur non authentifié");
-      return queryRepository.fetchOwned(user.id);
+      return repository.fetchOwned(user.id);
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -48,16 +45,15 @@ export function useOwnedPrompts() {
 }
 
 // Hook de lecture - prompts partagés avec moi (partage privé)
-// ISP : Utilise uniquement PromptQueryRepository (4 méthodes au lieu de 7)
 export function useSharedWithMePrompts() {
-  const queryRepository = usePromptQueryRepository();
+  const repository = usePromptRepository();
   const { user } = useAuth();
   
   return useQuery({
     queryKey: ["prompts", "shared-with-me", user?.id],
     queryFn: () => {
       if (!user) throw new Error("Utilisateur non authentifié");
-      return queryRepository.fetchSharedWithMe(user.id);
+      return repository.fetchSharedWithMe(user.id);
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -65,31 +61,29 @@ export function useSharedWithMePrompts() {
 }
 
 // Hook de lecture - prompt unique
-// ISP : Utilise uniquement PromptQueryRepository (4 méthodes au lieu de 7)
 export function usePrompt(id: string | undefined) {
-  const queryRepository = usePromptQueryRepository();
+  const repository = usePromptRepository();
   
   return useQuery({
     queryKey: ["prompts", id],
     queryFn: () => {
       if (!id) throw new Error("ID requis");
-      return queryRepository.fetchById(id);
+      return repository.fetchById(id);
     },
     enabled: !!id,
   });
 }
 
 // Hook création
-// ISP : Utilise uniquement PromptCommandRepository (3 méthodes au lieu de 7)
 export function useCreatePrompt() {
   const queryClient = useQueryClient();
-  const commandRepository = usePromptCommandRepository();
+  const repository = usePromptRepository();
   const { user } = useAuth();
   
   return useMutation({
     mutationFn: (promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">) => {
       if (!user) throw new Error("Non authentifié");
-      return commandRepository.create(user.id, promptData);
+      return repository.create(user.id, promptData);
     },
     retry: shouldRetryMutation,
     retryDelay: getRetryDelay,
@@ -104,14 +98,13 @@ export function useCreatePrompt() {
 }
 
 // Hook mise à jour
-// ISP : Utilise uniquement PromptCommandRepository (3 méthodes au lieu de 7)
 export function useUpdatePrompt() {
   const queryClient = useQueryClient();
-  const commandRepository = usePromptCommandRepository();
+  const repository = usePromptRepository();
   
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Prompt> }) =>
-      commandRepository.update(id, updates),
+      repository.update(id, updates),
     retry: shouldRetryMutation,
     retryDelay: getRetryDelay,
     onMutate: async ({ id, updates }) => {
@@ -138,13 +131,12 @@ export function useUpdatePrompt() {
 }
 
 // Hook suppression
-// ISP : Utilise uniquement PromptCommandRepository (3 méthodes au lieu de 7)
 export function useDeletePrompt() {
   const queryClient = useQueryClient();
-  const commandRepository = usePromptCommandRepository();
+  const repository = usePromptRepository();
   
   return useMutation({
-    mutationFn: (id: string) => commandRepository.delete(id),
+    mutationFn: (id: string) => repository.delete(id),
     retry: shouldRetryMutation,
     retryDelay: getRetryDelay,
     onSuccess: () => {

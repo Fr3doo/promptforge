@@ -3,8 +3,7 @@ import {
   SupabasePromptDuplicationService,
   type PromptDuplicationService,
 } from "@/services/PromptDuplicationService";
-import { usePromptQueryRepository } from "./PromptQueryRepositoryContext";
-import { usePromptCommandRepository } from "./PromptCommandRepositoryContext";
+import { usePromptRepository } from "./PromptRepositoryContext";
 
 const PromptDuplicationServiceContext = createContext<PromptDuplicationService | null>(null);
 
@@ -23,32 +22,14 @@ interface PromptDuplicationServiceProviderProps {
  * </PromptDuplicationServiceProvider>
  * ```
  */
-/**
- * Provider pour le service de duplication de prompts
- * 
- * Principe ISP : Injecte Query + Command (7 méthodes)
- * C'est le service le plus complexe, il compose 2 interfaces spécialisées
- * 
- * @example
- * ```tsx
- * <PromptDuplicationServiceProvider>
- *   <DuplicateButton />
- * </PromptDuplicationServiceProvider>
- * ```
- */
 export function PromptDuplicationServiceProvider({
   children,
   service,
 }: PromptDuplicationServiceProviderProps) {
-  const promptQueryRepository = usePromptQueryRepository();
-  const promptCommandRepository = usePromptCommandRepository();
-  
+  const promptRepository = usePromptRepository();
   const defaultService = useMemo(
-    () => service || new SupabasePromptDuplicationService(
-      promptQueryRepository,
-      promptCommandRepository
-    ),
-    [service, promptQueryRepository, promptCommandRepository]
+    () => service || new SupabasePromptDuplicationService(promptRepository),
+    [service, promptRepository]
   );
 
   return (

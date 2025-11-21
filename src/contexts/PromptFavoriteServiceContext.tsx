@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { SupabasePromptFavoriteService, type PromptFavoriteService } from "@/services/PromptFavoriteService";
-import { usePromptMutationRepository } from "./PromptMutationRepositoryContext";
+import { usePromptRepository } from "./PromptRepositoryContext";
 
 const PromptFavoriteServiceContext = createContext<PromptFavoriteService | null>(null);
 
@@ -9,26 +9,14 @@ interface PromptFavoriteServiceProviderProps {
   service?: PromptFavoriteService;
 }
 
-/**
- * Provider pour le service de gestion des favoris
- * 
- * Principe ISP : Injecte PromptMutationRepository (1 méthode) au lieu de 7
- * 
- * @example
- * ```tsx
- * <PromptFavoriteServiceProvider>
- *   <FavoriteButton />
- * </PromptFavoriteServiceProvider>
- * ```
- */
 export function PromptFavoriteServiceProvider({ 
   children, 
   service 
 }: PromptFavoriteServiceProviderProps) {
-  const promptMutationRepository = usePromptMutationRepository();
+  const promptRepository = usePromptRepository();
   const defaultService = useMemo(
-    () => service || new SupabasePromptFavoriteService(promptMutationRepository),
-    [service, promptMutationRepository]
+    () => service || new SupabasePromptFavoriteService(promptRepository),
+    [service, promptRepository]
   );
 
   return (
