@@ -4,6 +4,7 @@ import type { PromptRepository } from "@/repositories/PromptRepository";
 import type { VariableRepository } from "@/repositories/VariableRepository";
 import type { AnalysisRepository } from "@/repositories/AnalysisRepository";
 import type { PromptShareRepository } from "@/repositories/PromptShareRepository";
+import type { ProfileRepository } from "@/repositories/ProfileRepository";
 import type { PromptFavoriteService } from "@/services/PromptFavoriteService";
 import type { PromptVisibilityService } from "@/services/PromptVisibilityService";
 import type { PromptDuplicationService } from "@/services/PromptDuplicationService";
@@ -32,6 +33,9 @@ export interface AppProvidersProps {
   
   /** Repository de partage (optionnel pour tests) */
   shareRepository?: PromptShareRepository;
+  
+  /** Repository des profils (optionnel pour tests) */
+  profileRepository?: ProfileRepository;
   
   /** Service de gestion des favoris (optionnel pour tests) */
   favoriteService?: PromptFavoriteService;
