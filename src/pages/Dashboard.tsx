@@ -115,34 +115,21 @@ const Dashboard = () => {
         />
 
         {/* Favorite Prompts */}
-        {dashboardData?.favoritePrompts && dashboardData.favoritePrompts.length > 0 && (
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <Star className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">{messages.dashboard.sections.favorites}</h2>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {dashboardData.favoritePrompts.map((prompt) => (
-                <PromptCard
-                  key={prompt.id}
-                  prompt={prompt}
-                  onToggleFavorite={(id, currentState) =>
-                    toggleFavorite({ id, currentState })
-                  }
-                  onToggleVisibility={async (id, currentVisibility, permission) => {
-                    if (permission !== undefined) {
-                      await toggleVisibility({ id, currentVisibility, publicPermission: permission });
-                    } else {
-                      await toggleVisibility({ id, currentVisibility });
-                    }
-                  }}
-                  onClick={() => navigate(`/prompts/${prompt.id}`)}
-                  currentUserId={user?.id}
-                />
-              ))}
-            </div>
-          </section>
-        )}
+        <DashboardPromptSection
+          icon={Star}
+          title={messages.dashboard.sections.favorites}
+          prompts={dashboardData?.favoritePrompts || []}
+          currentUserId={user?.id}
+          onToggleFavorite={(id, currentState) => toggleFavorite({ id, currentState })}
+          onToggleVisibility={async (id, currentVisibility, permission) => {
+            if (permission !== undefined) {
+              await toggleVisibility({ id, currentVisibility, publicPermission: permission });
+            } else {
+              await toggleVisibility({ id, currentVisibility });
+            }
+          }}
+          onPromptClick={(id) => navigate(`/prompts/${id}`)}
+        />
 
 
         {/* Shared Prompts */}
