@@ -3,6 +3,7 @@ import { PromptRepositoryProvider } from "@/contexts/PromptRepositoryContext";
 import { PromptMutationRepositoryProvider } from "@/contexts/PromptMutationRepositoryContext";
 import { PromptQueryRepositoryProvider } from "@/contexts/PromptQueryRepositoryContext";
 import { PromptCommandRepositoryProvider } from "@/contexts/PromptCommandRepositoryContext";
+import { VariableRepositoryProvider } from "@/contexts/VariableRepositoryContext";
 import type { AppProvidersProps } from "./AppProviders.types";
 
 /**
@@ -24,14 +25,20 @@ import type { AppProvidersProps } from "./AppProviders.types";
  * </AppProviders>
  * ```
  */
-export function AppProviders({ children, repository }: AppProvidersProps) {
+export function AppProviders({ 
+  children, 
+  repository,
+  variableRepository 
+}: AppProvidersProps) {
   return (
     <ErrorBoundary>
       <PromptRepositoryProvider repository={repository}>
         <PromptMutationRepositoryProvider>
           <PromptQueryRepositoryProvider>
             <PromptCommandRepositoryProvider>
-              {children}
+              <VariableRepositoryProvider repository={variableRepository}>
+                {children}
+              </VariableRepositoryProvider>
             </PromptCommandRepositoryProvider>
           </PromptQueryRepositoryProvider>
         </PromptMutationRepositoryProvider>
