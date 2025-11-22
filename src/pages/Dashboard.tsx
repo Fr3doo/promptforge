@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboard } from "@/hooks/useDashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PromptCard } from "@/features/prompts/components/PromptCard";
 import { useToggleFavorite, useToggleVisibility } from "@/hooks/usePrompts";
 import { TrendingUp, Star, Share2, Clock } from "lucide-react";
 import { Header } from "@/components/Header";
@@ -133,34 +132,21 @@ const Dashboard = () => {
 
 
         {/* Shared Prompts */}
-        {dashboardData?.sharedPrompts && dashboardData.sharedPrompts.length > 0 && (
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <Share2 className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">{messages.dashboard.sections.shared}</h2>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {dashboardData.sharedPrompts.map((prompt) => (
-                <PromptCard
-                  key={prompt.id}
-                  prompt={prompt}
-                  onToggleFavorite={(id, currentState) =>
-                    toggleFavorite({ id, currentState })
-                  }
-                  onToggleVisibility={async (id, currentVisibility, permission) => {
-                    if (permission !== undefined) {
-                      await toggleVisibility({ id, currentVisibility, publicPermission: permission });
-                    } else {
-                      await toggleVisibility({ id, currentVisibility });
-                    }
-                  }}
-                  onClick={() => navigate(`/prompts/${prompt.id}`)}
-                  currentUserId={user?.id}
-                />
-              ))}
-            </div>
-          </section>
-        )}
+        <DashboardPromptSection
+          icon={Share2}
+          title={messages.dashboard.sections.shared}
+          prompts={dashboardData?.sharedPrompts || []}
+          currentUserId={user?.id}
+          onToggleFavorite={(id, currentState) => toggleFavorite({ id, currentState })}
+          onToggleVisibility={async (id, currentVisibility, permission) => {
+            if (permission !== undefined) {
+              await toggleVisibility({ id, currentVisibility, publicPermission: permission });
+            } else {
+              await toggleVisibility({ id, currentVisibility });
+            }
+          }}
+          onPromptClick={(id) => navigate(`/prompts/${id}`)}
+        />
 
       </main>
       
