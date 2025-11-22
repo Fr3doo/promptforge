@@ -1,5 +1,5 @@
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useEdgeFunctionRepository } from "@/contexts/EdgeFunctionRepositoryContext";
 
 export interface SimpleVariable {
   name: string;
@@ -22,34 +22,31 @@ export interface InitialVersionOptions {
  * Isole la logique complexe de création de version (lignes 165-206)
  */
 export function useInitialVersionCreator() {
+  const edgeFunctionRepository = useEdgeFunctionRepository();
+  
   const createInitialVersion = async (
     options: InitialVersionOptions
   ): Promise<{ success: boolean; skipped?: boolean }> => {
     try {
-      const { data: versionData, error: versionError } = await supabase.functions.invoke(
-        "create-initial-version",
-        {
-          body: {
-            prompt_id: options.promptId,
-            content: options.content,
-            semver: "1.0.0",
-            message: "Version initiale",
-            variables: options.variables.map((v, index) => ({
-              name: v.name,
-              type: v.type,
-              required: v.required,
-              default_value: v.default_value || "",
-              help: v.help || "",
-              pattern: v.pattern || "",
-              options: v.options || [],
-              order_index: index,
-            })),
-          },
-        }
-      );
+      const result = await edgeFunctionRepository.createInitialVersion({
+        prompt_id: options.promptId,
+        content: options.content,
+        semver: "1.0.0",
+        message: "Version initiale",
+        variables: options.variables.map((v, index) => ({
+          name: v.name,
+          type: v.type,
+          required: v.required,
+          default_value: v.default_value || "",
+          help: v.help || "",
+          pattern: v.pattern || "",
+          options: v.options || [],
+          order_index: index,
+        })),
+      });
 
-      if (versionError) {
-        console.error("Erreur création version initiale:", versionError);
+      if (!result.success) {
+        console.error("Erreur création version initiale");
         // Ne pas bloquer l'utilisateur, juste notifier
         toast.warning("Prompt créé", {
           description:
@@ -58,7 +55,7 @@ export function useInitialVersionCreator() {
         return { success: false };
       }
 
-      if (versionData?.skipped) {
+      if (result.skipped) {
         console.log("Version initiale déjà existante");
         return { success: true, skipped: true };
       }

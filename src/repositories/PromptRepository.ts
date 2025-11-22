@@ -12,6 +12,7 @@ export interface PromptRepository {
   fetchRecent(userId: string, days?: number, limit?: number): Promise<Prompt[]>;
   fetchFavorites(userId: string, limit?: number): Promise<Prompt[]>;
   fetchPublicShared(userId: string, limit?: number): Promise<Prompt[]>;
+  countPublic(): Promise<number>;
   create(userId: string, promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt>;
   update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
   delete(id: string): Promise<void>;
@@ -167,5 +168,16 @@ export class SupabasePromptRepository implements PromptRepository {
     
     handleSupabaseError(result);
     return result.data as Prompt[];
+  }
+
+  async countPublic(): Promise<number> {
+    const result = await supabase
+      .from("prompts")
+      .select("*", { count: "exact", head: true })
+      .eq("visibility", "SHARED")
+      .eq("status", "PUBLISHED");
+    
+    handleSupabaseError(result);
+    return result.count ?? 0;
   }
 }

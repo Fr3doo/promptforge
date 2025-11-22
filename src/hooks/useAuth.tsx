@@ -3,6 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
 import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
 import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
+import { SupabaseVariableSetRepository } from "@/repositories/VariableSetRepository";
 import { TemplateInitializationService } from "@/services/TemplateInitializationService";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { logError } from "@/lib/logger";
@@ -13,7 +14,11 @@ export function useAuth() {
   const variableRepository = useVariableRepository();
   
   const templateService = useMemo(
-    () => new TemplateInitializationService(promptRepository, variableRepository),
+    () => new TemplateInitializationService(
+      promptRepository, 
+      variableRepository,
+      new SupabaseVariableSetRepository()
+    ),
     [promptRepository, variableRepository]
   );
   

@@ -1,29 +1,25 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Code2, Zap, GitBranch, FileText, BookOpen, HelpCircle, Lightbulb, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { messages } from "@/constants/messages";
+import { useProfileRepository } from "@/contexts/ProfileRepositoryContext";
 
 const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const profileRepository = useProfileRepository();
   
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data } = await supabase
-        .from("profiles")
-        .select("pseudo")
-        .eq("id", user.id)
-        .single();
-      return data;
+      return await profileRepository.fetchByUserId(user.id);
     },
     enabled: !!user?.id,
   });
