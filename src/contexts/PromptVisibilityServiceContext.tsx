@@ -3,7 +3,8 @@ import {
   SupabasePromptVisibilityService,
   type PromptVisibilityService,
 } from "@/services/PromptVisibilityService";
-import { usePromptRepository } from "./PromptRepositoryContext";
+import { usePromptMutationRepository } from "./PromptMutationRepositoryContext";
+import { usePromptQueryRepository } from "./PromptQueryRepositoryContext";
 
 const PromptVisibilityServiceContext = createContext<PromptVisibilityService | null>(null);
 
@@ -26,10 +27,11 @@ export function PromptVisibilityServiceProvider({
   children,
   service,
 }: PromptVisibilityServiceProviderProps) {
-  const promptRepository = usePromptRepository();
+  const mutationRepository = usePromptMutationRepository();
+  const queryRepository = usePromptQueryRepository();
   const defaultService = useMemo(
-    () => service || new SupabasePromptVisibilityService(promptRepository),
-    [service, promptRepository]
+    () => service || new SupabasePromptVisibilityService(mutationRepository, queryRepository),
+    [service, mutationRepository, queryRepository]
   );
 
   return (

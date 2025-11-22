@@ -1,4 +1,7 @@
-import type { PromptRepository } from "@/repositories/PromptRepository";
+import type { 
+  PromptMutationRepository, 
+  PromptQueryRepository 
+} from "@/repositories/PromptRepository.interfaces";
 
 /**
  * Service dédié à la gestion de la visibilité et des permissions publiques des prompts
@@ -52,7 +55,10 @@ export interface PromptVisibilityService {
 }
 
 export class SupabasePromptVisibilityService implements PromptVisibilityService {
-  constructor(private promptRepository: PromptRepository) {}
+  constructor(
+    private mutationRepository: PromptMutationRepository,
+    private queryRepository: PromptQueryRepository
+  ) {}
 
   async toggleVisibility(
     id: string,
@@ -77,18 +83,18 @@ export class SupabasePromptVisibilityService implements PromptVisibilityService 
       updateData.public_permission = publicPermission || "READ";
     }
 
-    await this.promptRepository.update(id, updateData);
+    await this.mutationRepository.update(id, updateData);
     return newVisibility;
   }
 
   async updatePublicPermission(id: string, permission: "READ" | "WRITE"): Promise<void> {
     // First, check if the prompt is SHARED (public permission only applies to SHARED prompts)
-    const prompt = await this.promptRepository.fetchById(id);
+    const prompt = await this.queryRepository.fetchById(id);
 
     if (prompt.visibility !== "SHARED") {
       throw new Error("PERMISSION_UPDATE_ON_PRIVATE_PROMPT");
     }
 
-    await this.promptRepository.update(id, { public_permission: permission });
+    await this.mutationRepository.update(id, { public_permission: permission });
   }
 }
