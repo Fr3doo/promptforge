@@ -1,6 +1,7 @@
+import { memo } from "react";
 import type { PromptListViewProps } from "./PromptListView.types";
 
-export const PromptListView = ({
+export const PromptListView = memo(({
   prompts,
   isLoading,
   isEmpty,
@@ -25,4 +26,6 @@ export const PromptListView = ({
       {children}
     </div>
   );
-};
+});
+
+PromptListView.displayName = "PromptListView";
