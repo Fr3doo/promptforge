@@ -42,6 +42,29 @@ export const PromptCardView = ({
           {prompt.description || "Aucune description"}
         </CardDescription>
       </CardHeader>
+      <CardContent onClick={onClick}>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {prompt.tags?.slice(0, 3).map((tag: string) => (
+            <Badge key={tag} variant="secondary" className="text-xs">
+              {tag}
+            </Badge>
+          ))}
+          {prompt.tags && prompt.tags.length > 3 && (
+            <Badge variant="secondary" className="text-xs">
+              +{prompt.tags.length - 3}
+            </Badge>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground">
+          <VisibilityBadge sharingState={sharingState} shareCount={shareCount} />
+          <span>v{prompt.version}</span>
+          {!isOwner && (
+            <Badge variant="outline" className="text-xs">
+              Partagé avec vous
+            </Badge>
+          )}
+        </div>
+      </CardContent>
     </Card>
   );
 };
