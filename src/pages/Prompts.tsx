@@ -176,7 +176,6 @@ const Prompts = () => {
             onDuplicate={handleDuplicate}
             onToggleVisibility={handleToggleVisibility}
             emptySearchState={!!searchQuery}
-            searchQuery={searchQuery}
             currentUserId={user?.id}
           />
         </section>
@@ -196,7 +195,6 @@ const Prompts = () => {
             onDuplicate={handleDuplicate}
             onToggleVisibility={handleToggleVisibility}
             emptySearchState={!!searchQuery}
-            searchQuery={searchQuery}
             currentUserId={user?.id}
             isSharedSection={true}
           />

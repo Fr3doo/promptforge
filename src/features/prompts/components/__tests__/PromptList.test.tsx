@@ -353,7 +353,6 @@ describe("PromptList - Tests d'intégration", () => {
         <PromptList
           {...defaultProps}
           emptySearchState={true}
-          searchQuery="test"
           currentUserId="user-123"
         />
       );
