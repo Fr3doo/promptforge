@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Prompt } from "@/features/prompts/types";
 import { usePromptQueryRepository } from "@/contexts/PromptQueryRepositoryContext";
+import { usePromptUsageRepository } from "@/contexts/PromptUsageRepositoryContext";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardStats {
   recentPrompts: Prompt[];
@@ -18,6 +18,7 @@ interface DashboardStats {
 
 export function useDashboard() {
   const queryRepository = usePromptQueryRepository();
+  const usageRepository = usePromptUsageRepository();
   const { user } = useAuth();
   
   return useQuery({
@@ -34,33 +35,8 @@ export function useDashboard() {
       // Fetch shared prompts using repository
       const sharedPrompts = await queryRepository.fetchPublicShared(user.id, 5);
 
-      // Fetch usage statistics
-      const { data: promptsWithUsage } = await supabase
-        .from("prompts")
-        .select(`
-          id,
-          title,
-          prompt_usage (
-            id,
-            success
-          )
-        `)
-        .eq("owner_id", user.id);
-
-      const usageStats = (promptsWithUsage || []).map((prompt: any) => {
-        const usages = prompt.prompt_usage || [];
-        const totalUsage = usages.length;
-        const successfulUsage = usages.filter((u: any) => u.success === true).length;
-        
-        return {
-          promptId: prompt.id,
-          title: prompt.title,
-          usageCount: totalUsage,
-          successRate: totalUsage > 0 ? (successfulUsage / totalUsage) * 100 : 0,
-        };
-      }).filter(stat => stat.usageCount > 0)
-        .sort((a, b) => b.usageCount - a.usageCount)
-        .slice(0, 5);
+      // Fetch usage statistics using repository
+      const usageStats = await usageRepository.fetchUsageStats(user.id, 5);
 
       return {
         recentPrompts,
