@@ -4,6 +4,7 @@ import { PromptMutationRepositoryProvider } from "@/contexts/PromptMutationRepos
 import { PromptQueryRepositoryProvider } from "@/contexts/PromptQueryRepositoryContext";
 import { PromptCommandRepositoryProvider } from "@/contexts/PromptCommandRepositoryContext";
 import { VariableRepositoryProvider } from "@/contexts/VariableRepositoryContext";
+import { AnalysisRepositoryProvider } from "@/contexts/AnalysisRepositoryContext";
 import type { AppProvidersProps } from "./AppProviders.types";
 
 /**
@@ -28,7 +29,8 @@ import type { AppProvidersProps } from "./AppProviders.types";
 export function AppProviders({ 
   children, 
   repository,
-  variableRepository 
+  variableRepository,
+  analysisRepository
 }: AppProvidersProps) {
   return (
     <ErrorBoundary>
@@ -37,7 +39,9 @@ export function AppProviders({
           <PromptQueryRepositoryProvider>
             <PromptCommandRepositoryProvider>
               <VariableRepositoryProvider repository={variableRepository}>
-                {children}
+                <AnalysisRepositoryProvider repository={analysisRepository}>
+                  {children}
+                </AnalysisRepositoryProvider>
               </VariableRepositoryProvider>
             </PromptCommandRepositoryProvider>
           </PromptQueryRepositoryProvider>
