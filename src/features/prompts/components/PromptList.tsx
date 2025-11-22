@@ -1,9 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { PromptCard } from "./PromptCard";
 import { PromptListSkeleton } from "@/components/PromptCardSkeleton";
 import { EmptyPromptState } from "./EmptyPromptState";
 import type { Prompt } from "../types";
 import { useLoadingState } from "@/hooks/useLoadingState";
+import { PromptListView } from "./PromptListView";
+import { PromptListActionsItem } from "./PromptListActions";
 
 interface PromptListProps {
   prompts: Prompt[];
@@ -50,20 +51,26 @@ export const PromptList = ({
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <PromptListView
+      prompts={prompts}
+      isLoading={isLoading}
+      isEmpty={prompts.length === 0}
+      loadingComponent={loadingState.content}
+      emptyComponent={loadingState.content}
+    >
       {prompts.map((prompt, index) => (
-        <PromptCard
+        <PromptListActionsItem
           key={prompt.id}
           prompt={prompt}
           index={index}
+          onPromptClick={(id) => navigate(`/prompts/${id}`)}
           onToggleFavorite={onToggleFavorite}
           onDelete={onDelete}
           onDuplicate={onDuplicate}
           onToggleVisibility={onToggleVisibility}
-          onClick={() => navigate(`/prompts/${prompt.id}`)}
           currentUserId={currentUserId}
         />
       ))}
-    </div>
+    </PromptListView>
   );
 };
