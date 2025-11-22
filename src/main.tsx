@@ -4,6 +4,7 @@ import "./index.css";
 import { PromptRepositoryProvider } from "./contexts/PromptRepositoryContext.tsx";
 import { PromptMutationRepositoryProvider } from "./contexts/PromptMutationRepositoryContext.tsx";
 import { PromptQueryRepositoryProvider } from "./contexts/PromptQueryRepositoryContext.tsx";
+import { PromptCommandRepositoryProvider } from "./contexts/PromptCommandRepositoryContext.tsx";
 import { VariableRepositoryProvider } from "./contexts/VariableRepositoryContext.tsx";
 import { AnalysisRepositoryProvider } from "./contexts/AnalysisRepositoryContext.tsx";
 import { PromptShareRepositoryProvider } from "./contexts/PromptShareRepositoryContext.tsx";
@@ -17,19 +18,21 @@ createRoot(document.getElementById("root")!).render(
     <PromptRepositoryProvider>
       <PromptMutationRepositoryProvider>
         <PromptQueryRepositoryProvider>
-          <VariableRepositoryProvider>
-            <AnalysisRepositoryProvider>
-              <PromptShareRepositoryProvider>
-                <PromptFavoriteServiceProvider>
-                  <PromptVisibilityServiceProvider>
-                    <PromptDuplicationServiceProvider>
-                      <App />
-                    </PromptDuplicationServiceProvider>
-                  </PromptVisibilityServiceProvider>
-                </PromptFavoriteServiceProvider>
-              </PromptShareRepositoryProvider>
-            </AnalysisRepositoryProvider>
-          </VariableRepositoryProvider>
+          <PromptCommandRepositoryProvider>
+            <VariableRepositoryProvider>
+              <AnalysisRepositoryProvider>
+                <PromptShareRepositoryProvider>
+                  <PromptFavoriteServiceProvider>
+                    <PromptVisibilityServiceProvider>
+                      <PromptDuplicationServiceProvider>
+                        <App />
+                      </PromptDuplicationServiceProvider>
+                    </PromptVisibilityServiceProvider>
+                  </PromptFavoriteServiceProvider>
+                </PromptShareRepositoryProvider>
+              </AnalysisRepositoryProvider>
+            </VariableRepositoryProvider>
+          </PromptCommandRepositoryProvider>
         </PromptQueryRepositoryProvider>
       </PromptMutationRepositoryProvider>
     </PromptRepositoryProvider>
