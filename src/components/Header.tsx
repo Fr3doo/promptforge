@@ -3,19 +3,20 @@ import { Link, useNavigate } from "react-router-dom";
 import { Code2, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { messages } from "@/constants/messages";
 
 
 export const Header = () => {
+  const authRepository = useAuthRepository();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await authRepository.signOut();
     toast.success(messages.success.signedOut);
     setMobileMenuOpen(false);
     navigate("/");
