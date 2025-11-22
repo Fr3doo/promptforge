@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Prompt } from "@/features/prompts/types";
+import { usePromptQueryRepository } from "@/contexts/PromptQueryRepositoryContext";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DashboardStats {
   recentPrompts: Prompt[];
@@ -15,42 +17,22 @@ interface DashboardStats {
 }
 
 export function useDashboard() {
+  const queryRepository = usePromptQueryRepository();
+  const { user } = useAuth();
+  
   return useQuery({
-    queryKey: ["dashboard"],
+    queryKey: ["dashboard", user?.id],
     queryFn: async (): Promise<DashboardStats> => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Fetch recent prompts (updated in last 7 days)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
-      const { data: recentPrompts } = await supabase
-        .from("prompts")
-        .select("*")
-        .eq("owner_id", user.id)
-        .gte("updated_at", sevenDaysAgo.toISOString())
-        .order("updated_at", { ascending: false })
-        .limit(5);
+      // Fetch recent prompts using repository
+      const recentPrompts = await queryRepository.fetchRecent(user.id, 7, 5);
 
-      // Fetch favorite prompts
-      const { data: favoritePrompts } = await supabase
-        .from("prompts")
-        .select("*")
-        .eq("owner_id", user.id)
-        .eq("is_favorite", true)
-        .order("updated_at", { ascending: false })
-        .limit(5);
+      // Fetch favorite prompts using repository
+      const favoritePrompts = await queryRepository.fetchFavorites(user.id, 5);
 
-      // Fetch shared prompts (public)
-      const { data: sharedPrompts } = await supabase
-        .from("prompts")
-        .select("*")
-        .eq("visibility", "SHARED")
-        .neq("owner_id", user.id)
-        .order("updated_at", { ascending: false })
-        .limit(5);
-
+      // Fetch shared prompts using repository
+      const sharedPrompts = await queryRepository.fetchPublicShared(user.id, 5);
 
       // Fetch usage statistics
       const { data: promptsWithUsage } = await supabase
@@ -81,11 +63,12 @@ export function useDashboard() {
         .slice(0, 5);
 
       return {
-        recentPrompts: recentPrompts || [],
-        favoritePrompts: favoritePrompts || [],
-        sharedPrompts: sharedPrompts || [],
+        recentPrompts,
+        favoritePrompts,
+        sharedPrompts,
         usageStats,
       };
     },
+    enabled: !!user,
   });
 }
