@@ -16,6 +16,9 @@ const mockQueryRepository: PromptQueryRepository = {
   fetchOwned: vi.fn(),
   fetchSharedWithMe: vi.fn(),
   fetchById: vi.fn(),
+  fetchRecent: vi.fn(),
+  fetchFavorites: vi.fn(),
+  fetchPublicShared: vi.fn(),
 };
 
 describe("PromptVisibilityService", () => {
