@@ -13,7 +13,6 @@ interface PromptListProps {
   onDuplicate?: (id: string) => void;
   onToggleVisibility?: (id: string, currentVisibility: "PRIVATE" | "SHARED", permission: "READ" | "WRITE") => Promise<void>;
   emptySearchState?: boolean;
-  searchQuery?: string;
   currentUserId?: string;
   isSharedSection?: boolean;
 }
@@ -26,7 +25,6 @@ export const PromptList = ({
   onDuplicate,
   onToggleVisibility,
   emptySearchState = false,
-  searchQuery = "",
   currentUserId,
   isSharedSection = false,
 }: PromptListProps) => {
