@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
+import { useProfileRepository } from "@/contexts/ProfileRepositoryContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
@@ -19,6 +20,8 @@ import { SEO } from "@/components/SEO";
 import { messages } from "@/constants/messages";
 
 export default function Settings() {
+  const authRepository = useAuthRepository();
+  const profileRepository = useProfileRepository();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -49,13 +52,9 @@ export default function Settings() {
     queryKey: ["profile", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
       
-      if (error) throw error;
+      const data = await profileRepository.fetchByUserId(user.id);
+      
       if (data?.pseudo) {
         setPseudo(data.pseudo);
       }
@@ -66,7 +65,7 @@ export default function Settings() {
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      await authRepository.signOut();
       toast({
         title: messages.success.signedOut,
         description: messages.info.goodbye,
@@ -127,18 +126,7 @@ export default function Settings() {
     
     setIsPseudoLoading(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ pseudo: trimmedPseudo })
-        .eq('id', user.id);
-      
-      if (error) {
-        // Check for unique constraint violation
-        if (error.code === '23505') {
-          throw new Error(messages.settings.profile.pseudoAlreadyUsed);
-        }
-        throw error;
-      }
+      await profileRepository.update(user.id, { pseudo: trimmedPseudo });
       
       toast({
         title: messages.settings.profile.pseudoUpdated,
@@ -148,9 +136,16 @@ export default function Settings() {
       // Invalidate queries to refresh profile data across the app
       queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
     } catch (error) {
+      // Check for unique constraint violation
+      const errorMessage = error instanceof Error && error.message.includes('duplicate key')
+        ? messages.settings.profile.pseudoAlreadyUsed
+        : error instanceof Error 
+          ? error.message 
+          : messages.settings.profile.pseudoUpdateError;
+      
       toast({
         title: messages.labels.error,
-        description: error instanceof Error ? error.message : messages.settings.profile.pseudoUpdateError,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
