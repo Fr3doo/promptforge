@@ -7,6 +7,7 @@ import { VariableRepositoryProvider } from "@/contexts/VariableRepositoryContext
 import { AnalysisRepositoryProvider } from "@/contexts/AnalysisRepositoryContext";
 import { PromptShareRepositoryProvider } from "@/contexts/PromptShareRepositoryContext";
 import { PromptFavoriteServiceProvider } from "@/contexts/PromptFavoriteServiceContext";
+import { PromptVisibilityServiceProvider } from "@/contexts/PromptVisibilityServiceContext";
 import type { AppProvidersProps } from "./AppProviders.types";
 
 /**
@@ -34,7 +35,8 @@ export function AppProviders({
   variableRepository,
   analysisRepository,
   shareRepository,
-  favoriteService
+  favoriteService,
+  visibilityService
 }: AppProvidersProps) {
   return (
     <ErrorBoundary>
@@ -46,7 +48,9 @@ export function AppProviders({
                 <AnalysisRepositoryProvider repository={analysisRepository}>
                   <PromptShareRepositoryProvider repository={shareRepository}>
                     <PromptFavoriteServiceProvider service={favoriteService}>
-                      {children}
+                      <PromptVisibilityServiceProvider service={visibilityService}>
+                        {children}
+                      </PromptVisibilityServiceProvider>
                     </PromptFavoriteServiceProvider>
                   </PromptShareRepositoryProvider>
                 </AnalysisRepositoryProvider>
