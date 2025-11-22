@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import { Footer } from "@/components/Footer";
 import { messages } from "@/constants/messages";
 
 const Auth = () => {
+  const authRepository = useAuthRepository();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,11 +30,11 @@ const Auth = () => {
         password,
       });
 
-      const { error } = await supabase.auth.signInWithPassword({
-        email: validatedData.email,
-        password: validatedData.password,
-      });
-      if (error) throw error;
+      await authRepository.signIn(
+        validatedData.email,
+        validatedData.password
+      );
+      
       toast.success(messages.auth.loginSuccess);
       navigate("/");
     } catch (error: any) {
