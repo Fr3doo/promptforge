@@ -21,6 +21,27 @@ export const PromptCardView = ({
   index = 0,
   actions,
 }: PromptCardViewProps) => {
-  // Phase 2: Retour temporaire null - composant non utilisé pour l'instant
-  return null;
+  return (
+    <Card className="cursor-pointer transition-all hover:border-primary hover:shadow-lg">
+      <CardHeader>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 flex flex-col gap-2" onClick={onClick}>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg">{prompt.title}</CardTitle>
+              {isDraft && (
+                <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+                  <FileText className="h-3 w-3 mr-1" />
+                  Brouillon
+                </Badge>
+              )}
+            </div>
+          </div>
+          {actions}
+        </div>
+        <CardDescription className="line-clamp-2" onClick={onClick}>
+          {prompt.description || "Aucune description"}
+        </CardDescription>
+      </CardHeader>
+    </Card>
+  );
 };
