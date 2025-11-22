@@ -11,6 +11,9 @@ export interface PromptQueryRepository {
   fetchOwned(userId: string): Promise<Prompt[]>;
   fetchSharedWithMe(userId: string): Promise<Prompt[]>;
   fetchById(id: string): Promise<Prompt>;
+  fetchRecent(userId: string, days?: number, limit?: number): Promise<Prompt[]>;
+  fetchFavorites(userId: string, limit?: number): Promise<Prompt[]>;
+  fetchPublicShared(userId: string, limit?: number): Promise<Prompt[]>;
 }
 
 /**

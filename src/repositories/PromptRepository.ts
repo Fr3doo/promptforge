@@ -9,6 +9,9 @@ export interface PromptRepository {
   fetchOwned(userId: string): Promise<Prompt[]>;
   fetchSharedWithMe(userId: string): Promise<Prompt[]>;
   fetchById(id: string): Promise<Prompt>;
+  fetchRecent(userId: string, days?: number, limit?: number): Promise<Prompt[]>;
+  fetchFavorites(userId: string, limit?: number): Promise<Prompt[]>;
+  fetchPublicShared(userId: string, limit?: number): Promise<Prompt[]>;
   create(userId: string, promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">): Promise<Prompt>;
   update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
   delete(id: string): Promise<void>;
@@ -116,5 +119,53 @@ export class SupabasePromptRepository implements PromptRepository {
       .eq("id", id);
     
     handleSupabaseError(result);
+  }
+
+  async fetchRecent(userId: string, days: number = 7, limit: number = 5): Promise<Prompt[]> {
+    if (!userId) throw new Error("ID utilisateur requis");
+    
+    const daysAgo = new Date();
+    daysAgo.setDate(daysAgo.getDate() - days);
+    
+    const result = await supabase
+      .from("prompts")
+      .select("*")
+      .eq("owner_id", userId)
+      .gte("updated_at", daysAgo.toISOString())
+      .order("updated_at", { ascending: false })
+      .limit(limit);
+    
+    handleSupabaseError(result);
+    return result.data as Prompt[];
+  }
+
+  async fetchFavorites(userId: string, limit: number = 5): Promise<Prompt[]> {
+    if (!userId) throw new Error("ID utilisateur requis");
+    
+    const result = await supabase
+      .from("prompts")
+      .select("*")
+      .eq("owner_id", userId)
+      .eq("is_favorite", true)
+      .order("updated_at", { ascending: false })
+      .limit(limit);
+    
+    handleSupabaseError(result);
+    return result.data as Prompt[];
+  }
+
+  async fetchPublicShared(userId: string, limit: number = 5): Promise<Prompt[]> {
+    if (!userId) throw new Error("ID utilisateur requis");
+    
+    const result = await supabase
+      .from("prompts")
+      .select("*")
+      .eq("visibility", "SHARED")
+      .neq("owner_id", userId)
+      .order("updated_at", { ascending: false })
+      .limit(limit);
+    
+    handleSupabaseError(result);
+    return result.data as Prompt[];
   }
 }
