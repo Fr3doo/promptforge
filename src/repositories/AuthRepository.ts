@@ -86,29 +86,45 @@ export class SupabaseAuthRepository implements AuthRepository {
   }
 
   /**
-   * Crée un nouveau compte utilisateur (stub)
+   * Crée un nouveau compte utilisateur
    */
   async signUp(
     email: string,
     password: string,
     metadata?: { pseudo?: string; emailRedirectTo?: string }
   ): Promise<{ user: User; session: Session }> {
-    throw new Error("Not implemented yet");
+    const result = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: metadata?.pseudo ? { pseudo: metadata.pseudo } : undefined,
+        emailRedirectTo: metadata?.emailRedirectTo,
+      },
+    });
+    handleSupabaseError(result);
+    
+    if (!result.data.user || !result.data.session) {
+      throw new Error("Création de compte échouée : utilisateur ou session manquant");
+    }
+    
+    return { user: result.data.user, session: result.data.session };
   }
 
   /**
-   * Déconnecte l'utilisateur actuel (stub)
+   * Déconnecte l'utilisateur actuel
    */
   async signOut(): Promise<void> {
-    throw new Error("Not implemented yet");
+    const { error } = await supabase.auth.signOut();
+    handleSupabaseError({ data: null, error });
   }
 
   /**
-   * Écoute les changements d'état d'authentification (stub)
+   * Écoute les changements d'état d'authentification
    */
   onAuthStateChange(
     callback: (event: AuthChangeEvent, session: Session | null) => void
   ): { unsubscribe: () => void } {
-    throw new Error("Not implemented yet");
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(callback);
+    return { unsubscribe: () => subscription.unsubscribe() };
   }
 }
