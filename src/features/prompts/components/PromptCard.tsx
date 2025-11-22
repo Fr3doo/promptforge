@@ -1,6 +1,3 @@
-import { motion } from "framer-motion";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,14 +8,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { FileText } from "lucide-react";
 import { useState } from "react";
-import { FavoriteButton } from "./FavoriteButton";
-import { VisibilityBadge, type SharingState } from "./VisibilityBadge";
-import { PromptActionsMenu } from "./PromptActionsMenu";
+import { PromptCardView } from "./PromptCardView";
+import { PromptCardActions } from "./PromptCardActions";
 import { SharePromptDialog } from "./SharePromptDialog";
 import { PublicShareDialog } from "./PublicShareDialog";
 import type { Prompt } from "../types";
+import type { SharingState } from "./VisibilityBadge";
 import { useUpdatePublicPermission } from "@/hooks/usePrompts";
 import { messages } from "@/constants/messages";
 
@@ -77,79 +73,38 @@ export const PromptCard = ({
     await updatePublicPermission({ id: prompt.id, permission });
   };
 
+  const handleEdit = (id: string) => {
+    onClick();
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
+
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.2, delay: index * 0.05 }}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <Card className="cursor-pointer transition-all hover:border-primary hover:shadow-lg">
-          <CardHeader>
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 flex flex-col gap-2" onClick={onClick}>
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg">{prompt.title}</CardTitle>
-                  {isDraft && (
-                    <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
-                      <FileText className="h-3 w-3 mr-1" />
-                      Brouillon
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <FavoriteButton
-                  isFavorite={prompt.is_favorite ?? false}
-                  onToggle={(e) => {
-                    e.stopPropagation();
-                    onToggleFavorite(prompt.id, prompt.is_favorite ?? false);
-                  }}
-                />
-                
-                {isOwner && onDelete && (
-                  <PromptActionsMenu
-                    isShared={isShared}
-                    onEdit={onClick}
-                    onDuplicate={onDuplicate ? () => onDuplicate(prompt.id) : undefined}
-                    onManageSharing={() => setShowShareDialog(true)}
-                    onToggleVisibility={onToggleVisibility ? () => setPublicShareDialogOpen(true) : undefined}
-                    onDelete={() => setShowDeleteDialog(true)}
-                  />
-                )}
-              </div>
-            </div>
-            <CardDescription className="line-clamp-2" onClick={onClick}>
-              {prompt.description || "Aucune description"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent onClick={onClick}>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {prompt.tags?.slice(0, 3).map((tag: string) => (
-                <Badge key={tag} variant="secondary" className="text-xs">
-                  {tag}
-                </Badge>
-              ))}
-              {prompt.tags && prompt.tags.length > 3 && (
-                <Badge variant="secondary" className="text-xs">
-                  +{prompt.tags.length - 3}
-                </Badge>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground">
-              <VisibilityBadge sharingState={sharingState} shareCount={shareCount} />
-              <span>v{prompt.version}</span>
-              {!isOwner && (
-                <Badge variant="outline" className="text-xs">
-                  Partagé avec vous
-                </Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+      <PromptCardView
+        prompt={prompt}
+        isDraft={isDraft}
+        isOwner={isOwner || false}
+        shareCount={shareCount}
+        sharingState={sharingState}
+        onClick={onClick}
+        index={index}
+        actions={
+          <PromptCardActions
+            prompt={prompt}
+            isOwner={isOwner || false}
+            onToggleFavorite={onToggleFavorite}
+            onDelete={handleDeleteClick}
+            onDuplicate={onDuplicate || (() => {})}
+            onToggleVisibility={async (id, visibility, permission) => {
+              setPublicShareDialogOpen(true);
+            }}
+            onEdit={handleEdit}
+          />
+        }
+      />
 
       <SharePromptDialog
         open={showShareDialog}
