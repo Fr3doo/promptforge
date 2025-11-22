@@ -1,12 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
-import { templateInitializationService } from "@/services/TemplateInitializationService.factory";
+import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
+import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
+import { TemplateInitializationService } from "@/services/TemplateInitializationService";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { logError } from "@/lib/logger";
 
 export function useAuth() {
   const authRepository = useAuthRepository();
+  const promptRepository = usePromptRepository();
+  const variableRepository = useVariableRepository();
+  
+  const templateService = useMemo(
+    () => new TemplateInitializationService(promptRepository, variableRepository),
+    [promptRepository, variableRepository]
+  );
+  
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +32,7 @@ export function useAuth() {
         if (event === 'SIGNED_IN' && session?.user) {
           setTimeout(async () => {
             try {
-              await templateInitializationService.createTemplatesForNewUser(
+              await templateService.createTemplatesForNewUser(
                 session.user.id
               );
             } catch (error) {
@@ -44,7 +54,7 @@ export function useAuth() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [authRepository, templateService]);
 
   return { user, session, loading };
 }
