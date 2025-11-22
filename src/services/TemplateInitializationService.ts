@@ -1,8 +1,8 @@
-import { supabase } from "@/integrations/supabase/client";
 import { logError } from "@/lib/logger";
 import { exampleTemplates } from "@/lib/exampleTemplates";
 import type { PromptRepository } from "@/repositories/PromptRepository";
 import type { VariableRepository } from "@/repositories/VariableRepository";
+import type { VariableSetRepository } from "@/repositories/VariableSetRepository";
 
 /**
  * Service responsable de l'initialisation des templates d'exemple
@@ -15,7 +15,8 @@ import type { VariableRepository } from "@/repositories/VariableRepository";
 export class TemplateInitializationService {
   constructor(
     private readonly promptRepository: PromptRepository,
-    private readonly variableRepository: VariableRepository
+    private readonly variableRepository: VariableRepository,
+    private readonly variableSetRepository: VariableSetRepository
   ) {}
 
   /**
@@ -93,22 +94,20 @@ export class TemplateInitializationService {
           }
         }
 
-        // Insert variable sets (using direct Supabase for now as no repository method exists)
+        // Insert variable sets using repository
         if (template.variableSets.length > 0) {
-          const setsToInsert = template.variableSets.map((set) => ({
-            prompt_id: prompt.id,
-            name: set.name,
-            values: set.values,
-          }));
+          try {
+            const setsToInsert = template.variableSets.map((set) => ({
+              prompt_id: prompt.id,
+              name: set.name,
+              values: set.values,
+            }));
 
-          const { error: setsError } = await supabase
-            .from("variable_sets")
-            .insert(setsToInsert);
-
-          if (setsError) {
+            await this.variableSetRepository.bulkInsert(setsToInsert);
+          } catch (error) {
             logError("Error creating template variable sets", {
               template: template.title,
-              error: setsError.message,
+              error: error instanceof Error ? error.message : String(error),
             });
           }
         }

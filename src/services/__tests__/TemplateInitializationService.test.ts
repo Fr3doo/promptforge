@@ -2,13 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TemplateInitializationService } from "../TemplateInitializationService";
 import type { PromptRepository } from "@/repositories/PromptRepository";
 import type { VariableRepository } from "@/repositories/VariableRepository";
-import { supabase } from "@/integrations/supabase/client";
-
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: {
-    from: vi.fn(),
-  },
-}));
 
 vi.mock("@/lib/logger", () => ({
   logError: vi.fn(),
@@ -47,6 +40,7 @@ describe("TemplateInitializationService", () => {
   let service: TemplateInitializationService;
   let mockPromptRepository: PromptRepository;
   let mockVariableRepository: VariableRepository;
+  let mockVariableSetRepository: any;
   const mockUserId = "user-123";
 
   beforeEach(() => {
@@ -69,9 +63,14 @@ describe("TemplateInitializationService", () => {
       }),
     } as any;
 
+    mockVariableSetRepository = {
+      bulkInsert: vi.fn().mockResolvedValue(undefined),
+    } as any;
+
     service = new TemplateInitializationService(
       mockPromptRepository,
-      mockVariableRepository
+      mockVariableRepository,
+      mockVariableSetRepository
     );
   });
 
@@ -110,11 +109,6 @@ describe("TemplateInitializationService", () => {
     it("should create templates when user has no prompts", async () => {
       vi.mocked(mockPromptRepository.fetchOwned).mockResolvedValue([]);
 
-      const mockInsert = vi.fn().mockResolvedValue({ data: null, error: null });
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: mockInsert,
-      } as any);
-
       await service.createTemplatesForNewUser(mockUserId);
 
       expect(mockPromptRepository.create).toHaveBeenCalled();
@@ -131,16 +125,9 @@ describe("TemplateInitializationService", () => {
       expect(mockPromptRepository.create).not.toHaveBeenCalled();
       expect(mockVariableRepository.create).not.toHaveBeenCalled();
     });
-  });
 
-  describe("createTemplates (private method)", () => {
     it("should create prompt with correct data", async () => {
       vi.mocked(mockPromptRepository.fetchOwned).mockResolvedValue([]);
-
-      const mockInsert = vi.fn().mockResolvedValue({ data: null, error: null });
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: mockInsert,
-      } as any);
 
       await service.createTemplatesForNewUser(mockUserId);
 
@@ -160,11 +147,6 @@ describe("TemplateInitializationService", () => {
     it("should create variables for template", async () => {
       vi.mocked(mockPromptRepository.fetchOwned).mockResolvedValue([]);
 
-      const mockInsert = vi.fn().mockResolvedValue({ data: null, error: null });
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: mockInsert,
-      } as any);
-
       await service.createTemplatesForNewUser(mockUserId);
 
       expect(mockVariableRepository.create).toHaveBeenCalledWith({
@@ -181,15 +163,9 @@ describe("TemplateInitializationService", () => {
     it("should create variable sets", async () => {
       vi.mocked(mockPromptRepository.fetchOwned).mockResolvedValue([]);
 
-      const mockInsert = vi.fn().mockResolvedValue({ data: null, error: null });
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: mockInsert,
-      } as any);
-
       await service.createTemplatesForNewUser(mockUserId);
 
-      expect(supabase.from).toHaveBeenCalledWith("variable_sets");
-      expect(mockInsert).toHaveBeenCalledWith([
+      expect(mockVariableSetRepository.bulkInsert).toHaveBeenCalledWith([
         {
           prompt_id: "prompt-123",
           name: "Test Set",
@@ -204,11 +180,6 @@ describe("TemplateInitializationService", () => {
         new Error("Variable creation failed")
       );
 
-      const mockInsert = vi.fn().mockResolvedValue({ data: null, error: null });
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: mockInsert,
-      } as any);
-
       await expect(
         service.createTemplatesForNewUser(mockUserId)
       ).resolves.not.toThrow();
@@ -216,14 +187,9 @@ describe("TemplateInitializationService", () => {
 
     it("should handle variable set creation errors gracefully", async () => {
       vi.mocked(mockPromptRepository.fetchOwned).mockResolvedValue([]);
-
-      const mockInsert = vi.fn().mockResolvedValue({
-        data: null,
-        error: { message: "Insert failed" },
-      });
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: mockInsert,
-      } as any);
+      vi.mocked(mockVariableSetRepository.bulkInsert).mockRejectedValue(
+        new Error("Insert failed")
+      );
 
       await expect(
         service.createTemplatesForNewUser(mockUserId)

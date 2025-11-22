@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import type { Prompt } from "@/features/prompts/types";
 import { usePromptQueryRepository } from "@/contexts/PromptQueryRepositoryContext";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardStats {
   recentPrompts: Prompt[];

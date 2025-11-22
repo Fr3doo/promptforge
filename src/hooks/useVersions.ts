@@ -1,27 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useVersionMessages } from "@/features/prompts/hooks/useVersionMessages";
-import type { Tables, TablesInsert } from "@/integrations/supabase/types";
+import type { TablesInsert } from "@/integrations/supabase/types";
 import { logDebug, logError, logInfo } from "@/lib/logger";
 import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
+import { useVersionRepository } from "@/contexts/VersionRepositoryContext";
+import { useEdgeFunctionRepository } from "@/contexts/EdgeFunctionRepositoryContext";
+import type { Version } from "@/repositories/VersionRepository";
 
-type Version = Tables<"versions">;
 type VersionInsert = TablesInsert<"versions">;
 
 export function useVersions(promptId: string | undefined) {
+  const versionRepository = useVersionRepository();
+  
   return useQuery({
     queryKey: ["versions", promptId],
     queryFn: async () => {
       if (!promptId) return [];
-
-      const { data, error } = await supabase
-        .from("versions")
-        .select("*")
-        .eq("prompt_id", promptId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data as Version[];
+      return await versionRepository.fetchByPromptId(promptId);
     },
     enabled: !!promptId,
   });
@@ -30,25 +25,15 @@ export function useVersions(promptId: string | undefined) {
 export function useCreateVersion() {
   const queryClient = useQueryClient();
   const versionMessages = useVersionMessages();
+  const versionRepository = useVersionRepository();
 
   return useMutation({
     mutationFn: async (version: VersionInsert) => {
       // Créer la nouvelle version
-      const { data, error } = await supabase
-        .from("versions")
-        .insert(version)
-        .select()
-        .single();
-
-      if (error) throw error;
-
+      const data = await versionRepository.create(version);
+      
       // Mettre à jour le numéro de version du prompt
-      const { error: updateError } = await supabase
-        .from("prompts")
-        .update({ version: version.semver })
-        .eq("id", version.prompt_id);
-
-      if (updateError) throw updateError;
+      await versionRepository.updatePromptVersion(version.prompt_id, version.semver);
 
       return data;
     },
@@ -69,6 +54,7 @@ export function useCreateVersion() {
 export function useDeleteVersions() {
   const queryClient = useQueryClient();
   const versionMessages = useVersionMessages();
+  const versionRepository = useVersionRepository();
 
   return useMutation({
     mutationFn: async ({ 
@@ -83,63 +69,28 @@ export function useDeleteVersions() {
       logDebug("Suppression de versions", { count: versionIds.length, promptId });
       
       // Récupérer les versions à supprimer pour vérifier si la version courante est incluse
-      const { data: versionsToDelete, error: fetchError } = await supabase
-        .from("versions")
-        .select("semver")
-        .in("id", versionIds);
-
-      if (fetchError) throw fetchError;
+      const versionsToDelete = await versionRepository.fetchByIds(versionIds);
 
       const isCurrentVersionIncluded = versionsToDelete?.some(
         v => v.semver === currentVersion
       );
 
-      const { error } = await supabase
-        .from("versions")
-        .delete()
-        .in("id", versionIds);
-
-      if (error) {
-        logError("Erreur suppression versions", { 
-          versionIds, 
-          promptId,
-          error: error.message 
-        });
-        throw error;
-      }
+      // Supprimer les versions
+      await versionRepository.delete(versionIds);
 
       // Si la version courante a été supprimée, mettre à jour le prompt avec la dernière version restante
       if (isCurrentVersionIncluded) {
         logInfo("Version courante supprimée, mise à jour du prompt");
         
-        const { data: remainingVersions, error: remainingError } = await supabase
-          .from("versions")
-          .select("semver")
-          .eq("prompt_id", promptId)
-          .order("created_at", { ascending: false })
-          .limit(1);
+        const latestVersion = await versionRepository.fetchLatestByPromptId(promptId);
 
-        if (remainingError) throw remainingError;
-
-        if (remainingVersions && remainingVersions.length > 0) {
+        if (latestVersion) {
           // Mettre à jour vers la version la plus récente
-          const { error: updateError } = await supabase
-            .from("prompts")
-            .update({ version: remainingVersions[0].semver })
-            .eq("id", promptId);
-
-          if (updateError) throw updateError;
-          
-          logInfo("Prompt mis à jour vers version", { semver: remainingVersions[0].semver });
+          await versionRepository.updatePromptVersion(promptId, latestVersion.semver);
+          logInfo("Prompt mis à jour vers version", { semver: latestVersion.semver });
         } else {
           // Aucune version restante, réinitialiser à 1.0.0
-          const { error: updateError } = await supabase
-            .from("prompts")
-            .update({ version: "1.0.0" })
-            .eq("id", promptId);
-
-          if (updateError) throw updateError;
-          
+          await versionRepository.updatePromptVersion(promptId, "1.0.0");
           logInfo("Aucune version restante, réinitialisation à 1.0.0");
         }
       }
@@ -164,6 +115,7 @@ export function useDeleteVersions() {
 export function useRestoreVersion() {
   const queryClient = useQueryClient();
   const versionMessages = useVersionMessages();
+  const edgeFunctionRepository = useEdgeFunctionRepository();
 
   return useMutation({
     mutationFn: async ({ 
@@ -176,34 +128,23 @@ export function useRestoreVersion() {
       logDebug("Début restauration via edge function", { versionId, promptId });
       
       // Appeler l'edge function pour restauration avec transaction
-      const { data, error } = await supabase.functions.invoke('restore-version', {
-        body: { versionId, promptId }
-      });
+      const result = await edgeFunctionRepository.restoreVersion({ versionId, promptId });
 
-      if (error) {
-        logError("Erreur edge function restore-version", { 
-          versionId,
-          promptId,
-          error: error.message 
-        });
-        throw new Error(error.message || "Échec de la restauration");
-      }
-
-      if (!data?.success) {
+      if (!result.success) {
         logError("Échec restauration", { 
           versionId,
           promptId,
-          errorDetails: data?.error 
+          errorDetails: result.error 
         });
-        throw new Error(data?.error || "Échec de la restauration");
+        throw new Error(result.error || "Échec de la restauration");
       }
 
       logInfo("Restauration réussie via edge function", { 
-        semver: data.version.semver,
-        variablesCount: data.version.variablesCount
+        semver: result.version?.semver,
+        variablesCount: result.version?.variablesCount
       });
 
-      return data.version;
+      return result.version;
     },
     retry: shouldRetryMutation,
     retryDelay: getRetryDelay,
