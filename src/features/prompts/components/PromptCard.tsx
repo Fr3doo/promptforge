@@ -81,6 +81,10 @@ export const PromptCard = ({
     setShowDeleteDialog(true);
   };
 
+  const handleManageSharing = () => {
+    setShowShareDialog(true);
+  };
+
   return (
     <>
       <PromptCardView
@@ -102,6 +106,7 @@ export const PromptCard = ({
               setPublicShareDialogOpen(true);
             }}
             onEdit={handleEdit}
+            onManageSharing={handleManageSharing}
           />
         }
       />
