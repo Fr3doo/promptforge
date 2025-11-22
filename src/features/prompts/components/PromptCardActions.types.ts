@@ -29,4 +29,7 @@ export interface PromptCardActionsProps {
   
   /** Callback pour éditer le prompt */
   onEdit: (id: string) => void;
+  
+  /** Callback pour gérer le partage privé (ouvre SharePromptDialog) */
+  onManageSharing?: () => void;
 }

@@ -14,6 +14,7 @@ export const PromptCardActions = ({
   onDuplicate,
   onToggleVisibility,
   onEdit,
+  onManageSharing,
 }: PromptCardActionsProps) => {
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -51,6 +52,7 @@ export const PromptCardActions = ({
           isShared={prompt.visibility === "SHARED"}
           onEdit={handleEdit}
           onDuplicate={handleDuplicate}
+          onManageSharing={onManageSharing}
           onToggleVisibility={handleToggleVisibility}
           onDelete={handleDelete}
         />
