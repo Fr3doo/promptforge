@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
 import { templateInitializationService } from "@/services/TemplateInitializationService.factory";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { logError } from "@/lib/logger";
 
 export function useAuth() {
+  const authRepository = useAuthRepository();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
