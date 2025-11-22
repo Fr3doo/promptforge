@@ -1,17 +1,38 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, waitFor } from "@/test/utils";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactNode } from "react";
+import { ReactNode, createContext } from "react";
 import { usePrompts } from "../usePrompts";
-import { supabase } from "@/integrations/supabase/client";
+import type { PromptQueryRepository, Prompt } from "@/repositories/PromptRepository.interfaces";
 
-// Mock Supabase
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: {
-    from: vi.fn(),
-    auth: {
-      getUser: vi.fn(),
-    },
+// Create test context
+const TestPromptQueryRepositoryContext = createContext<PromptQueryRepository | null>(null);
+
+// Mock PromptQueryRepository
+const mockQueryRepository: PromptQueryRepository = {
+  fetchAll: vi.fn(),
+  fetchOwned: vi.fn(),
+  fetchSharedWithMe: vi.fn(),
+  fetchById: vi.fn(),
+  fetchRecent: vi.fn(),
+  fetchFavorites: vi.fn(),
+  fetchPublicShared: vi.fn(),
+};
+
+// Mock useAuth
+vi.mock("@/hooks/useAuth", () => ({
+  useAuth: () => ({ user: { id: "test-user-id" } }),
+}));
+
+// Mock usePromptQueryRepository to use our test context
+vi.mock("@/contexts/PromptQueryRepositoryContext", () => ({
+  usePromptQueryRepository: () => {
+    const { useContext } = require("react");
+    const context = useContext(TestPromptQueryRepositoryContext);
+    if (!context) {
+      throw new Error("usePromptQueryRepository must be used within PromptQueryRepositoryProvider");
+    }
+    return context;
   },
 }));
 
@@ -36,7 +57,9 @@ function createWrapper() {
   function TestWrapper({ children }: WrapperProps) {
     return (
       <QueryClientProvider client={queryClient}>
-        {children}
+        <TestPromptQueryRepositoryContext.Provider value={mockQueryRepository}>
+          {children}
+        </TestPromptQueryRepositoryContext.Provider>
       </QueryClientProvider>
     );
   }
@@ -50,7 +73,7 @@ describe("usePrompts", () => {
   });
 
   it("should fetch prompts successfully", async () => {
-    const mockPrompts = [
+    const mockPrompts: Prompt[] = [
       { 
         id: "1", 
         title: "Prompt 1", 
@@ -58,9 +81,13 @@ describe("usePrompts", () => {
         visibility: "PRIVATE",
         version: "1.0.0",
         tags: [],
-        owner_id: "user-1",
+        owner_id: "test-user-id",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        description: null,
+        is_favorite: false,
+        status: "DRAFT",
+        public_permission: "READ",
       },
       { 
         id: "2", 
@@ -69,17 +96,17 @@ describe("usePrompts", () => {
         visibility: "PRIVATE",
         version: "1.0.0",
         tags: [],
-        owner_id: "user-1",
+        owner_id: "test-user-id",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        description: null,
+        is_favorite: false,
+        status: "DRAFT",
+        public_permission: "READ",
       },
     ];
 
-    vi.mocked(supabase.from).mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        order: vi.fn().mockResolvedValue({ data: mockPrompts, error: null }),
-      }),
-    } as any);
+    vi.mocked(mockQueryRepository.fetchAll).mockResolvedValue(mockPrompts);
 
     const { result } = renderHook(() => usePrompts(), {
       wrapper: createWrapper(),
@@ -87,17 +114,13 @@ describe("usePrompts", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(mockPrompts);
+    expect(mockQueryRepository.fetchAll).toHaveBeenCalledWith("test-user-id");
   });
 
   it("should handle fetch error", async () => {
-    vi.mocked(supabase.from).mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        order: vi.fn().mockResolvedValue({
-          data: null,
-          error: { message: "Error fetching prompts" },
-        }),
-      }),
-    } as any);
+    vi.mocked(mockQueryRepository.fetchAll).mockRejectedValue(
+      new Error("Error fetching prompts")
+    );
 
     const { result } = renderHook(() => usePrompts(), {
       wrapper: createWrapper(),
@@ -106,12 +129,10 @@ describe("usePrompts", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
   });
 
-  it("should return empty array initially", () => {
-    vi.mocked(supabase.from).mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        order: vi.fn().mockResolvedValue({ data: [], error: null }),
-      }),
-    } as any);
+  it("should return undefined initially while loading", () => {
+    vi.mocked(mockQueryRepository.fetchAll).mockImplementation(
+      () => new Promise(() => {}) // Never resolves
+    );
 
     const { result } = renderHook(() => usePrompts(), {
       wrapper: createWrapper(),
