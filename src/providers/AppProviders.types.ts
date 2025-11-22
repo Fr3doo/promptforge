@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { AuthRepository } from "@/repositories/AuthRepository";
 import type { PromptRepository } from "@/repositories/PromptRepository";
 import type { VariableRepository } from "@/repositories/VariableRepository";
 import type { AnalysisRepository } from "@/repositories/AnalysisRepository";
@@ -16,6 +17,9 @@ import type { PromptDuplicationService } from "@/services/PromptDuplicationServi
 export interface AppProvidersProps {
   /** Contenu enfant à wrapper avec tous les providers */
   children: ReactNode;
+  
+  /** Repository d'authentification (optionnel pour tests) */
+  authRepository?: AuthRepository;
   
   /** Repository principal des prompts (optionnel pour tests) */
   repository?: PromptRepository;
