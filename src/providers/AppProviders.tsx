@@ -8,6 +8,7 @@ import { AnalysisRepositoryProvider } from "@/contexts/AnalysisRepositoryContext
 import { PromptShareRepositoryProvider } from "@/contexts/PromptShareRepositoryContext";
 import { PromptFavoriteServiceProvider } from "@/contexts/PromptFavoriteServiceContext";
 import { PromptVisibilityServiceProvider } from "@/contexts/PromptVisibilityServiceContext";
+import { PromptDuplicationServiceProvider } from "@/contexts/PromptDuplicationServiceContext";
 import type { AppProvidersProps } from "./AppProviders.types";
 
 /**
@@ -36,7 +37,8 @@ export function AppProviders({
   analysisRepository,
   shareRepository,
   favoriteService,
-  visibilityService
+  visibilityService,
+  duplicationService
 }: AppProvidersProps) {
   return (
     <ErrorBoundary>
@@ -49,7 +51,9 @@ export function AppProviders({
                   <PromptShareRepositoryProvider repository={shareRepository}>
                     <PromptFavoriteServiceProvider service={favoriteService}>
                       <PromptVisibilityServiceProvider service={visibilityService}>
-                        {children}
+                        <PromptDuplicationServiceProvider service={duplicationService}>
+                          {children}
+                        </PromptDuplicationServiceProvider>
                       </PromptVisibilityServiceProvider>
                     </PromptFavoriteServiceProvider>
                   </PromptShareRepositoryProvider>
