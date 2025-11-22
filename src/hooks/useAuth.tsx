@@ -38,7 +38,7 @@ export function useAuth() {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    authRepository.getCurrentSession().then((session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
