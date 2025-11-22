@@ -13,6 +13,7 @@ import { PromptVisibilityServiceProvider } from "@/contexts/PromptVisibilityServ
 import { PromptDuplicationServiceProvider } from "@/contexts/PromptDuplicationServiceContext";
 import { VersionRepositoryProvider } from "@/contexts/VersionRepositoryContext";
 import { EdgeFunctionRepositoryProvider } from "@/contexts/EdgeFunctionRepositoryContext";
+import { PromptUsageRepositoryProvider } from "@/contexts/PromptUsageRepositoryContext";
 import type { AppProvidersProps } from "./AppProviders.types";
 
 /**
@@ -44,7 +45,8 @@ export function AppProviders({
   shareRepository,
   favoriteService,
   visibilityService,
-  duplicationService
+  duplicationService,
+  usageRepository
 }: AppProvidersProps) {
   return (
     <ErrorBoundary>
@@ -57,17 +59,19 @@ export function AppProviders({
                   <VariableRepositoryProvider repository={variableRepository}>
                     <VersionRepositoryProvider>
                       <EdgeFunctionRepositoryProvider>
-                        <AnalysisRepositoryProvider repository={analysisRepository}>
-                          <PromptShareRepositoryProvider repository={shareRepository}>
-                            <PromptFavoriteServiceProvider service={favoriteService}>
-                              <PromptVisibilityServiceProvider service={visibilityService}>
-                                <PromptDuplicationServiceProvider service={duplicationService}>
-                                  {children}
-                                </PromptDuplicationServiceProvider>
-                              </PromptVisibilityServiceProvider>
-                            </PromptFavoriteServiceProvider>
-                          </PromptShareRepositoryProvider>
-                        </AnalysisRepositoryProvider>
+                        <PromptUsageRepositoryProvider repository={usageRepository}>
+                          <AnalysisRepositoryProvider repository={analysisRepository}>
+                            <PromptShareRepositoryProvider repository={shareRepository}>
+                              <PromptFavoriteServiceProvider service={favoriteService}>
+                                <PromptVisibilityServiceProvider service={visibilityService}>
+                                  <PromptDuplicationServiceProvider service={duplicationService}>
+                                    {children}
+                                  </PromptDuplicationServiceProvider>
+                                </PromptVisibilityServiceProvider>
+                              </PromptFavoriteServiceProvider>
+                            </PromptShareRepositoryProvider>
+                          </AnalysisRepositoryProvider>
+                        </PromptUsageRepositoryProvider>
                       </EdgeFunctionRepositoryProvider>
                     </VersionRepositoryProvider>
                   </VariableRepositoryProvider>
