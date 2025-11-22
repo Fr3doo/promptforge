@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { templateInitializationService } from "@/services/TemplateInitializationService";
+import { templateInitializationService } from "@/services/TemplateInitializationService.factory";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { logError } from "@/lib/logger";
 
@@ -21,7 +21,7 @@ export function useAuth() {
         if (event === 'SIGNED_IN' && session?.user) {
           setTimeout(async () => {
             try {
-              await templateInitializationService.createExampleTemplatesIfNeeded(
+              await templateInitializationService.createTemplatesForNewUser(
                 session.user.id
               );
             } catch (error) {
