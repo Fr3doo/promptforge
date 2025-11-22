@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
 import { templateInitializationService } from "@/services/TemplateInitializationService.factory";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
