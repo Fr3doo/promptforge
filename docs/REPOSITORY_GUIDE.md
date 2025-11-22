@@ -1708,5 +1708,87 @@ export class CleanService {
 
 **Ce guide doit être consulté lors de chaque ajout de nouveau repository ou service.**
 
-**Dernière mise à jour :** 2025-11-19  
+---
+
+## Ségrégation d'interfaces (ISP)
+
+Pour les repositories complexes avec de nombreuses méthodes, il est recommandé d'appliquer le **Interface Segregation Principle (ISP)** pour améliorer la testabilité et réduire le couplage.
+
+### Quand appliquer l'ISP ?
+
+Appliquer l'ISP si :
+- Le repository a 5+ méthodes avec des responsabilités distinctes (Query vs Command)
+- Des services n'utilisent qu'un sous-ensemble des méthodes disponibles
+- Les tests deviennent complexes à cause de gros mocks
+
+### Pattern de ségrégation
+
+```typescript
+// Interfaces ségrégées
+export interface {Entity}QueryRepository {
+  // Opérations de lecture uniquement
+  fetchAll(): Promise<{Entity}[]>;
+  fetchById(id: string): Promise<{Entity}>;
+}
+
+export interface {Entity}CommandRepository {
+  // Opérations de commande (création/modification/suppression)
+  create(data: {Entity}Insert): Promise<{Entity}>;
+  update(id: string, updates: Partial<{Entity}>): Promise<{Entity}>;
+  delete(id: string): Promise<void>;
+}
+
+// Interface agrégée pour l'implémentation
+export interface {Entity}Repository 
+  extends {Entity}QueryRepository, 
+          {Entity}CommandRepository {}
+
+// Implémentation unique
+export class Supabase{Entity}Repository implements {Entity}Repository {
+  // Implémente toutes les méthodes
+}
+```
+
+### Contexts ségrégués
+
+```typescript
+// Context pour Query
+export function {Entity}QueryRepositoryProvider({ children }) {
+  const repository = use{Entity}Repository(); // Réutilise l'instance unique
+  return <Context.Provider value={repository}>{children}</Context.Provider>;
+}
+
+// Context pour Command
+export function {Entity}CommandRepositoryProvider({ children }) {
+  const repository = use{Entity}Repository(); // Réutilise l'instance unique
+  return <Context.Provider value={repository}>{children}</Context.Provider>;
+}
+```
+
+### Exemple complet
+
+Pour un exemple complet d'application de l'ISP, consultez :
+- **`docs/REPOSITORY_PATTERNS.md`** : Guide détaillé du pattern ISP avec diagrammes Mermaid
+- **`src/services/PromptFavoriteService.ts`** : Exemple de service utilisant `PromptMutationRepository`
+- **`src/services/PromptVisibilityService.ts`** : Exemple de service utilisant `Query` + `Mutation`
+- **`src/services/PromptDuplicationService.ts`** : Exemple de service utilisant `Query` + `Command`
+
+### Bénéfices mesurés
+
+**Avant ségrégation** :
+- Services reçoivent 7 méthodes, utilisent 1-2 (71-85% d'inutile)
+- Tests avec 7 lignes de mock pour 1 méthode testée
+- Couplage fort et responsabilités confuses
+
+**Après ségrégation** :
+- Services reçoivent uniquement les méthodes nécessaires (1-5 méthodes)
+- Tests focalisés avec mocks minimaux
+- Séparation claire Query/Mutation/Command (pattern CQRS)
+- Couplage réduit de 85% pour les services simples
+
+---
+
+**Ce guide doit être consulté lors de chaque ajout de nouveau repository ou service.**
+
+**Dernière mise à jour :** 2025-01-22  
 **Responsable :** Équipe Architecture PromptForge
