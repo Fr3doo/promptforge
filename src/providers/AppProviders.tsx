@@ -1,3 +1,4 @@
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import type { AppProvidersProps } from "./AppProviders.types";
 
 /**
@@ -20,5 +21,9 @@ import type { AppProvidersProps } from "./AppProviders.types";
  * ```
  */
 export function AppProviders({ children }: AppProvidersProps) {
-  return <>{children}</>;
+  return (
+    <ErrorBoundary>
+      {children}
+    </ErrorBoundary>
+  );
 }
