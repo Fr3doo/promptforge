@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import { Footer } from "@/components/Footer";
 import { messages } from "@/constants/messages";
 
 const SignUp = () => {
+  const authRepository = useAuthRepository();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,15 +32,15 @@ const SignUp = () => {
         name: pseudo || email,
       });
 
-      const { error } = await supabase.auth.signUp({
-        email: validatedData.email,
-        password: validatedData.password,
-        options: {
-          data: { pseudo: validatedData.name || validatedData.email },
+      await authRepository.signUp(
+        validatedData.email,
+        validatedData.password,
+        {
+          pseudo: validatedData.name || validatedData.email,
           emailRedirectTo: `${window.location.origin}/`,
-        },
-      });
-      if (error) throw error;
+        }
+      );
+      
       toast.success(messages.auth.signupSuccess);
       navigate("/");
     } catch (error: any) {
