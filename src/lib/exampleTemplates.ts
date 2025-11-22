@@ -1,6 +1,40 @@
-import { logError } from "@/lib/logger";
+import type { Database } from "@/integrations/supabase/types";
 
-export const exampleTemplates = [
+type VarType = Database["public"]["Enums"]["var_type"];
+
+/**
+ * Templates d'exemple pour les nouveaux utilisateurs
+ * 
+ * NOTE: La logique de création des templates a été déplacée vers
+ * TemplateInitializationService pour respecter le principe SRP
+ */
+
+interface TemplateVariable {
+  name: string;
+  type: VarType;
+  required: boolean;
+  default_value: string;
+  help: string;
+  order_index: number;
+}
+
+interface TemplateVariableSet {
+  name: string;
+  values: Record<string, string>;
+}
+
+interface ExampleTemplate {
+  title: string;
+  description: string;
+  content: string;
+  tags: string[];
+  visibility: "PRIVATE" | "SHARED";
+  public_permission: "READ" | "WRITE";
+  variables: TemplateVariable[];
+  variableSets: TemplateVariableSet[];
+}
+
+export const exampleTemplates: ExampleTemplate[] = [
   {
     title: "Bug Triage Assistant",
     description: "Aide à analyser et prioriser les bugs reportés",
@@ -113,48 +147,3 @@ Résume cet email en respectant:
   },
 ];
 
-export async function createExampleTemplates(userId: string, supabase: any) {
-  for (const template of exampleTemplates) {
-    const { data: prompt, error: promptError } = await supabase
-      .from("prompts")
-      .insert({
-        owner_id: userId,
-        title: template.title,
-        description: template.description,
-        content: template.content,
-        tags: template.tags,
-        visibility: template.visibility,
-      })
-      .select()
-      .single();
-
-    if (promptError) {
-      logError("Error creating template", { 
-        template: template.title,
-        error: promptError.message 
-      });
-      continue;
-    }
-
-    // Insert variables
-    if (template.variables.length > 0) {
-      const varsToInsert = template.variables.map((v) => ({
-        prompt_id: prompt.id,
-        ...v,
-      }));
-
-      await supabase.from("variables").insert(varsToInsert);
-    }
-
-    // Insert variable sets
-    if (template.variableSets.length > 0) {
-      const setsToInsert = template.variableSets.map((set) => ({
-        prompt_id: prompt.id,
-        name: set.name,
-        values: set.values,
-      }));
-
-      await supabase.from("variable_sets").insert(setsToInsert);
-    }
-  }
-}
