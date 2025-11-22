@@ -1,5 +1,6 @@
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PromptRepositoryProvider } from "@/contexts/PromptRepositoryContext";
+import { PromptMutationRepositoryProvider } from "@/contexts/PromptMutationRepositoryContext";
 import type { AppProvidersProps } from "./AppProviders.types";
 
 /**
@@ -25,7 +26,9 @@ export function AppProviders({ children, repository }: AppProvidersProps) {
   return (
     <ErrorBoundary>
       <PromptRepositoryProvider repository={repository}>
-        {children}
+        <PromptMutationRepositoryProvider>
+          {children}
+        </PromptMutationRepositoryProvider>
       </PromptRepositoryProvider>
     </ErrorBoundary>
   );
