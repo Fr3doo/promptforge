@@ -2,6 +2,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PromptRepositoryProvider } from "@/contexts/PromptRepositoryContext";
 import { PromptMutationRepositoryProvider } from "@/contexts/PromptMutationRepositoryContext";
 import { PromptQueryRepositoryProvider } from "@/contexts/PromptQueryRepositoryContext";
+import { PromptCommandRepositoryProvider } from "@/contexts/PromptCommandRepositoryContext";
 import type { AppProvidersProps } from "./AppProviders.types";
 
 /**
@@ -29,7 +30,9 @@ export function AppProviders({ children, repository }: AppProvidersProps) {
       <PromptRepositoryProvider repository={repository}>
         <PromptMutationRepositoryProvider>
           <PromptQueryRepositoryProvider>
-            {children}
+            <PromptCommandRepositoryProvider>
+              {children}
+            </PromptCommandRepositoryProvider>
           </PromptQueryRepositoryProvider>
         </PromptMutationRepositoryProvider>
       </PromptRepositoryProvider>
