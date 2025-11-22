@@ -69,10 +69,20 @@ export class SupabaseAuthRepository implements AuthRepository {
   }
 
   /**
-   * Connecte un utilisateur avec email et mot de passe (stub)
+   * Connecte un utilisateur avec email et mot de passe
    */
   async signIn(email: string, password: string): Promise<{ user: User; session: Session }> {
-    throw new Error("Not implemented yet");
+    const result = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    handleSupabaseError(result);
+    
+    if (!result.data.user || !result.data.session) {
+      throw new Error("Authentification échouée : utilisateur ou session manquant");
+    }
+    
+    return { user: result.data.user, session: result.data.session };
   }
 
   /**
