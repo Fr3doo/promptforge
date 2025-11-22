@@ -3,7 +3,8 @@ import {
   SupabasePromptDuplicationService,
   type PromptDuplicationService,
 } from "@/services/PromptDuplicationService";
-import { usePromptRepository } from "./PromptRepositoryContext";
+import { usePromptQueryRepository } from "./PromptQueryRepositoryContext";
+import { usePromptCommandRepository } from "./PromptCommandRepositoryContext";
 
 const PromptDuplicationServiceContext = createContext<PromptDuplicationService | null>(null);
 
@@ -26,10 +27,11 @@ export function PromptDuplicationServiceProvider({
   children,
   service,
 }: PromptDuplicationServiceProviderProps) {
-  const promptRepository = usePromptRepository();
+  const queryRepository = usePromptQueryRepository();
+  const commandRepository = usePromptCommandRepository();
   const defaultService = useMemo(
-    () => service || new SupabasePromptDuplicationService(promptRepository),
-    [service, promptRepository]
+    () => service || new SupabasePromptDuplicationService(queryRepository, commandRepository),
+    [service, queryRepository, commandRepository]
   );
 
   return (

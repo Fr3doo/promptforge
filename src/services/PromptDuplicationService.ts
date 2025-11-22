@@ -1,4 +1,8 @@
-import type { PromptRepository, Prompt } from "@/repositories/PromptRepository";
+import type { 
+  PromptQueryRepository, 
+  PromptCommandRepository,
+  Prompt 
+} from "@/repositories/PromptRepository.interfaces";
 import type { VariableRepository, VariableUpsertInput, Variable } from "@/repositories/VariableRepository";
 
 /**
@@ -49,7 +53,10 @@ export interface PromptDuplicationService {
 }
 
 export class SupabasePromptDuplicationService implements PromptDuplicationService {
-  constructor(private promptRepository: PromptRepository) {}
+  constructor(
+    private queryRepository: PromptQueryRepository,
+    private commandRepository: PromptCommandRepository
+  ) {}
 
   async duplicate(
     userId: string,
@@ -59,13 +66,13 @@ export class SupabasePromptDuplicationService implements PromptDuplicationServic
     if (!userId) throw new Error("ID utilisateur requis");
 
     // Step 1: Fetch original prompt (delegated to repository)
-    const originalPrompt = await this.promptRepository.fetchById(promptId);
+    const originalPrompt = await this.queryRepository.fetchById(promptId);
 
     // Step 2: Fetch original variables
     const originalVariables = await variableRepository.fetch(promptId);
 
     // Step 3: Create duplicate prompt (delegated to repository)
-    const duplicatedPrompt = await this.promptRepository.create(userId, {
+    const duplicatedPrompt = await this.commandRepository.create(userId, {
       title: `${originalPrompt.title} (Copie)`,
       content: originalPrompt.content,
       description: originalPrompt.description,
