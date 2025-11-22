@@ -1,5 +1,6 @@
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthRepositoryProvider } from "@/contexts/AuthRepositoryContext";
+import { ProfileRepositoryProvider } from "@/contexts/ProfileRepositoryContext";
 import { PromptRepositoryProvider } from "@/contexts/PromptRepositoryContext";
 import { PromptMutationRepositoryProvider } from "@/contexts/PromptMutationRepositoryContext";
 import { PromptQueryRepositoryProvider } from "@/contexts/PromptQueryRepositoryContext";
@@ -34,6 +35,7 @@ import type { AppProvidersProps } from "./AppProviders.types";
 export function AppProviders({ 
   children, 
   authRepository,
+  profileRepository,
   repository,
   variableRepository,
   analysisRepository,
@@ -45,27 +47,29 @@ export function AppProviders({
   return (
     <ErrorBoundary>
       <AuthRepositoryProvider repository={authRepository}>
-        <PromptRepositoryProvider repository={repository}>
-          <PromptMutationRepositoryProvider>
-            <PromptQueryRepositoryProvider>
-              <PromptCommandRepositoryProvider>
-                <VariableRepositoryProvider repository={variableRepository}>
-                  <AnalysisRepositoryProvider repository={analysisRepository}>
-                    <PromptShareRepositoryProvider repository={shareRepository}>
-                      <PromptFavoriteServiceProvider service={favoriteService}>
-                        <PromptVisibilityServiceProvider service={visibilityService}>
-                          <PromptDuplicationServiceProvider service={duplicationService}>
-                            {children}
-                          </PromptDuplicationServiceProvider>
-                        </PromptVisibilityServiceProvider>
-                      </PromptFavoriteServiceProvider>
-                    </PromptShareRepositoryProvider>
-                  </AnalysisRepositoryProvider>
-                </VariableRepositoryProvider>
-              </PromptCommandRepositoryProvider>
-            </PromptQueryRepositoryProvider>
-          </PromptMutationRepositoryProvider>
-        </PromptRepositoryProvider>
+        <ProfileRepositoryProvider repository={profileRepository}>
+          <PromptRepositoryProvider repository={repository}>
+            <PromptMutationRepositoryProvider>
+              <PromptQueryRepositoryProvider>
+                <PromptCommandRepositoryProvider>
+                  <VariableRepositoryProvider repository={variableRepository}>
+                    <AnalysisRepositoryProvider repository={analysisRepository}>
+                      <PromptShareRepositoryProvider repository={shareRepository}>
+                        <PromptFavoriteServiceProvider service={favoriteService}>
+                          <PromptVisibilityServiceProvider service={visibilityService}>
+                            <PromptDuplicationServiceProvider service={duplicationService}>
+                              {children}
+                            </PromptDuplicationServiceProvider>
+                          </PromptVisibilityServiceProvider>
+                        </PromptFavoriteServiceProvider>
+                      </PromptShareRepositoryProvider>
+                    </AnalysisRepositoryProvider>
+                  </VariableRepositoryProvider>
+                </PromptCommandRepositoryProvider>
+              </PromptQueryRepositoryProvider>
+            </PromptMutationRepositoryProvider>
+          </PromptRepositoryProvider>
+        </ProfileRepositoryProvider>
       </AuthRepositoryProvider>
     </ErrorBoundary>
   );
