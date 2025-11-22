@@ -22,3 +22,22 @@ export interface PromptCommandRepository {
   update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
   delete(id: string): Promise<void>;
 }
+
+/**
+ * Interface ségrégée : Opérations de MUTATION partielles
+ * Utilisée par : PromptFavoriteService, PromptVisibilityService
+ */
+export interface PromptMutationRepository {
+  update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
+}
+
+/**
+ * Interface agrégée pour la rétrocompatibilité et l'implémentation complète
+ * Implémentée par : SupabasePromptRepository
+ * Utilisée par : PromptRepositoryProvider
+ */
+export interface PromptRepository extends PromptQueryRepository, PromptCommandRepository {
+  // 7 méthodes héritées :
+  // - Query: fetchAll, fetchOwned, fetchSharedWithMe, fetchById
+  // - Command: create, update, delete
+}
