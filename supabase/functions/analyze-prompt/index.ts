@@ -487,11 +487,16 @@ serve(async (req) => {
 
     // 5. Parse response (DÉFENSIF pour debug)
     const rawBody = await response.text();
+    const MAX_LOG_LENGTH = 2000;
 
     console.log('[DEBUG] ========== RAW GATEWAY RESPONSE ==========');
     console.log('[DEBUG] Status:', response.status);
     console.log('[DEBUG] Headers:', Object.fromEntries(response.headers.entries()));
-    console.log('[DEBUG] Body (raw):', rawBody);
+    console.log('[DEBUG] Body length:', rawBody.length, 'characters');
+    console.log(
+      '[DEBUG] Body (raw, truncated):',
+      rawBody.length > MAX_LOG_LENGTH ? rawBody.slice(0, MAX_LOG_LENGTH) + '…[truncated]' : rawBody
+    );
 
     let data: any;
     try {
