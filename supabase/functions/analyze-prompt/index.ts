@@ -485,12 +485,38 @@ serve(async (req) => {
       return handleAIError(response.status);
     }
 
-    // 5. Parse response
-    const data = await response.json();
+    // 5. Parse response (DÉFENSIF pour debug)
+    const rawBody = await response.text();
+
+    console.log('[DEBUG] ========== RAW GATEWAY RESPONSE ==========');
+    console.log('[DEBUG] Status:', response.status);
+    console.log('[DEBUG] Headers:', Object.fromEntries(response.headers.entries()));
+    console.log('[DEBUG] Body (raw):', rawBody);
+
+    let data: any;
+    try {
+      data = JSON.parse(rawBody);
+    } catch (err) {
+      console.error('[DEBUG] ❌ Impossible de parser la réponse en JSON', err);
+      throw new Error(`Réponse du Gateway invalide (JSON parse error): ${err instanceof Error ? err.message : String(err)}`);
+    }
+
+    console.log('[DEBUG] data keys:', Object.keys(data || {}));
+    console.log('[DEBUG] data.choices:', data.choices);
+    console.log('[DEBUG] data.choices?.[0]:', data.choices?.[0]);
+    console.log('[DEBUG] data.choices?.[0]?.message:', data.choices?.[0]?.message);
+    console.log('[DEBUG] data.choices?.[0]?.message?.tool_calls:', data.choices?.[0]?.message?.tool_calls);
+
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    
+
     if (!toolCall) {
-      throw new Error('Aucun résultat structuré reçu');
+      console.error('[ERROR] ❌ Aucun tool_call trouvé');
+      console.error('[ERROR] Structure complète de data.choices?.[0]?.message:', 
+        JSON.stringify(data?.choices?.[0]?.message, null, 2));
+      throw new Error(
+        'Aucun résultat structuré reçu (tool_call manquant). ' +
+        'Vérifier les logs pour la structure exacte de la réponse.'
+      );
     }
 
     const structured = JSON.parse(toolCall.function.arguments);
