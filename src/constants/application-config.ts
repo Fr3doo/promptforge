@@ -20,11 +20,11 @@ export const TIMING = {
   /** Durée d'affichage des toasts (3 secondes) */
   TOAST_DURATION: 3000,
   
-  /** Timeout côté client pour l'analyse de prompt (30 secondes) */
-  ANALYSIS_CLIENT_TIMEOUT: 30_000,
-  
   /** Timeout côté edge function pour l'appel AI (35 secondes) */
   ANALYSIS_EDGE_TIMEOUT: 35_000,
+  
+  /** Timeout côté client pour l'analyse de prompt (45 secondes = edge + marge) */
+  ANALYSIS_CLIENT_TIMEOUT: 45_000,
 } as const;
 
 // ============================================

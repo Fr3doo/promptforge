@@ -30,7 +30,7 @@ describe("application-config", () => {
     });
 
     it("should define client analysis timeout correctly", () => {
-      expect(TIMING.ANALYSIS_CLIENT_TIMEOUT).toBe(30_000);
+      expect(TIMING.ANALYSIS_CLIENT_TIMEOUT).toBe(45_000);
       expect(TIMING.ANALYSIS_CLIENT_TIMEOUT).toBeGreaterThan(0);
     });
 
@@ -39,14 +39,14 @@ describe("application-config", () => {
       expect(TIMING.ANALYSIS_EDGE_TIMEOUT).toBeGreaterThan(0);
     });
 
-    it("should ensure edge timeout is greater than client timeout", () => {
-      expect(TIMING.ANALYSIS_EDGE_TIMEOUT).toBeGreaterThan(
-        TIMING.ANALYSIS_CLIENT_TIMEOUT
+    it("should ensure client timeout is greater than edge timeout", () => {
+      expect(TIMING.ANALYSIS_CLIENT_TIMEOUT).toBeGreaterThan(
+        TIMING.ANALYSIS_EDGE_TIMEOUT
       );
     });
 
     it("should ensure timeout gap is at least 5 seconds", () => {
-      const gap = TIMING.ANALYSIS_EDGE_TIMEOUT - TIMING.ANALYSIS_CLIENT_TIMEOUT;
+      const gap = TIMING.ANALYSIS_CLIENT_TIMEOUT - TIMING.ANALYSIS_EDGE_TIMEOUT;
       expect(gap).toBeGreaterThanOrEqual(5000);
     });
 
