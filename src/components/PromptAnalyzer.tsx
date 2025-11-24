@@ -17,6 +17,7 @@ import { useCreateVersion } from "@/hooks/useVersions";
 import { MetadataView } from "./analyzer/MetadataView";
 import { ExportActions } from "./analyzer/ExportActions";
 import { MobileExportActions } from "./analyzer/MobileExportActions";
+import { CharacterCounter } from "./analyzer/CharacterCounter";
 import { Badge } from "@/components/ui/badge";
 import { successToast, errorToast } from "@/lib/toastUtils";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
@@ -215,13 +216,18 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 sm:p-6 space-y-4">
-          <Textarea
-            placeholder={messages.placeholders.analyzerPrompt}
-            value={promptContent}
-            onChange={(e) => setPromptContent(e.target.value)}
-            rows={8}
-            className="font-mono text-sm min-h-[200px] sm:min-h-[280px]"
-          />
+          <div className="space-y-3">
+            <Textarea
+              placeholder={messages.placeholders.analyzerPrompt}
+              value={promptContent}
+              onChange={(e) => setPromptContent(e.target.value)}
+              rows={8}
+              className="font-mono text-sm min-h-[200px] sm:min-h-[280px]"
+            />
+            {promptContent && (
+              <CharacterCounter length={promptContent.length} />
+            )}
+          </div>
           <Button 
             onClick={() => analyze(promptContent)} 
             disabled={isAnalyzing || !promptContent.trim()}
