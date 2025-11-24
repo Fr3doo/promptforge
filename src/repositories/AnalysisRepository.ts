@@ -67,12 +67,14 @@ export interface AnalysisRepository {
  */
 export class SupabaseAnalysisRepository implements AnalysisRepository {
   async analyzePrompt(content: string): Promise<AnalysisResult> {
-    // Create AbortController for timeout management
+    const startTime = Date.now();
+    let timedOut = false;
+    
     const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      TIMING.ANALYSIS_CLIENT_TIMEOUT
-    );
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, TIMING.ANALYSIS_CLIENT_TIMEOUT);
 
     try {
       const result = await supabase.functions.invoke('analyze-prompt', {
@@ -82,6 +84,10 @@ export class SupabaseAnalysisRepository implements AnalysisRepository {
       });
 
       clearTimeout(timeoutId);
+      
+      const duration = Date.now() - startTime;
+      console.log(`[ANALYSIS] ✅ Completed in ${duration}ms`);
+      
       handleSupabaseError(result);
 
       if (result.data?.error) {
@@ -89,16 +95,30 @@ export class SupabaseAnalysisRepository implements AnalysisRepository {
       }
 
       return result.data as AnalysisResult;
+      
     } catch (error: any) {
       clearTimeout(timeoutId);
+      
+      const duration = Date.now() - startTime;
+      console.error(`[ANALYSIS] ❌ Failed after ${duration}ms`, { 
+        errorName: error?.name,
+        errorMessage: error?.message,
+        timedOut
+      });
 
-      // Detect AbortError (timeout triggered)
-      if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+      // ✅ Source de vérité : le flag timedOut
+      if (timedOut) {
         throw new AnalysisTimeoutError(
           messages.analysis.notifications.errors.timeout.description
         );
       }
 
+      // ℹ️ Log spécifique pour FunctionsFetchError (mais ne PAS le relabeller en timeout)
+      if (error?.name === 'FunctionsFetchError') {
+        console.error('[ANALYSIS] FunctionsFetchError détecté (réseau/CORS/infra?)');
+      }
+
+      // Rethrow l'erreur originale (pas de relabelling abusif)
       throw error;
     }
   }
