@@ -30,12 +30,12 @@ describe("application-config", () => {
     });
 
     it("should define client analysis timeout correctly", () => {
-      expect(TIMING.ANALYSIS_CLIENT_TIMEOUT).toBe(45_000);
+      expect(TIMING.ANALYSIS_CLIENT_TIMEOUT).toBe(60_000);
       expect(TIMING.ANALYSIS_CLIENT_TIMEOUT).toBeGreaterThan(0);
     });
 
     it("should define edge analysis timeout correctly", () => {
-      expect(TIMING.ANALYSIS_EDGE_TIMEOUT).toBe(35_000);
+      expect(TIMING.ANALYSIS_EDGE_TIMEOUT).toBe(50_000);
       expect(TIMING.ANALYSIS_EDGE_TIMEOUT).toBeGreaterThan(0);
     });
 

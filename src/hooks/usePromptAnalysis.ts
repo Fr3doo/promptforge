@@ -4,6 +4,8 @@ import { useAnalysisRepository } from "@/contexts/AnalysisRepositoryContext";
 import type { AnalysisResult } from "@/repositories/AnalysisRepository";
 import { AnalysisTimeoutError } from "@/repositories/AnalysisRepository";
 import { captureException } from "@/lib/logger";
+import { VALIDATION } from "@/constants/application-config";
+import { toast } from "sonner";
 
 /**
  * Hook for analyzing prompts using the injected AnalysisRepository
@@ -20,6 +22,23 @@ export function usePromptAnalysis() {
     if (!promptContent.trim()) {
       analysisMessages.showEmptyPromptError();
       return;
+    }
+
+    const contentLength = promptContent.length;
+
+    // Limite dure : blocage
+    if (contentLength > VALIDATION.PROMPT_ANALYSIS_HARD_LIMIT) {
+      toast.error("Prompt trop long", {
+        description: `Le prompt ne peut pas dépasser ${VALIDATION.PROMPT_ANALYSIS_HARD_LIMIT.toLocaleString()} caractères. Longueur actuelle : ${contentLength.toLocaleString()} caractères.`,
+      });
+      return;
+    }
+
+    // Limite douce : avertissement
+    if (contentLength > VALIDATION.PROMPT_ANALYSIS_SOFT_LIMIT) {
+      toast.warning("Prompt très long", {
+        description: `Votre prompt fait ${contentLength.toLocaleString()} caractères. L'analyse peut prendre jusqu'à 60 secondes.`,
+      });
     }
 
     setIsAnalyzing(true);

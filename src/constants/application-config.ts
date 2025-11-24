@@ -20,11 +20,22 @@ export const TIMING = {
   /** Durée d'affichage des toasts (3 secondes) */
   TOAST_DURATION: 3000,
   
-  /** Timeout côté edge function pour l'appel AI (35 secondes) */
-  ANALYSIS_EDGE_TIMEOUT: 35_000,
+  /** Timeout côté edge function pour l'appel AI (50 secondes) */
+  ANALYSIS_EDGE_TIMEOUT: 50_000,
   
-  /** Timeout côté client pour l'analyse de prompt (45 secondes = edge + marge) */
-  ANALYSIS_CLIENT_TIMEOUT: 45_000,
+  /** Timeout côté client pour l'analyse de prompt (60 secondes = edge + marge) */
+  ANALYSIS_CLIENT_TIMEOUT: 60_000,
+} as const;
+
+// ============================================
+// VALIDATION LIMITS
+// ============================================
+export const VALIDATION = {
+  /** Limite douce pour l'analyse de prompt (avertissement à 12k caractères) */
+  PROMPT_ANALYSIS_SOFT_LIMIT: 12_000,
+  
+  /** Limite dure pour l'analyse de prompt (blocage à 20k caractères) */
+  PROMPT_ANALYSIS_HARD_LIMIT: 20_000,
 } as const;
 
 // ============================================
