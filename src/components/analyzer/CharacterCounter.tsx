@@ -1,5 +1,6 @@
 import { AlertCircle, AlertTriangle, CheckCircle } from "lucide-react";
 import { VALIDATION } from "@/constants/application-config";
+import { messages } from "@/constants/messages";
 import { cn } from "@/lib/utils";
 
 interface CharacterCounterProps {
@@ -21,6 +22,7 @@ export function CharacterCounter({ length }: CharacterCounterProps) {
         text: "Trop long - Limite dépassée",
         color: "text-destructive",
         bgColor: "bg-destructive/10",
+        timeHint: null,
       };
     }
     if (length > softLimit) {
@@ -30,6 +32,17 @@ export function CharacterCounter({ length }: CharacterCounterProps) {
         text: "Prompt très long - Analyse lente",
         color: "text-amber-600 dark:text-amber-500",
         bgColor: "bg-amber-50 dark:bg-amber-950/30",
+        timeHint: messages.analysis.timeHints.long,
+      };
+    }
+    if (length > 5000) {
+      return {
+        variant: "success" as const,
+        icon: CheckCircle,
+        text: "Longueur optimale",
+        color: "text-emerald-600 dark:text-emerald-500",
+        bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
+        timeHint: messages.analysis.timeHints.normal,
       };
     }
     return {
@@ -38,6 +51,7 @@ export function CharacterCounter({ length }: CharacterCounterProps) {
       text: "Longueur optimale",
       color: "text-emerald-600 dark:text-emerald-500",
       bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
+      timeHint: null,
     };
   };
 
@@ -85,6 +99,13 @@ export function CharacterCounter({ length }: CharacterCounterProps) {
           </span>
         </div>
       </div>
+
+      {/* Time hint selon la taille */}
+      {status.timeHint && (
+        <p className="text-xs text-muted-foreground italic mt-1">
+          💡 {status.timeHint}
+        </p>
+      )}
     </div>
   );
 }

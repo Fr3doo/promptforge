@@ -18,6 +18,7 @@ import { MetadataView } from "./analyzer/MetadataView";
 import { ExportActions } from "./analyzer/ExportActions";
 import { MobileExportActions } from "./analyzer/MobileExportActions";
 import { CharacterCounter } from "./analyzer/CharacterCounter";
+import { AnalysisLoadingState } from "./analyzer/AnalysisLoadingState";
 import { Badge } from "@/components/ui/badge";
 import { successToast, errorToast } from "@/lib/toastUtils";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
@@ -33,7 +34,7 @@ interface PromptAnalyzerProps {
 
 export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
   const [promptContent, setPromptContent] = useState("");
-  const { result, isAnalyzing, analyze, reset } = usePromptAnalysis();
+  const { result, isAnalyzing, analyze, reset, progressMessage, elapsedSeconds } = usePromptAnalysis();
   const breakpoint = useBreakpoint();
   const { mutate: createPrompt, isPending: isSaving } = useCreatePrompt();
   const { mutate: saveVariables } = useBulkUpsertVariables();
@@ -228,14 +229,21 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
               <CharacterCounter length={promptContent.length} />
             )}
           </div>
-          <Button 
-            onClick={() => analyze(promptContent)} 
-            disabled={isAnalyzing || !promptContent.trim()}
-            className="w-full gap-2"
-          >
-            {isAnalyzing && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isAnalyzing ? messages.analyzer.analyzing : messages.analyzer.analyze}
-          </Button>
+          {isAnalyzing ? (
+            <AnalysisLoadingState
+              progressMessage={progressMessage}
+              elapsedSeconds={elapsedSeconds}
+            />
+          ) : (
+            <Button 
+              onClick={() => analyze(promptContent)} 
+              disabled={!promptContent.trim()}
+              className="w-full gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              {messages.analyzer.analyze}
+            </Button>
+          )}
         </CardContent>
       </Card>
 

@@ -61,6 +61,8 @@ describe('PromptAnalyzer - Save Function', () => {
       isTimeout: false,
       analyze: vi.fn(),
       reset: vi.fn(),
+      progressMessage: '',
+      elapsedSeconds: 0,
     });
 
     vi.spyOn(usePromptsModule, 'useCreatePrompt').mockReturnValue({
@@ -84,6 +86,8 @@ describe('PromptAnalyzer - Save Function', () => {
       isTimeout: false,
       analyze: vi.fn(),
       reset: vi.fn(),
+      progressMessage: '',
+      elapsedSeconds: 0,
     });
 
     render(<PromptAnalyzer onClose={mockOnClose} />);
@@ -173,6 +177,8 @@ describe('PromptAnalyzer - Save Function', () => {
       isTimeout: false,
       analyze: vi.fn(),
       reset: vi.fn(),
+      progressMessage: '',
+      elapsedSeconds: 0,
     });
 
     render(<PromptAnalyzer onClose={mockOnClose} />);
@@ -210,6 +216,8 @@ describe('PromptAnalyzer - Save Function', () => {
       isTimeout: false,
       analyze: vi.fn(),
       reset: vi.fn(),
+      progressMessage: '',
+      elapsedSeconds: 0,
     });
 
     render(<PromptAnalyzer onClose={mockOnClose} />);
@@ -229,6 +237,8 @@ describe('PromptAnalyzer - Save Function', () => {
       isTimeout: false,
       analyze: vi.fn(),
       reset: vi.fn(),
+      progressMessage: '',
+      elapsedSeconds: 0,
     });
 
     render(<PromptAnalyzer onClose={mockOnClose} />);
@@ -271,6 +281,8 @@ describe('PromptAnalyzer - Save Function', () => {
       isTimeout: false,
       analyze: vi.fn(),
       reset: vi.fn(),
+      progressMessage: '',
+      elapsedSeconds: 0,
     });
 
     render(<PromptAnalyzer onClose={mockOnClose} />);
@@ -314,6 +326,8 @@ describe('PromptAnalyzer - Save Function', () => {
       isTimeout: false,
       analyze: vi.fn(),
       reset: vi.fn(),
+      progressMessage: '',
+      elapsedSeconds: 0,
     });
 
     render(<PromptAnalyzer onClose={mockOnClose} />);
