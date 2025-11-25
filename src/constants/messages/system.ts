@@ -109,5 +109,19 @@ export const systemMessages = {
         },
       },
     },
+    // Messages de progression dynamique pendant l'analyse
+    progress: {
+      preparing: "Préparation de l'analyse...",
+      analyzing: "Analyse du prompt en cours...",
+      deepAnalysis: "Analyse approfondie de votre prompt...",
+      complexPrompt: "C'est un prompt complexe, l'analyse continue...",
+      almostDone: "Presque terminé, merci de patienter...",
+      elapsed: (seconds: number) => `${seconds}s écoulées`,
+    },
+    // Hints de temps selon la taille du prompt
+    timeHints: {
+      normal: "L'analyse prend généralement moins de 30 secondes",
+      long: "L'analyse peut prendre jusqu'à ~45 secondes",
+    },
   },
 } as const;

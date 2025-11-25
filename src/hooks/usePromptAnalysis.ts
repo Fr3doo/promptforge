@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAnalysisMessages } from "@/features/prompts/hooks/useAnalysisMessages";
 import { useAnalysisRepository } from "@/contexts/AnalysisRepositoryContext";
+import { useAnalysisProgress } from "./useAnalysisProgress";
 import type { AnalysisResult } from "@/repositories/AnalysisRepository";
 import { AnalysisTimeoutError } from "@/repositories/AnalysisRepository";
 import { captureException } from "@/lib/logger";
@@ -17,6 +18,7 @@ export function usePromptAnalysis() {
   const [isTimeout, setIsTimeout] = useState(false);
   const analysisRepository = useAnalysisRepository();
   const analysisMessages = useAnalysisMessages();
+  const progress = useAnalysisProgress();
 
   const analyze = async (promptContent: string) => {
     if (!promptContent.trim()) {
@@ -43,6 +45,7 @@ export function usePromptAnalysis() {
 
     setIsAnalyzing(true);
     setIsTimeout(false);
+    progress.start();
     analysisMessages.showAnalyzing();
 
     try {
@@ -67,6 +70,7 @@ export function usePromptAnalysis() {
       setResult(null);
     } finally {
       setIsAnalyzing(false);
+      progress.stop();
     }
   };
 
@@ -75,5 +79,13 @@ export function usePromptAnalysis() {
     setIsTimeout(false);
   };
 
-  return { result, isAnalyzing, isTimeout, analyze, reset };
+  return { 
+    result, 
+    isAnalyzing, 
+    isTimeout, 
+    analyze, 
+    reset,
+    progressMessage: progress.getProgressMessage(),
+    elapsedSeconds: progress.elapsedSeconds,
+  };
 }
