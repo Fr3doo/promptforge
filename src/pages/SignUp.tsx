@@ -42,7 +42,7 @@ const SignUp = () => {
       );
       
       toast.success(messages.auth.signupSuccess);
-      navigate("/");
+      navigate("/dashboard");
     } catch (error: any) {
       toast.error(getSafeErrorMessage(error));
     } finally {

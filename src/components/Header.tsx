@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Code2, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -13,7 +13,10 @@ export const Header = () => {
   const authRepository = useAuthRepository();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const isActive = (path: string) => location.pathname === path;
 
   const handleSignOut = async () => {
     await authRepository.signOut();
@@ -43,19 +46,52 @@ export const Header = () => {
             <>
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center gap-4 lg:gap-6 md:ml-6 lg:ml-8">
-                <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
+                <Link 
+                  to="/dashboard" 
+                  className={`text-sm font-medium hover:text-primary transition-colors ${
+                    isActive('/dashboard') ? 'text-primary font-semibold' : ''
+                  }`}
+                >
                   {messages.navigation.dashboard}
                 </Link>
-                <Link to="/resources" className="text-sm font-medium hover:text-primary transition-colors">
+                <Link 
+                  to="/prompts" 
+                  className={`text-sm font-medium hover:text-primary transition-colors ${
+                    isActive('/prompts') ? 'text-primary font-semibold' : ''
+                  }`}
+                >
+                  {messages.navigation.prompts}
+                </Link>
+                <Link 
+                  to="/resources" 
+                  className={`text-sm font-medium hover:text-primary transition-colors ${
+                    isActive('/resources') ? 'text-primary font-semibold' : ''
+                  }`}
+                >
                   {messages.navigation.resources}
                 </Link>
-                <Link to="/methodes" className="text-sm font-medium hover:text-primary transition-colors">
+                <Link 
+                  to="/methodes" 
+                  className={`text-sm font-medium hover:text-primary transition-colors ${
+                    isActive('/methodes') ? 'text-primary font-semibold' : ''
+                  }`}
+                >
                   {messages.navigation.methods}
                 </Link>
-                <Link to="/faq" className="text-sm font-medium hover:text-primary transition-colors">
+                <Link 
+                  to="/faq" 
+                  className={`text-sm font-medium hover:text-primary transition-colors ${
+                    isActive('/faq') ? 'text-primary font-semibold' : ''
+                  }`}
+                >
                   {messages.navigation.faq}
                 </Link>
-                <Link to="/settings" className="text-sm font-medium hover:text-primary transition-colors">
+                <Link 
+                  to="/settings" 
+                  className={`text-sm font-medium hover:text-primary transition-colors ${
+                    isActive('/settings') ? 'text-primary font-semibold' : ''
+                  }`}
+                >
                   {messages.navigation.settings}
                 </Link>
                 <Button variant="ghost" onClick={handleSignOut} className="gap-2">
@@ -81,35 +117,54 @@ export const Header = () => {
                   <nav className="flex flex-col gap-4 mt-8">
                     <Button 
                       variant="ghost" 
-                      className="justify-start text-base"
+                      className={`justify-start text-base ${
+                        isActive('/dashboard') ? 'bg-muted font-semibold' : ''
+                      }`}
                       onClick={() => handleNavigation("/dashboard")}
                     >
                       {messages.navigation.dashboard}
                     </Button>
                     <Button 
                       variant="ghost" 
-                      className="justify-start text-base"
+                      className={`justify-start text-base ${
+                        isActive('/prompts') ? 'bg-muted font-semibold' : ''
+                      }`}
+                      onClick={() => handleNavigation("/prompts")}
+                    >
+                      {messages.navigation.prompts}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      className={`justify-start text-base ${
+                        isActive('/resources') ? 'bg-muted font-semibold' : ''
+                      }`}
                       onClick={() => handleNavigation("/resources")}
                     >
                       {messages.navigation.resources}
                     </Button>
                     <Button 
                       variant="ghost" 
-                      className="justify-start text-base"
+                      className={`justify-start text-base ${
+                        isActive('/methodes') ? 'bg-muted font-semibold' : ''
+                      }`}
                       onClick={() => handleNavigation("/methodes")}
                     >
                       {messages.navigation.methods}
                     </Button>
                   <Button 
                       variant="ghost" 
-                      className="justify-start text-base"
+                      className={`justify-start text-base ${
+                        isActive('/faq') ? 'bg-muted font-semibold' : ''
+                      }`}
                       onClick={() => handleNavigation("/faq")}
                     >
                       {messages.navigation.faq}
                     </Button>
                     <Button 
                       variant="ghost" 
-                      className="justify-start text-base"
+                      className={`justify-start text-base ${
+                        isActive('/settings') ? 'bg-muted font-semibold' : ''
+                      }`}
                       onClick={() => handleNavigation("/settings")}
                     >
                       {messages.navigation.settings}
