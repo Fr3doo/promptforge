@@ -61,7 +61,7 @@ const ResourceArticle = () => {
           </div>
         </header>
 
-        <main className="container mx-auto px-4 py-8 sm:py-12">
+        <main id="main-content" className="container mx-auto px-4 py-8 sm:py-12">
           <article className="max-w-3xl mx-auto space-y-8">
             <div className="space-y-4">
               <Badge variant="secondary">{article.category}</Badge>
