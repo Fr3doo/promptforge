@@ -27,6 +27,7 @@ export const appMessages = {
     signIn: "Se connecter",
     signUp: "S'inscrire",
     signOut: "Se déconnecter",
+    skipToContent: "Aller au contenu principal",
     copyright: (year: number) => `© ${year} PromptForge. Tous droits réservés.`,
   },
 

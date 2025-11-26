@@ -162,7 +162,7 @@ export default function Settings() {
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
         
-        <main className="flex-1 container mx-auto px-4 py-8">
+        <main id="main-content" className="flex-1 container mx-auto px-4 py-8">
           <div className="mb-8">
             <Button
               variant="ghost"

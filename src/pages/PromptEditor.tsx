@@ -36,7 +36,7 @@ function PromptEditorMainContent() {
     <>
       <PromptEditorHeader />
       
-      <main className="container mx-auto px-4 py-8 space-y-8 max-w-7xl">
+      <main id="main-content" className="container mx-auto px-4 py-8 space-y-8 max-w-7xl">
         <ConflictAlertContainer />
         
         <PromptEditorMetadata />

@@ -122,7 +122,7 @@ const Prompts = () => {
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-8 space-y-12">
+      <main id="main-content" className="container mx-auto px-4 py-8 space-y-12">
         {/* Share Banner for newly created prompts */}
         {showShareBanner && justCreatedPrompt && (
           <Alert className="border-primary bg-primary/5">

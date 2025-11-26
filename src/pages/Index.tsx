@@ -39,7 +39,7 @@ const Index = () => {
         <div className="min-h-screen flex flex-col bg-background">
         <Header />
 
-        <main className="flex-1 flex flex-col items-center justify-center px-4 py-16">
+        <main id="main-content" className="flex-1 flex flex-col items-center justify-center px-4 py-16">
           <div className="text-center max-w-3xl space-y-8">
             <div className="space-y-4 px-4">
               <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
@@ -169,7 +169,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="container mx-auto px-4 py-16">
+      <main id="main-content" className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto space-y-8 px-4">
           <div className="text-center space-y-4">
             <h1 className="text-3xl sm:text-4xl font-bold">{messages.marketing.hero.welcomeBack(profile?.pseudo || user.email)}</h1>

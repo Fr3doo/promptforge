@@ -61,7 +61,7 @@ const PromptingMethods = () => {
       <div className="min-h-screen bg-background">
         <Header />
 
-        <main className="container mx-auto px-4 py-12">
+        <main id="main-content" className="container mx-auto px-4 py-12">
           <div className="max-w-7xl mx-auto">
             <div className="text-center space-y-4 mb-8">
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full">

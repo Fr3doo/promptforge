@@ -63,7 +63,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
+      <main id="main-content" className="container mx-auto px-4 py-8 space-y-8">
         {/* Usage Statistics */}
         {dashboardData?.usageStats && dashboardData.usageStats.length > 0 && (
           <section>

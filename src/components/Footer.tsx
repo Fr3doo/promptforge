@@ -59,35 +59,35 @@ export const Footer = () => {
                 href="https://github.com/Fr3doo"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-primary transition-colors"
+                className="text-muted-foreground hover:text-primary transition-colors p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label="GitHub"
               >
-                <Github className="h-5 w-5" />
+                <Github className="h-6 w-6" />
               </a>
               <a
                 href="https://x.com/fverissim0"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-primary transition-colors"
+                className="text-muted-foreground hover:text-primary transition-colors p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label="Twitter"
               >
-                <Twitter className="h-5 w-5" />
+                <Twitter className="h-6 w-6" />
               </a>
               <a
                 href="https://www.linkedin.com/in/fredericverissimo/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-primary transition-colors"
+                className="text-muted-foreground hover:text-primary transition-colors p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label="LinkedIn"
               >
-                <Linkedin className="h-5 w-5" />
+                <Linkedin className="h-6 w-6" />
               </a>
               <a
                 href="mailto:frederic.verissimo@gmail.com"
-                className="text-muted-foreground hover:text-primary transition-colors"
+                className="text-muted-foreground hover:text-primary transition-colors p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label="Email"
               >
-                <Mail className="h-5 w-5" />
+                <Mail className="h-6 w-6" />
               </a>
             </div>
             <p className="text-sm text-muted-foreground">{messages.navigation.communityContact}</p>
