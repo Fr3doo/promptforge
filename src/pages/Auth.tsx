@@ -36,7 +36,7 @@ const Auth = () => {
       );
       
       toast.success(messages.auth.loginSuccess);
-      navigate("/");
+      navigate("/dashboard");
     } catch (error: any) {
       toast.error(getSafeErrorMessage(error));
     } finally {
