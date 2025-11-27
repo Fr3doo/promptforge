@@ -1,4 +1,5 @@
 import { createContext, useContext, ReactNode } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { usePrompt } from "@/hooks/usePrompts";
 import { useVariables } from "@/hooks/useVariables";
 import { useVersions } from "@/hooks/useVersions";
@@ -54,6 +55,7 @@ interface PromptEditorProviderProps {
 
 export function PromptEditorProvider({ children, promptId }: PromptEditorProviderProps) {
   const isEditMode = !!promptId;
+  const { loading: authLoading } = useAuth();
   
   // Queries
   const { data: prompt, isLoading: isLoadingPrompt, refetch: refetchPrompt } = usePrompt(promptId);
@@ -62,7 +64,7 @@ export function PromptEditorProvider({ children, promptId }: PromptEditorProvide
   
   // Permissions
   const { canEdit: canEditFromPermission, canCreateVersion, permission, isOwner } = usePromptPermission(promptId);
-  const canEdit = !isEditMode || canEditFromPermission;
+  const canEdit = !isEditMode || (canEditFromPermission && !authLoading);
   
   // Conflict detection
   const { hasConflict, serverUpdatedAt, resetConflict } = useConflictDetection(
