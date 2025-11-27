@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useVariableManager } from "@/hooks/useVariableManager";
 import { usePromptSave } from "@/hooks/usePromptSave";
 import { usePromptMessages } from "./usePromptMessages";
@@ -32,15 +33,18 @@ export function usePromptForm({
   // 1. État du formulaire
   const formState = useFormState({ prompt, isEditMode });
 
-  // 2. Validation
-  const validation = useFormValidation({
+  // 2. Mémoriser formData pour stabiliser la référence passée à useFormValidation
+  const formDataForValidation = useMemo(() => ({
     title: formState.title,
     description: formState.description,
     content: formState.content,
     tags: formState.tags,
-  });
+  }), [formState.title, formState.description, formState.content, formState.tags]);
 
-  // 3. Gestion des brouillons (uniquement en mode création)
+  // 3. Validation
+  const validation = useFormValidation(formDataForValidation);
+
+  // 4. Gestion des brouillons (uniquement en mode création)
   const draft = useFormDraft(
     {
       title: formState.title,
@@ -51,7 +55,7 @@ export function usePromptForm({
     !isEditMode
   );
 
-  // 4. Détection des changements
+  // 5. Détection des changements
   const changeDetector = useFormChangeDetector(
     {
       title: formState.title,
@@ -63,13 +67,13 @@ export function usePromptForm({
     isEditMode
   );
 
-  // 5. Gestion des variables
+  // 6. Gestion des variables
   const { variables, addVariablesFromContent, updateVariable, deleteVariable } = useVariableManager({
     content: formState.content,
     initialVariables: existingVariables,
   });
 
-  // 6. Sauvegarde avec callback pour nettoyer le brouillon
+  // 7. Sauvegarde avec callback pour nettoyer le brouillon
   const { savePrompt, isSaving } = usePromptSave({ 
     isEditMode,
     onSuccess: () => {

@@ -28,12 +28,15 @@ export function useVariableManager({ content, initialVariables = [] }: UseVariab
 
   // Synchronize variables with detected names in content
   useEffect(() => {
-    // Remove variables that are no longer in content
-    const validVariables = variables.filter(v => detectedNames.includes(v.name));
-    
-    if (validVariables.length !== variables.length) {
-      setVariables(validVariables);
-    }
+    // Remove variables that are no longer in content using functional update
+    setVariables(prevVariables => {
+      const validVariables = prevVariables.filter(v => detectedNames.includes(v.name));
+      // Only update if there's an actual change to avoid unnecessary re-renders
+      if (validVariables.length !== prevVariables.length) {
+        return validVariables;
+      }
+      return prevVariables;
+    });
   }, [detectedNames]);
 
   /**
