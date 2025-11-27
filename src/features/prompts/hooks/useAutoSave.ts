@@ -53,7 +53,6 @@ export function useAutoSave({
             content: data.content,
             description: data.description || null,
             tags: data.tags,
-            status: "DRAFT", // Marquer comme brouillon lors de l'auto-save
           },
         }, {
           onSuccess: () => {
