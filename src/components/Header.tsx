@@ -11,7 +11,7 @@ import { messages } from "@/constants/messages";
 
 export const Header = () => {
   const authRepository = useAuthRepository();
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,26 +29,6 @@ export const Header = () => {
     setMobileMenuOpen(false);
     navigate(path);
   };
-
-  // Afficher un état neutre pendant le chargement pour éviter les flashs
-  if (loading) {
-    return (
-      <header className="border-b border-border bg-card sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <Code2 className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="text-lg sm:text-xl font-bold">PromptForge</span>
-            </Link>
-            {/* Placeholder pendant le chargement */}
-            <div className="w-32 h-9 bg-muted/30 rounded animate-pulse" />
-          </div>
-        </div>
-      </header>
-    );
-  }
 
   return (
     <header className="border-b border-border bg-card sticky top-0 z-50">
