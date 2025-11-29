@@ -1,6 +1,7 @@
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthRepositoryProvider } from "@/contexts/AuthRepositoryContext";
 import { AuthContextProvider } from "@/contexts/AuthContext";
+import { UserBootstrapWrapper } from "./UserBootstrapWrapper";
 import { ProfileRepositoryProvider } from "@/contexts/ProfileRepositoryContext";
 import { PromptRepositoryProvider } from "@/contexts/PromptRepositoryContext";
 import { PromptMutationRepositoryProvider } from "@/contexts/PromptMutationRepositoryContext";
@@ -52,7 +53,8 @@ export function AppProviders({
   return (
     <ErrorBoundary>
       <AuthRepositoryProvider repository={authRepository}>
-        <AuthContextProvider>
+      <AuthContextProvider>
+        <UserBootstrapWrapper>
           <ProfileRepositoryProvider repository={profileRepository}>
           <PromptRepositoryProvider repository={repository}>
             <PromptMutationRepositoryProvider>
@@ -82,6 +84,7 @@ export function AppProviders({
             </PromptMutationRepositoryProvider>
           </PromptRepositoryProvider>
         </ProfileRepositoryProvider>
+        </UserBootstrapWrapper>
         </AuthContextProvider>
       </AuthRepositoryProvider>
     </ErrorBoundary>
