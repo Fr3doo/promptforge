@@ -1,5 +1,6 @@
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthRepositoryProvider } from "@/contexts/AuthRepositoryContext";
+import { AuthContextProvider } from "@/contexts/AuthContext";
 import { ProfileRepositoryProvider } from "@/contexts/ProfileRepositoryContext";
 import { PromptRepositoryProvider } from "@/contexts/PromptRepositoryContext";
 import { PromptMutationRepositoryProvider } from "@/contexts/PromptMutationRepositoryContext";
@@ -51,7 +52,8 @@ export function AppProviders({
   return (
     <ErrorBoundary>
       <AuthRepositoryProvider repository={authRepository}>
-        <ProfileRepositoryProvider repository={profileRepository}>
+        <AuthContextProvider>
+          <ProfileRepositoryProvider repository={profileRepository}>
           <PromptRepositoryProvider repository={repository}>
             <PromptMutationRepositoryProvider>
               <PromptQueryRepositoryProvider>
@@ -66,20 +68,21 @@ export function AppProviders({
                                 <PromptVisibilityServiceProvider service={visibilityService}>
                                   <PromptDuplicationServiceProvider service={duplicationService}>
                                     {children}
-                                  </PromptDuplicationServiceProvider>
-                                </PromptVisibilityServiceProvider>
-                              </PromptFavoriteServiceProvider>
-                            </PromptShareRepositoryProvider>
-                          </AnalysisRepositoryProvider>
-                        </PromptUsageRepositoryProvider>
-                      </EdgeFunctionRepositoryProvider>
-                    </VersionRepositoryProvider>
-                  </VariableRepositoryProvider>
-                </PromptCommandRepositoryProvider>
+                  </PromptDuplicationServiceProvider>
+                </PromptVisibilityServiceProvider>
+              </PromptFavoriteServiceProvider>
+            </PromptShareRepositoryProvider>
+          </AnalysisRepositoryProvider>
+        </PromptUsageRepositoryProvider>
+      </EdgeFunctionRepositoryProvider>
+    </VersionRepositoryProvider>
+  </VariableRepositoryProvider>
+</PromptCommandRepositoryProvider>
               </PromptQueryRepositoryProvider>
             </PromptMutationRepositoryProvider>
           </PromptRepositoryProvider>
         </ProfileRepositoryProvider>
+        </AuthContextProvider>
       </AuthRepositoryProvider>
     </ErrorBoundary>
   );
