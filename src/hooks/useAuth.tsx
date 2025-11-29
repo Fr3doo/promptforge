@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useContext } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
 import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
@@ -7,8 +7,26 @@ import { SupabaseVariableSetRepository } from "@/repositories/VariableSetReposit
 import { TemplateInitializationService } from "@/services/TemplateInitializationService";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { logError } from "@/lib/logger";
+import { AuthContext } from "@/contexts/AuthContext";
 
 export function useAuth() {
+  // Tenter d'utiliser le nouveau contexte (peut être undefined si pas de provider)
+  const authContext = useContext(AuthContext);
+  
+  // Si le contexte existe, l'utiliser directement (nouveau système)
+  if (authContext !== undefined) {
+    return authContext;
+  }
+  
+  // Sinon, fallback vers l'ancien comportement (transition)
+  return useAuthLegacy();
+}
+
+/**
+ * Implémentation legacy - sera supprimée après migration complète
+ * @deprecated Utiliser AuthContextProvider à la place
+ */
+function useAuthLegacy() {
   const authRepository = useAuthRepository();
   const promptRepository = usePromptRepository();
   const variableRepository = useVariableRepository();
