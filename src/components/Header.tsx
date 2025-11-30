@@ -7,11 +7,12 @@ import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { messages } from "@/constants/messages";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 export const Header = () => {
   const authRepository = useAuthRepository();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -42,7 +43,11 @@ export const Header = () => {
             <span className="text-lg sm:text-xl font-bold">PromptForge</span>
           </Link>
 
-          {user ? (
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 w-20" />
+            </div>
+          ) : user ? (
             <>
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center gap-4 lg:gap-6 md:ml-6 lg:ml-8">
