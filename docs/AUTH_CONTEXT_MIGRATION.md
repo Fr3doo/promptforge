@@ -1,5 +1,17 @@
 # Migration AuthContext - Phase 1 à 8
 
+## 🧠 Mémoire projet - AuthContext (résumé)
+
+> **Pour référence rapide** - Les détails complets sont dans les sections ci-dessous.
+
+- **Source de vérité auth** : `AuthContext` (un seul listener `onAuthStateChange`, un seul état global `user`, `session`, `loading`).
+- **`useAuth`** est un simple proxy vers le contexte, sans état local ni listeners propres.
+- **Logique métier nouveaux utilisateurs** : déplacée dans `useNewUserBootstrap` + `UserBootstrapWrapper`.
+- **UI et loading** : Toujours respecter `loading` (ex : `Header` affiche un skeleton tant que `loading === true`).
+- **Règle d'or** : Toute nouvelle fonctionnalité touchant à l'auth doit lire/écrire **uniquement** via `AuthContext` / `useAuth`.
+
+---
+
 ## 📋 Vue d'ensemble
 
 Cette documentation récapitule la migration complète de l'architecture d'authentification vers un système centralisé basé sur `AuthContext`, réalisée en 8 phases granulaires pour garantir zéro régression.
@@ -44,14 +56,14 @@ Cette documentation récapitule la migration complète de l'architecture d'authe
 
 ### Fichiers clés
 
-| Fichier | Responsabilité |
-|---------|----------------|
-| `src/contexts/AuthContext.tsx` | Contexte centralisé avec `AuthContextProvider` et `useAuthContext` |
-| `src/hooks/useAuth.tsx` | Hook public simple qui retourne `useAuthContext()` |
-| `src/hooks/useNewUserBootstrap.ts` | Hook métier pour initialiser les templates nouveaux users |
+| Fichier                                  | Responsabilité                                                       |
+| ---------------------------------------- | -------------------------------------------------------------------- |
+| `src/contexts/AuthContext.tsx`           | Contexte centralisé avec `AuthContextProvider` et `useAuthContext`   |
+| `src/hooks/useAuth.tsx`                  | Hook public simple qui retourne `useAuthContext()`                   |
+| `src/hooks/useNewUserBootstrap.ts`       | Hook métier pour initialiser les templates nouveaux users            |
 | `src/providers/UserBootstrapWrapper.tsx` | Wrapper qui invoque `useNewUserBootstrap` dans l'arbre des providers |
-| `src/providers/AppProviders.tsx` | Intégration de `AuthContextProvider` et `UserBootstrapWrapper` |
-| `src/components/Header.tsx` | Consomme `loading` pour afficher skeleton pendant l'init |
+| `src/providers/AppProviders.tsx`         | Intégration de `AuthContextProvider` et `UserBootstrapWrapper`       |
+| `src/components/Header.tsx`              | Consomme `loading` pour afficher skeleton pendant l'init             |
 
 ---
 
@@ -62,6 +74,7 @@ Cette documentation récapitule la migration complète de l'architecture d'authe
 **Responsabilité** : Gérer l'état d'authentification global pour toute l'application.
 
 **État exposé** :
+
 ```typescript
 interface AuthContextValue {
   user: User | null;
@@ -71,6 +84,7 @@ interface AuthContextValue {
 ```
 
 **Comportement** :
+
 - ✅ Appelle `authRepository.onAuthStateChange()` une seule fois au montage
 - ✅ Appelle `authRepository.getCurrentSession()` une seule fois au montage
 - ✅ Met à jour `user`, `session` selon les événements auth (SIGNED_IN, SIGNED_OUT, etc.)
@@ -80,6 +94,7 @@ interface AuthContextValue {
 - ❌ Ne gère **PAS** la logique métier (création templates, etc.)
 
 **Exemple d'usage** :
+
 ```typescript
 export function AuthContextProvider({ children }: { children: ReactNode }) {
   const authRepository = useAuthRepository();
@@ -124,12 +139,14 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
 **Responsabilité** : Interface publique pour accéder à l'état d'authentification.
 
 **Comportement** :
+
 - ✅ Retourne directement `useAuthContext()`
 - ✅ Throw error si utilisé hors d'un `AuthContextProvider`
 - ❌ Ne crée **AUCUN** état local
 - ❌ Ne gère **AUCUN** listener `onAuthStateChange`
 
 **Code simplifié** :
+
 ```typescript
 export function useAuth() {
   return useAuthContext();
@@ -147,6 +164,7 @@ export function useAuth() {
 **Responsabilité** : Initialiser les templates d'exemple pour les nouveaux utilisateurs.
 
 **Comportement** :
+
 - ✅ Écoute les changements de `user` et `loading` depuis `useAuth()`
 - ✅ Skip si `loading === true`
 - ✅ Skip si `user === null`
@@ -157,6 +175,7 @@ export function useAuth() {
 - ✅ Utilise `setTimeout(initializeUser, 0)` pour éviter deadlock Supabase
 
 **Exemple d'usage** :
+
 ```typescript
 export function useNewUserBootstrap() {
   const { user, loading } = useAuth();
@@ -179,7 +198,7 @@ export function useNewUserBootstrap() {
     const initializeUser = async () => {
       hasInitialized.current = true;
       previousUserId.current = user.id;
-      
+
       try {
         const templateService = new TemplateInitializationService(
           promptRepository,
@@ -204,11 +223,13 @@ export function useNewUserBootstrap() {
 **Responsabilité** : Invoque `useNewUserBootstrap` dans l'arbre des providers.
 
 **Comportement** :
+
 - ✅ Invoque le hook `useNewUserBootstrap`
 - ✅ Render transparent (retourne `children` sans modification)
 - ✅ Doit être placé **après** `AuthContextProvider` dans l'arbre
 
 **Code** :
+
 ```typescript
 export function UserBootstrapWrapper({ children }: { children: ReactNode }) {
   useNewUserBootstrap();
@@ -225,6 +246,7 @@ export function UserBootstrapWrapper({ children }: { children: ReactNode }) {
 **Responsabilité** : Composer tous les providers dans le bon ordre.
 
 **Ordre critique** :
+
 ```typescript
 <QueryClientProvider>
   <AuthRepositoryProvider>       {/* 1. Repository d'auth */}
@@ -243,6 +265,7 @@ export function UserBootstrapWrapper({ children }: { children: ReactNode }) {
 ```
 
 **Règles** :
+
 - `AuthContextProvider` doit être **avant** `UserBootstrapWrapper` (car le wrapper utilise `useAuth()`)
 - `PromptRepositoryProvider` et `VariableRepositoryProvider` doivent être **avant** `UserBootstrapWrapper` (car le hook utilise ces repos)
 
@@ -253,12 +276,14 @@ export function UserBootstrapWrapper({ children }: { children: ReactNode }) {
 **Responsabilité** : Afficher un skeleton pendant le chargement de l'authentification.
 
 **Comportement** :
+
 - ✅ Récupère `{ user, loading }` depuis `useAuth()`
 - ✅ Affiche skeleton si `loading === true`
 - ✅ Affiche navigation authentifiée si `user !== null`
 - ✅ Affiche boutons connexion/inscription si `user === null`
 
 **Exemple** :
+
 ```typescript
 export const Header = () => {
   const { user, loading } = useAuth();
@@ -283,16 +308,16 @@ export const Header = () => {
 
 ## 📊 Récapitulatif des 8 phases
 
-| Phase | Objectif | Fichiers modifiés | Risque | Validation |
-|-------|----------|-------------------|--------|------------|
-| **Phase 1** | Créer `AuthContext` isolé | `src/contexts/AuthContext.tsx` | 0% | Contexte créé, pas encore intégré |
-| **Phase 2** | Modifier `useAuth` avec fallback | `src/hooks/useAuth.tsx` | 5% | Hook détecte contexte disponible, sinon fallback legacy |
-| **Phase 3** | Intégrer `AuthContextProvider` | `src/providers/AppProviders.tsx` | 10% | Contexte activé dans l'arbre des providers |
-| **Phase 4** | Créer `useNewUserBootstrap` | `src/hooks/useNewUserBootstrap.ts` | 5% | Hook séparé pour bootstrap, pas encore invoqué |
-| **Phase 5** | Créer `UserBootstrapWrapper` | `src/providers/UserBootstrapWrapper.tsx`<br>`src/providers/AppProviders.tsx` | 10% | Wrapper intégré, templates activés |
-| **Phase 6** | Supprimer fallback legacy | `src/hooks/useAuth.tsx` | 15% | `useAuth` devient pure passthrough |
-| **Phase 7** | Corriger `Header` avec `loading` | `src/components/Header.tsx` | 5% | Skeleton pendant chargement auth |
-| **Phase 8** | Adapter les tests | `src/contexts/__tests__/AuthContext.test.tsx`<br>`src/hooks/__tests__/useNewUserBootstrap.test.tsx`<br>`src/hooks/__tests__/useAuth.test.tsx` | 5% | Tests reflètent nouvelle architecture |
+| Phase       | Objectif                         | Fichiers modifiés                                                                                                                             | Risque | Validation                                              |
+| ----------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------- |
+| **Phase 1** | Créer `AuthContext` isolé        | `src/contexts/AuthContext.tsx`                                                                                                                | 0%     | Contexte créé, pas encore intégré                       |
+| **Phase 2** | Modifier `useAuth` avec fallback | `src/hooks/useAuth.tsx`                                                                                                                       | 5%     | Hook détecte contexte disponible, sinon fallback legacy |
+| **Phase 3** | Intégrer `AuthContextProvider`   | `src/providers/AppProviders.tsx`                                                                                                              | 10%    | Contexte activé dans l'arbre des providers              |
+| **Phase 4** | Créer `useNewUserBootstrap`      | `src/hooks/useNewUserBootstrap.ts`                                                                                                            | 5%     | Hook séparé pour bootstrap, pas encore invoqué          |
+| **Phase 5** | Créer `UserBootstrapWrapper`     | `src/providers/UserBootstrapWrapper.tsx`<br>`src/providers/AppProviders.tsx`                                                                  | 10%    | Wrapper intégré, templates activés                      |
+| **Phase 6** | Supprimer fallback legacy        | `src/hooks/useAuth.tsx`                                                                                                                       | 15%    | `useAuth` devient pure passthrough                      |
+| **Phase 7** | Corriger `Header` avec `loading` | `src/components/Header.tsx`                                                                                                                   | 5%     | Skeleton pendant chargement auth                        |
+| **Phase 8** | Adapter les tests                | `src/contexts/__tests__/AuthContext.test.tsx`<br>`src/hooks/__tests__/useNewUserBootstrap.test.tsx`<br>`src/hooks/__tests__/useAuth.test.tsx` | 5%     | Tests reflètent nouvelle architecture                   |
 
 **Total des risques cumulés** : 55% répartis sur 8 phases granulaires → Risque moyen par phase : ~7%
 
@@ -305,6 +330,7 @@ export const Header = () => {
 **Fichier** : `src/contexts/__tests__/AuthContext.test.tsx`
 
 **Wrapper** :
+
 ```typescript
 const wrapper = ({ children }: { children: ReactNode }) => (
   <AuthRepositoryProvider repository={mockAuthRepository}>
@@ -314,6 +340,7 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 ```
 
 **Tests couverts** :
+
 - ✅ Initialisation avec `loading: true`, `user: null`, `session: null`
 - ✅ Setup du listener `onAuthStateChange` au montage
 - ✅ Appel de `getCurrentSession` au montage
@@ -325,6 +352,7 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 - ✅ Throw error si utilisé hors du provider
 
 **Exemple de test** :
+
 ```typescript
 it("should update state when auth state changes to SIGNED_IN", async () => {
   const { result } = renderHook(() => useAuthContext(), { wrapper });
@@ -349,6 +377,7 @@ it("should update state when auth state changes to SIGNED_IN", async () => {
 **Fichier** : `src/hooks/__tests__/useNewUserBootstrap.test.tsx`
 
 **Wrapper complet** :
+
 ```typescript
 const wrapper = ({ children }: { children: ReactNode }) => (
   <AuthRepositoryProvider repository={mockAuthRepository}>
@@ -364,6 +393,7 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 ```
 
 **Tests couverts** :
+
 - ✅ Ne fait rien si `loading === true`
 - ✅ Ne fait rien si `user === null`
 - ✅ Crée les templates pour un nouvel utilisateur
@@ -373,6 +403,7 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 - ✅ Réinitialise si l'utilisateur change
 
 **Exemple de test** :
+
 ```typescript
 it("should create templates for a new user", async () => {
   vi.mocked(mockAuthRepository.getCurrentSession).mockResolvedValue(mockSession);
@@ -399,10 +430,12 @@ it("should create templates for a new user", async () => {
 **Fichier** : `src/hooks/__tests__/useAuth.test.tsx`
 
 **Tests couverts** :
+
 - ✅ Retourne les valeurs du contexte (`user`, `session`, `loading`)
 - ✅ Throw error si utilisé hors de `AuthContextProvider`
 
 **Exemple de test** :
+
 ```typescript
 it("should return auth context values", () => {
   const { result } = renderHook(() => useAuth(), { wrapper });
@@ -449,7 +482,7 @@ it("should return auth context values", () => {
 ❌ Flash visuel connecté → non-connecté → connecté pendant l'init  
 ❌ Faux états read-only dans l'éditeur de prompts  
 ❌ Tests complexes car chaque composant gère son propre état  
-❌ Logique métier (templates) mélangée avec logique auth  
+❌ Logique métier (templates) mélangée avec logique auth
 
 ### Après
 
@@ -459,7 +492,7 @@ it("should return auth context values", () => {
 ✅ Skeleton pendant chargement auth (plus de flash visuel)  
 ✅ Permissions calculées après chargement complet de l'auth  
 ✅ Tests isolés et simples (mock du contexte uniquement)  
-✅ Séparation claire : auth (contexte) vs métier (hook bootstrap)  
+✅ Séparation claire : auth (contexte) vs métier (hook bootstrap)
 
 ---
 
