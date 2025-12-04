@@ -1,22 +1,27 @@
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode, useMemo } from "react";
 import type { PromptMutationRepository } from "@/repositories/PromptRepository.interfaces";
-import { usePromptRepository } from "./PromptRepositoryContext";
+import { SupabasePromptCommandRepository } from "@/repositories/PromptCommandRepository";
 
 const PromptMutationRepositoryContext = createContext<PromptMutationRepository | null>(null);
 
 interface PromptMutationRepositoryProviderProps {
   children: ReactNode;
+  repository?: PromptMutationRepository;
 }
 
 export function PromptMutationRepositoryProvider({ 
-  children 
+  children,
+  repository
 }: PromptMutationRepositoryProviderProps) {
-  // Réutilise l'instance existante de SupabasePromptRepository
-  // SupabasePromptRepository implémente PromptRepository qui extends PromptMutationRepository
-  const repository = usePromptRepository();
+  // Utilise le repository injecté ou crée une instance spécialisée
+  // SupabasePromptCommandRepository implémente PromptMutationRepository
+  const mutationRepository = useMemo(
+    () => repository ?? new SupabasePromptCommandRepository(),
+    [repository]
+  );
   
   return (
-    <PromptMutationRepositoryContext.Provider value={repository}>
+    <PromptMutationRepositoryContext.Provider value={mutationRepository}>
       {children}
     </PromptMutationRepositoryContext.Provider>
   );
