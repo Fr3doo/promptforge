@@ -43,6 +43,7 @@ export function AppProviders({
   profileRepository,
   repository,
   commandRepository,
+  mutationRepository,
   variableRepository,
   analysisRepository,
   shareRepository,
@@ -59,7 +60,7 @@ export function AppProviders({
             <PromptRepositoryProvider repository={repository}>
               <VariableRepositoryProvider repository={variableRepository}>
                 <UserBootstrapWrapper>
-                  <PromptMutationRepositoryProvider>
+                  <PromptMutationRepositoryProvider repository={mutationRepository}>
                     <PromptQueryRepositoryProvider>
                       <PromptCommandRepositoryProvider repository={commandRepository}>
                         <VersionRepositoryProvider>
