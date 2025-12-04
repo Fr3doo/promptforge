@@ -1,22 +1,26 @@
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode, useMemo } from "react";
 import type { PromptCommandRepository } from "@/repositories/PromptRepository.interfaces";
-import { usePromptRepository } from "./PromptRepositoryContext";
+import { SupabasePromptCommandRepository } from "@/repositories/PromptCommandRepository";
 
 const PromptCommandRepositoryContext = createContext<PromptCommandRepository | null>(null);
 
 interface PromptCommandRepositoryProviderProps {
   children: ReactNode;
+  repository?: PromptCommandRepository;
 }
 
 export function PromptCommandRepositoryProvider({ 
-  children 
+  children,
+  repository 
 }: PromptCommandRepositoryProviderProps) {
-  // Réutilise l'instance existante de SupabasePromptRepository
-  // SupabasePromptRepository implémente PromptRepository qui extends PromptCommandRepository
-  const repository = usePromptRepository();
+  // Utilise le repository injecté ou crée une instance spécialisée
+  const commandRepository = useMemo(
+    () => repository ?? new SupabasePromptCommandRepository(),
+    [repository]
+  );
   
   return (
-    <PromptCommandRepositoryContext.Provider value={repository}>
+    <PromptCommandRepositoryContext.Provider value={commandRepository}>
       {children}
     </PromptCommandRepositoryContext.Provider>
   );
