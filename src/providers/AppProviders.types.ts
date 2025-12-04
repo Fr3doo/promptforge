@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { AuthRepository } from "@/repositories/AuthRepository";
 import type { PromptRepository } from "@/repositories/PromptRepository";
+import type { PromptCommandRepository } from "@/repositories/PromptRepository.interfaces";
 import type { VariableRepository } from "@/repositories/VariableRepository";
 import type { AnalysisRepository } from "@/repositories/AnalysisRepository";
 import type { PromptShareRepository } from "@/repositories/PromptShareRepository";
@@ -25,6 +26,9 @@ export interface AppProvidersProps {
   
   /** Repository principal des prompts (optionnel pour tests) */
   repository?: PromptRepository;
+  
+  /** Repository de commandes prompts - écriture seule (optionnel pour tests) */
+  commandRepository?: PromptCommandRepository;
   
   /** Repository des variables (optionnel pour tests) */
   variableRepository?: VariableRepository;
