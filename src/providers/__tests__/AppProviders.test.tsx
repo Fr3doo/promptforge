@@ -95,6 +95,44 @@ describe("AppProviders", () => {
       expect(result.current).toBe(mockRepository);
     });
 
+    it("should support dependency injection for PromptCommandRepository", () => {
+      const mockCommandRepository = {
+        create: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      };
+
+      const customWrapper = ({ children }: { children: ReactNode }) => (
+        <AppProviders commandRepository={mockCommandRepository as any}>
+          {children}
+        </AppProviders>
+      );
+
+      const { result } = renderHook(() => usePromptCommandRepository(), { 
+        wrapper: customWrapper 
+      });
+
+      expect(result.current).toBe(mockCommandRepository);
+    });
+
+    it("should support dependency injection for PromptMutationRepository", () => {
+      const mockMutationRepository = {
+        update: vi.fn(),
+      };
+
+      const customWrapper = ({ children }: { children: ReactNode }) => (
+        <AppProviders mutationRepository={mockMutationRepository as any}>
+          {children}
+        </AppProviders>
+      );
+
+      const { result } = renderHook(() => usePromptMutationRepository(), { 
+        wrapper: customWrapper 
+      });
+
+      expect(result.current).toBe(mockMutationRepository);
+    });
+
     it("should support dependency injection for VariableRepository", () => {
       const mockVariableRepository = {
         getByPromptId: vi.fn(),
