@@ -42,6 +42,7 @@ export function AppProviders({
   authRepository,
   profileRepository,
   repository,
+  queryRepository,
   commandRepository,
   mutationRepository,
   variableRepository,
@@ -59,10 +60,11 @@ export function AppProviders({
           <ProfileRepositoryProvider repository={profileRepository}>
             <PromptRepositoryProvider repository={repository}>
               <VariableRepositoryProvider repository={variableRepository}>
-                <UserBootstrapWrapper>
-                  <PromptMutationRepositoryProvider repository={mutationRepository}>
-                    <PromptQueryRepositoryProvider>
-                      <PromptCommandRepositoryProvider repository={commandRepository}>
+                <PromptMutationRepositoryProvider repository={mutationRepository}>
+                  <PromptQueryRepositoryProvider repository={queryRepository}>
+                    <PromptCommandRepositoryProvider repository={commandRepository}>
+                      {/* UserBootstrapWrapper AFTER Query/Command providers for useNewUserBootstrap access */}
+                      <UserBootstrapWrapper>
                         <VersionRepositoryProvider>
                           <EdgeFunctionRepositoryProvider>
                             <PromptUsageRepositoryProvider repository={usageRepository}>
@@ -80,10 +82,10 @@ export function AppProviders({
                             </PromptUsageRepositoryProvider>
                           </EdgeFunctionRepositoryProvider>
                         </VersionRepositoryProvider>
-                      </PromptCommandRepositoryProvider>
-                    </PromptQueryRepositoryProvider>
-                  </PromptMutationRepositoryProvider>
-                </UserBootstrapWrapper>
+                      </UserBootstrapWrapper>
+                    </PromptCommandRepositoryProvider>
+                  </PromptQueryRepositoryProvider>
+                </PromptMutationRepositoryProvider>
               </VariableRepositoryProvider>
             </PromptRepositoryProvider>
           </ProfileRepositoryProvider>

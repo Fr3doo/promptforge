@@ -1,6 +1,6 @@
 import { logError } from "@/lib/logger";
 import { exampleTemplates } from "@/lib/exampleTemplates";
-import type { PromptRepository } from "@/repositories/PromptRepository";
+import type { PromptQueryRepository, PromptCommandRepository } from "@/repositories/PromptRepository.interfaces";
 import type { VariableRepository } from "@/repositories/VariableRepository";
 import type { VariableSetRepository } from "@/repositories/VariableSetRepository";
 
@@ -14,7 +14,8 @@ import type { VariableSetRepository } from "@/repositories/VariableSetRepository
  */
 export class TemplateInitializationService {
   constructor(
-    private readonly promptRepository: PromptRepository,
+    private readonly promptQueryRepository: PromptQueryRepository,
+    private readonly promptCommandRepository: PromptCommandRepository,
     private readonly variableRepository: VariableRepository,
     private readonly variableSetRepository: VariableSetRepository
   ) {}
@@ -26,7 +27,7 @@ export class TemplateInitializationService {
    */
   async shouldCreateTemplates(userId: string): Promise<boolean> {
     try {
-      const prompts = await this.promptRepository.fetchOwned(userId);
+      const prompts = await this.promptQueryRepository.fetchOwned(userId);
       return prompts.length === 0;
     } catch (error) {
       logError("Error checking existing prompts", {
@@ -58,8 +59,8 @@ export class TemplateInitializationService {
   private async createTemplates(userId: string): Promise<void> {
     for (const template of exampleTemplates) {
       try {
-        // Create the prompt using the repository
-        const prompt = await this.promptRepository.create(userId, {
+        // Create the prompt using the command repository
+        const prompt = await this.promptCommandRepository.create(userId, {
           title: template.title,
           description: template.description,
           content: template.content,

@@ -1,22 +1,25 @@
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode, useMemo } from "react";
 import type { PromptQueryRepository } from "@/repositories/PromptRepository.interfaces";
-import { usePromptRepository } from "./PromptRepositoryContext";
+import { SupabasePromptQueryRepository } from "@/repositories/PromptQueryRepository";
 
 const PromptQueryRepositoryContext = createContext<PromptQueryRepository | null>(null);
 
 interface PromptQueryRepositoryProviderProps {
   children: ReactNode;
+  repository?: PromptQueryRepository;
 }
 
 export function PromptQueryRepositoryProvider({ 
-  children 
+  children,
+  repository
 }: PromptQueryRepositoryProviderProps) {
-  // Réutilise l'instance existante de SupabasePromptRepository
-  // SupabasePromptRepository implémente PromptRepository qui extends PromptQueryRepository
-  const repository = usePromptRepository();
+  const queryRepository = useMemo(
+    () => repository ?? new SupabasePromptQueryRepository(),
+    [repository]
+  );
   
   return (
-    <PromptQueryRepositoryContext.Provider value={repository}>
+    <PromptQueryRepositoryContext.Provider value={queryRepository}>
       {children}
     </PromptQueryRepositoryContext.Provider>
   );

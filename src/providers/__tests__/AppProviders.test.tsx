@@ -95,6 +95,31 @@ describe("AppProviders", () => {
       expect(result.current).toBe(mockRepository);
     });
 
+    it("should support dependency injection for PromptQueryRepository", () => {
+      const mockQueryRepository = {
+        fetchAll: vi.fn(),
+        fetchOwned: vi.fn(),
+        fetchById: vi.fn(),
+        fetchSharedWithMe: vi.fn(),
+        fetchRecent: vi.fn(),
+        fetchFavorites: vi.fn(),
+        fetchPublicShared: vi.fn(),
+        countPublic: vi.fn(),
+      };
+
+      const customWrapper = ({ children }: { children: ReactNode }) => (
+        <AppProviders queryRepository={mockQueryRepository as any}>
+          {children}
+        </AppProviders>
+      );
+
+      const { result } = renderHook(() => usePromptQueryRepository(), { 
+        wrapper: customWrapper 
+      });
+
+      expect(result.current).toBe(mockQueryRepository);
+    });
+
     it("should support dependency injection for PromptCommandRepository", () => {
       const mockCommandRepository = {
         create: vi.fn(),

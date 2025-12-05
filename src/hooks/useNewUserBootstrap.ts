@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
+import { usePromptQueryRepository } from "@/contexts/PromptQueryRepositoryContext";
+import { usePromptCommandRepository } from "@/contexts/PromptCommandRepositoryContext";
 import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
 import { SupabaseVariableSetRepository } from "@/repositories/VariableSetRepository";
 import { TemplateInitializationService } from "@/services/TemplateInitializationService";
@@ -18,7 +19,8 @@ import { logError } from "@/lib/logger";
  */
 export function useNewUserBootstrap() {
   const { user, loading } = useAuth();
-  const promptRepository = usePromptRepository();
+  const promptQueryRepository = usePromptQueryRepository();
+  const promptCommandRepository = usePromptCommandRepository();
   const variableRepository = useVariableRepository();
   
   // Éviter les initialisations multiples
@@ -47,7 +49,8 @@ export function useNewUserBootstrap() {
       
       try {
         const templateService = new TemplateInitializationService(
-          promptRepository,
+          promptQueryRepository,
+          promptCommandRepository,
           variableRepository,
           new SupabaseVariableSetRepository()
         );
@@ -63,5 +66,5 @@ export function useNewUserBootstrap() {
 
     // setTimeout(0) pour éviter le deadlock Supabase (cf. doc)
     setTimeout(initializeUser, 0);
-  }, [user, loading, promptRepository, variableRepository]);
+  }, [user, loading, promptQueryRepository, promptCommandRepository, variableRepository]);
 }

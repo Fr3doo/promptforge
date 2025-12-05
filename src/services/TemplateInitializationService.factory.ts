@@ -1,5 +1,6 @@
 import { TemplateInitializationService } from "./TemplateInitializationService";
-import { SupabasePromptRepository } from "@/repositories/PromptRepository";
+import { SupabasePromptQueryRepository } from "@/repositories/PromptQueryRepository";
+import { SupabasePromptCommandRepository } from "@/repositories/PromptCommandRepository";
 import { SupabaseVariableRepository } from "@/repositories/VariableRepository";
 import { SupabaseVariableSetRepository } from "@/repositories/VariableSetRepository";
 
@@ -8,12 +9,14 @@ import { SupabaseVariableSetRepository } from "@/repositories/VariableSetReposit
  * avec ses dépendances par défaut
  */
 export function createTemplateInitializationService(): TemplateInitializationService {
-  const promptRepository = new SupabasePromptRepository();
+  const promptQueryRepository = new SupabasePromptQueryRepository();
+  const promptCommandRepository = new SupabasePromptCommandRepository();
   const variableRepository = new SupabaseVariableRepository();
   const variableSetRepository = new SupabaseVariableSetRepository();
 
   return new TemplateInitializationService(
-    promptRepository,
+    promptQueryRepository,
+    promptCommandRepository,
     variableRepository,
     variableSetRepository
   );
