@@ -2,11 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useNewUserBootstrap } from "../useNewUserBootstrap";
 import type { AuthRepository } from "@/repositories/AuthRepository";
-import type { PromptRepository } from "@/repositories/PromptRepository";
+import type { PromptQueryRepository, PromptCommandRepository } from "@/repositories/PromptRepository.interfaces";
 import type { VariableRepository } from "@/repositories/VariableRepository";
 import { AuthRepositoryProvider } from "@/contexts/AuthRepositoryContext";
 import { AuthContextProvider } from "@/contexts/AuthContext";
-import { PromptRepositoryProvider } from "@/contexts/PromptRepositoryContext";
+import { PromptQueryRepositoryProvider } from "@/contexts/PromptQueryRepositoryContext";
+import { PromptCommandRepositoryProvider } from "@/contexts/PromptCommandRepositoryContext";
 import { VariableRepositoryProvider } from "@/contexts/VariableRepositoryContext";
 import type { ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
@@ -18,7 +19,8 @@ vi.mock("@/lib/logger", () => ({
 
 describe("useNewUserBootstrap", () => {
   let mockAuthRepository: AuthRepository;
-  let mockPromptRepository: Partial<PromptRepository>;
+  let mockPromptQueryRepository: Partial<PromptQueryRepository>;
+  let mockPromptCommandRepository: Partial<PromptCommandRepository>;
   let mockVariableRepository: Partial<VariableRepository>;
   let authStateCallback: (event: string, session: Session | null) => void;
 
@@ -55,8 +57,11 @@ describe("useNewUserBootstrap", () => {
       }),
     };
 
-    mockPromptRepository = {
+    mockPromptQueryRepository = {
       fetchOwned: vi.fn().mockResolvedValue([]),
+    };
+
+    mockPromptCommandRepository = {
       create: vi.fn(),
     };
 
@@ -68,11 +73,13 @@ describe("useNewUserBootstrap", () => {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <AuthRepositoryProvider repository={mockAuthRepository}>
       <AuthContextProvider>
-        <PromptRepositoryProvider repository={mockPromptRepository as PromptRepository}>
-          <VariableRepositoryProvider repository={mockVariableRepository as VariableRepository}>
-            {children}
-          </VariableRepositoryProvider>
-        </PromptRepositoryProvider>
+        <PromptQueryRepositoryProvider repository={mockPromptQueryRepository as PromptQueryRepository}>
+          <PromptCommandRepositoryProvider repository={mockPromptCommandRepository as PromptCommandRepository}>
+            <VariableRepositoryProvider repository={mockVariableRepository as VariableRepository}>
+              {children}
+            </VariableRepositoryProvider>
+          </PromptCommandRepositoryProvider>
+        </PromptQueryRepositoryProvider>
       </AuthContextProvider>
     </AuthRepositoryProvider>
   );
@@ -83,7 +90,7 @@ describe("useNewUserBootstrap", () => {
     // Wait a bit to ensure no initialization happens
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(mockPromptRepository.fetchOwned).not.toHaveBeenCalled();
+    expect(mockPromptQueryRepository.fetchOwned).not.toHaveBeenCalled();
   });
 
   it("should not initialize when user is null", async () => {
@@ -97,7 +104,7 @@ describe("useNewUserBootstrap", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(mockPromptRepository.fetchOwned).not.toHaveBeenCalled();
+    expect(mockPromptQueryRepository.fetchOwned).not.toHaveBeenCalled();
   });
 
   it("should create templates for a new user", async () => {
@@ -106,13 +113,13 @@ describe("useNewUserBootstrap", () => {
     renderHook(() => useNewUserBootstrap(), { wrapper });
 
     await waitFor(() => {
-      expect(mockPromptRepository.fetchOwned).toHaveBeenCalledWith(mockUser.id);
+      expect(mockPromptQueryRepository.fetchOwned).toHaveBeenCalledWith(mockUser.id);
     });
 
     // Wait for template creation (deferred with setTimeout)
     await waitFor(
       () => {
-        expect(mockPromptRepository.create).toHaveBeenCalled();
+        expect(mockPromptCommandRepository.create).toHaveBeenCalled();
       },
       { timeout: 200 }
     );
@@ -120,22 +127,22 @@ describe("useNewUserBootstrap", () => {
 
   it("should not create templates if user already has prompts", async () => {
     const mockExistingPrompts = [{ id: "prompt-1", title: "Existing" }];
-    vi.mocked(mockPromptRepository.fetchOwned).mockResolvedValue(mockExistingPrompts as any);
+    vi.mocked(mockPromptQueryRepository.fetchOwned).mockResolvedValue(mockExistingPrompts as any);
     vi.mocked(mockAuthRepository.getCurrentSession).mockResolvedValue(mockSession);
 
     renderHook(() => useNewUserBootstrap(), { wrapper });
 
     await waitFor(() => {
-      expect(mockPromptRepository.fetchOwned).toHaveBeenCalledWith(mockUser.id);
+      expect(mockPromptQueryRepository.fetchOwned).toHaveBeenCalledWith(mockUser.id);
     });
 
     // Wait to ensure no template creation
     await new Promise((resolve) => setTimeout(resolve, 100));
-    expect(mockPromptRepository.create).not.toHaveBeenCalled();
+    expect(mockPromptCommandRepository.create).not.toHaveBeenCalled();
   });
 
   it("should handle errors gracefully", async () => {
-    vi.mocked(mockPromptRepository.fetchOwned).mockRejectedValue(
+    vi.mocked(mockPromptQueryRepository.fetchOwned).mockRejectedValue(
       new Error("Fetch failed")
     );
     vi.mocked(mockAuthRepository.getCurrentSession).mockResolvedValue(mockSession);
@@ -143,12 +150,12 @@ describe("useNewUserBootstrap", () => {
     renderHook(() => useNewUserBootstrap(), { wrapper });
 
     await waitFor(() => {
-      expect(mockPromptRepository.fetchOwned).toHaveBeenCalledWith(mockUser.id);
+      expect(mockPromptQueryRepository.fetchOwned).toHaveBeenCalledWith(mockUser.id);
     });
 
     // Should not crash
     await new Promise((resolve) => setTimeout(resolve, 100));
-    expect(mockPromptRepository.create).not.toHaveBeenCalled();
+    expect(mockPromptCommandRepository.create).not.toHaveBeenCalled();
   });
 
   it("should not initialize multiple times for the same user", async () => {
@@ -157,7 +164,7 @@ describe("useNewUserBootstrap", () => {
     const { rerender } = renderHook(() => useNewUserBootstrap(), { wrapper });
 
     await waitFor(() => {
-      expect(mockPromptRepository.fetchOwned).toHaveBeenCalledWith(mockUser.id);
+      expect(mockPromptQueryRepository.fetchOwned).toHaveBeenCalledWith(mockUser.id);
     });
 
     // Rerender multiple times
@@ -167,7 +174,7 @@ describe("useNewUserBootstrap", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Should only call fetchOwned once
-    expect(mockPromptRepository.fetchOwned).toHaveBeenCalledTimes(1);
+    expect(mockPromptQueryRepository.fetchOwned).toHaveBeenCalledTimes(1);
   });
 
   it("should reinitialize when user changes", async () => {
@@ -176,7 +183,7 @@ describe("useNewUserBootstrap", () => {
     const { rerender } = renderHook(() => useNewUserBootstrap(), { wrapper });
 
     await waitFor(() => {
-      expect(mockPromptRepository.fetchOwned).toHaveBeenCalledWith(mockUser.id);
+      expect(mockPromptQueryRepository.fetchOwned).toHaveBeenCalledWith(mockUser.id);
     });
 
     // Change user
@@ -188,10 +195,10 @@ describe("useNewUserBootstrap", () => {
     authStateCallback("SIGNED_IN", newSession);
 
     await waitFor(() => {
-      expect(mockPromptRepository.fetchOwned).toHaveBeenCalledWith(newUser.id);
+      expect(mockPromptQueryRepository.fetchOwned).toHaveBeenCalledWith(newUser.id);
     });
 
     // Should have called fetchOwned for both users
-    expect(mockPromptRepository.fetchOwned).toHaveBeenCalledTimes(2);
+    expect(mockPromptQueryRepository.fetchOwned).toHaveBeenCalledTimes(2);
   });
 });

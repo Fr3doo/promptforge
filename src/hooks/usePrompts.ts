@@ -12,7 +12,7 @@ import { usePromptDuplicationService } from "@/contexts/PromptDuplicationService
 import { useVariableRepository } from "@/contexts/VariableRepositoryContext";
 import { useAuth } from "@/hooks/useAuth";
 import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
-import type { Prompt } from "@/repositories/PromptRepository";
+import type { Prompt } from "@/repositories/PromptRepository.interfaces";
 
 // Hook de lecture - liste complète (tous les prompts accessibles)
 export function usePrompts() {
