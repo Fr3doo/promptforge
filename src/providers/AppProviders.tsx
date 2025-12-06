@@ -3,7 +3,6 @@ import { AuthRepositoryProvider } from "@/contexts/AuthRepositoryContext";
 import { AuthContextProvider } from "@/contexts/AuthContext";
 import { UserBootstrapWrapper } from "./UserBootstrapWrapper";
 import { ProfileRepositoryProvider } from "@/contexts/ProfileRepositoryContext";
-import { PromptRepositoryProvider } from "@/contexts/PromptRepositoryContext";
 import { PromptMutationRepositoryProvider } from "@/contexts/PromptMutationRepositoryContext";
 import { PromptQueryRepositoryProvider } from "@/contexts/PromptQueryRepositoryContext";
 import { PromptCommandRepositoryProvider } from "@/contexts/PromptCommandRepositoryContext";
@@ -32,7 +31,7 @@ import type { AppProvidersProps } from "./AppProviders.types";
  * </AppProviders>
  * 
  * // Tests avec mocks
- * <AppProviders repository={mockRepository}>
+ * <AppProviders queryRepository={mockQueryRepo} commandRepository={mockCommandRepo}>
  *   <ComponentToTest />
  * </AppProviders>
  * ```
@@ -41,7 +40,6 @@ export function AppProviders({
   children, 
   authRepository,
   profileRepository,
-  repository,
   queryRepository,
   commandRepository,
   mutationRepository,
@@ -58,36 +56,34 @@ export function AppProviders({
       <AuthRepositoryProvider repository={authRepository}>
         <AuthContextProvider>
           <ProfileRepositoryProvider repository={profileRepository}>
-            <PromptRepositoryProvider repository={repository}>
-              <VariableRepositoryProvider repository={variableRepository}>
-                <PromptMutationRepositoryProvider repository={mutationRepository}>
-                  <PromptQueryRepositoryProvider repository={queryRepository}>
-                    <PromptCommandRepositoryProvider repository={commandRepository}>
-                      {/* UserBootstrapWrapper AFTER Query/Command providers for useNewUserBootstrap access */}
-                      <UserBootstrapWrapper>
-                        <VersionRepositoryProvider>
-                          <EdgeFunctionRepositoryProvider>
-                            <PromptUsageRepositoryProvider repository={usageRepository}>
-                              <AnalysisRepositoryProvider repository={analysisRepository}>
-                                <PromptShareRepositoryProvider repository={shareRepository}>
-                                  <PromptFavoriteServiceProvider service={favoriteService}>
-                                    <PromptVisibilityServiceProvider service={visibilityService}>
-                                      <PromptDuplicationServiceProvider service={duplicationService}>
-                                        {children}
-                                      </PromptDuplicationServiceProvider>
-                                    </PromptVisibilityServiceProvider>
-                                  </PromptFavoriteServiceProvider>
-                                </PromptShareRepositoryProvider>
-                              </AnalysisRepositoryProvider>
-                            </PromptUsageRepositoryProvider>
-                          </EdgeFunctionRepositoryProvider>
-                        </VersionRepositoryProvider>
-                      </UserBootstrapWrapper>
-                    </PromptCommandRepositoryProvider>
-                  </PromptQueryRepositoryProvider>
-                </PromptMutationRepositoryProvider>
-              </VariableRepositoryProvider>
-            </PromptRepositoryProvider>
+            <VariableRepositoryProvider repository={variableRepository}>
+              <PromptMutationRepositoryProvider repository={mutationRepository}>
+                <PromptQueryRepositoryProvider repository={queryRepository}>
+                  <PromptCommandRepositoryProvider repository={commandRepository}>
+                    {/* UserBootstrapWrapper AFTER Query/Command providers for useNewUserBootstrap access */}
+                    <UserBootstrapWrapper>
+                      <VersionRepositoryProvider>
+                        <EdgeFunctionRepositoryProvider>
+                          <PromptUsageRepositoryProvider repository={usageRepository}>
+                            <AnalysisRepositoryProvider repository={analysisRepository}>
+                              <PromptShareRepositoryProvider repository={shareRepository}>
+                                <PromptFavoriteServiceProvider service={favoriteService}>
+                                  <PromptVisibilityServiceProvider service={visibilityService}>
+                                    <PromptDuplicationServiceProvider service={duplicationService}>
+                                      {children}
+                                    </PromptDuplicationServiceProvider>
+                                  </PromptVisibilityServiceProvider>
+                                </PromptFavoriteServiceProvider>
+                              </PromptShareRepositoryProvider>
+                            </AnalysisRepositoryProvider>
+                          </PromptUsageRepositoryProvider>
+                        </EdgeFunctionRepositoryProvider>
+                      </VersionRepositoryProvider>
+                    </UserBootstrapWrapper>
+                  </PromptCommandRepositoryProvider>
+                </PromptQueryRepositoryProvider>
+              </PromptMutationRepositoryProvider>
+            </VariableRepositoryProvider>
           </ProfileRepositoryProvider>
         </AuthContextProvider>
       </AuthRepositoryProvider>

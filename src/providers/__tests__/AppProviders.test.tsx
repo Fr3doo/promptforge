@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { AppProviders } from "../AppProviders";
-import { usePromptRepository } from "@/contexts/PromptRepositoryContext";
 import { usePromptMutationRepository } from "@/contexts/PromptMutationRepositoryContext";
 import { usePromptQueryRepository } from "@/contexts/PromptQueryRepositoryContext";
 import { usePromptCommandRepository } from "@/contexts/PromptCommandRepositoryContext";
@@ -19,11 +18,6 @@ describe("AppProviders", () => {
   );
 
   describe("Context Hooks Accessibility", () => {
-    it("should provide usePromptRepository", () => {
-      const { result } = renderHook(() => usePromptRepository(), { wrapper });
-      expect(result.current).toBeDefined();
-    });
-
     it("should provide usePromptMutationRepository", () => {
       const { result } = renderHook(() => usePromptMutationRepository(), { wrapper });
       expect(result.current).toBeDefined();
@@ -71,30 +65,6 @@ describe("AppProviders", () => {
   });
 
   describe("Dependency Injection", () => {
-    it("should support dependency injection for PromptRepository", () => {
-      const mockRepository = {
-        getById: vi.fn(),
-        getAll: vi.fn(),
-        create: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        toggleFavorite: vi.fn(),
-        updateVisibility: vi.fn(),
-      };
-
-      const customWrapper = ({ children }: { children: ReactNode }) => (
-        <AppProviders repository={mockRepository as any}>
-          {children}
-        </AppProviders>
-      );
-
-      const { result } = renderHook(() => usePromptRepository(), { 
-        wrapper: customWrapper 
-      });
-
-      expect(result.current).toBe(mockRepository);
-    });
-
     it("should support dependency injection for PromptQueryRepository", () => {
       const mockQueryRepository = {
         fetchAll: vi.fn(),
@@ -319,18 +289,18 @@ describe("AppProviders", () => {
     it("should wrap children with ErrorBoundary", () => {
       // ErrorBoundary est présent dans la hiérarchie
       // Test indirect via le fait que les hooks fonctionnent sans erreur
-      const { result } = renderHook(() => usePromptRepository(), { wrapper });
+      const { result } = renderHook(() => usePromptQueryRepository(), { wrapper });
       expect(result.current).toBeDefined();
     });
   });
 
   describe("Production Usage", () => {
     it("should work with default providers in production mode", () => {
-      const { result: repoResult } = renderHook(() => usePromptRepository(), { wrapper });
+      const { result: queryResult } = renderHook(() => usePromptQueryRepository(), { wrapper });
       const { result: varResult } = renderHook(() => useVariableRepository(), { wrapper });
       const { result: analysisResult } = renderHook(() => useAnalysisRepository(), { wrapper });
 
-      expect(repoResult.current).toBeDefined();
+      expect(queryResult.current).toBeDefined();
       expect(varResult.current).toBeDefined();
       expect(analysisResult.current).toBeDefined();
     });

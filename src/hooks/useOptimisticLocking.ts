@@ -82,8 +82,8 @@ export function useOptimisticLocking() {
     promptId: string,
     clientUpdatedAt: string
   ): Promise<{ hasConflict: boolean; serverUpdatedAt?: string }> => {
-    const { SupabasePromptRepository } = await import("@/repositories/PromptRepository");
-    const repository = new SupabasePromptRepository();
+    const { SupabasePromptQueryRepository } = await import("@/repositories/PromptQueryRepository");
+    const repository = new SupabasePromptQueryRepository();
     
     try {
       const serverPrompt = await repository.fetchById(promptId);
