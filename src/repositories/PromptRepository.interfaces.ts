@@ -1,6 +1,15 @@
 import type { Tables } from "@/integrations/supabase/types";
 
+// Type de permission de partage
+export type SharePermission = "READ" | "WRITE";
+
+// Type de base - données persistées
 export type Prompt = Tables<"prompts"> & { share_count?: number };
+
+// Type enrichi - contexte "partagé avec moi"
+export type PromptWithSharePermission = Prompt & {
+  shared_permission?: SharePermission;
+};
 
 /**
  * Interface ségrégée : Opérations de LECTURE seules
@@ -9,7 +18,7 @@ export type Prompt = Tables<"prompts"> & { share_count?: number };
 export interface PromptQueryRepository {
   fetchAll(userId: string): Promise<Prompt[]>;
   fetchOwned(userId: string): Promise<Prompt[]>;
-  fetchSharedWithMe(userId: string): Promise<Prompt[]>;
+  fetchSharedWithMe(userId: string): Promise<PromptWithSharePermission[]>;
   fetchById(id: string): Promise<Prompt>;
   fetchRecent(userId: string, days?: number, limit?: number): Promise<Prompt[]>;
   fetchFavorites(userId: string, limit?: number): Promise<Prompt[]>;

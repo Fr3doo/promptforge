@@ -1,7 +1,15 @@
 import type { Tables } from "@/integrations/supabase/types";
 import type { LucideIcon } from "lucide-react";
+import type { 
+  Prompt as PromptType, 
+  SharePermission, 
+  PromptWithSharePermission 
+} from "@/repositories/PromptRepository.interfaces";
 
-export type Prompt = Tables<"prompts"> & { share_count?: number };
+// Réexporter depuis la source unique
+export type { SharePermission, PromptWithSharePermission };
+export type Prompt = PromptType;
+
 export type Variable = Tables<"variables">;
 
 export interface PromptFormData {

@@ -3,7 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { FileText } from "lucide-react";
 import { VisibilityBadge } from "./VisibilityBadge";
+import { PermissionBadge } from "./PermissionBadge";
 import type { PromptCardViewProps } from "./PromptCardView.types";
+import type { PromptWithSharePermission } from "../types";
 
 /**
  * Composant UI pur pour l'affichage d'une carte de prompt
@@ -65,7 +67,10 @@ export const PromptCardView = ({
           <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground">
             <VisibilityBadge sharingState={sharingState} shareCount={shareCount} />
             <span>v{prompt.version}</span>
-            {!isOwner && (
+            {!isOwner && (prompt as PromptWithSharePermission).shared_permission && (
+              <PermissionBadge permission={(prompt as PromptWithSharePermission).shared_permission!} />
+            )}
+            {!isOwner && !(prompt as PromptWithSharePermission).shared_permission && (
               <Badge variant="outline" className="text-xs">
                 Partagé avec vous
               </Badge>
