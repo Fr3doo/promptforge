@@ -239,6 +239,12 @@ export const promptsMessages = {
         disabled: "Veuillez corriger les erreurs avant d'enregistrer",
         readOnly: "Mode lecture seule - Vous ne pouvez pas modifier ce prompt",
       },
+      
+      // Permission badges tooltips
+      permission: {
+        readOnly: "Lecture seule - Vous pouvez consulter ce prompt mais pas le modifier",
+        write: "Écriture - Vous pouvez modifier ce prompt et créer des versions",
+      },
     },
   },
 

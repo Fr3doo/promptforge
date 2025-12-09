@@ -13,7 +13,7 @@
  * - PromptVisibilityService (lecture avant mutation)
  */
 
-import type { PromptQueryRepository, Prompt } from "./PromptRepository.interfaces";
+import type { PromptQueryRepository, Prompt, PromptWithSharePermission, SharePermission } from "./PromptRepository.interfaces";
 import { supabase } from "@/integrations/supabase/client";
 import { handleSupabaseError } from "@/lib/errorHandler";
 
@@ -43,32 +43,36 @@ export class SupabasePromptQueryRepository implements PromptQueryRepository {
     return result.data as Prompt[];
   }
 
-  async fetchSharedWithMe(userId: string): Promise<Prompt[]> {
+  async fetchSharedWithMe(userId: string): Promise<PromptWithSharePermission[]> {
     if (!userId) throw new Error("ID utilisateur requis");
     
-    // Fetch prompt_ids shared with the current user
-    const sharesResult = await supabase
+    // Jointure unique : prompt_shares → prompts avec permission
+    const { data, error } = await supabase
       .from("prompt_shares")
-      .select("prompt_id")
+      .select(`
+        permission,
+        prompts:prompt_id (
+          *
+        )
+      `)
       .eq("shared_with_user_id", userId);
     
-    handleSupabaseError(sharesResult);
+    handleSupabaseError({ data, error });
     
-    if (!sharesResult.data || sharesResult.data.length === 0) {
+    if (!data || data.length === 0) {
       return [];
     }
     
-    const promptIds = sharesResult.data.map(share => share.prompt_id);
-    
-    // Fetch the actual prompts
-    const result = await supabase
-      .from("prompts_with_share_count")
-      .select("*")
-      .in("id", promptIds)
-      .order("updated_at", { ascending: false });
-    
-    handleSupabaseError(result);
-    return result.data as Prompt[];
+    // Mapper avec la permission et trier par updated_at
+    return data
+      .filter((row) => row.prompts != null)
+      .map((row) => ({
+        ...(row.prompts as Prompt),
+        shared_permission: row.permission as SharePermission,
+      }))
+      .sort((a, b) => 
+        new Date(b.updated_at ?? 0).getTime() - new Date(a.updated_at ?? 0).getTime()
+      );
   }
 
   async fetchById(id: string): Promise<Prompt> {
