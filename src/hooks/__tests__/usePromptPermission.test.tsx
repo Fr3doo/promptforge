@@ -89,12 +89,13 @@ describe("usePromptPermission", () => {
     expect(result.current.isOwner).toBe(false);
   });
 
-  it("devrait retourner WRITE pour un partage public en écriture", () => {
+  it("devrait retourner WRITE pour un partage public PUBLISHED en écriture", () => {
     vi.mocked(useAuth).mockReturnValue({ user: mockUser } as any);
     vi.mocked(usePrompt).mockReturnValue({
       data: {
         ...mockPrompt,
         visibility: "SHARED" as const,
+        status: "PUBLISHED" as const,
         public_permission: "WRITE" as const,
       },
     } as any);
@@ -108,12 +109,13 @@ describe("usePromptPermission", () => {
     expect(result.current.isOwner).toBe(false);
   });
 
-  it("devrait retourner READ pour un partage public en lecture", () => {
+  it("devrait retourner READ pour un partage public PUBLISHED en lecture", () => {
     vi.mocked(useAuth).mockReturnValue({ user: mockUser } as any);
     vi.mocked(usePrompt).mockReturnValue({
       data: {
         ...mockPrompt,
         visibility: "SHARED" as const,
+        status: "PUBLISHED" as const,
         public_permission: "READ" as const,
       },
     } as any);
@@ -122,6 +124,26 @@ describe("usePromptPermission", () => {
     const { result } = renderHook(() => usePromptPermission("prompt-1"));
 
     expect(result.current.permission).toBe("READ");
+    expect(result.current.canEdit).toBe(false);
+    expect(result.current.canCreateVersion).toBe(false);
+    expect(result.current.isOwner).toBe(false);
+  });
+
+  it("devrait retourner null pour un partage public DRAFT (RLS bloque l'accès)", () => {
+    vi.mocked(useAuth).mockReturnValue({ user: mockUser } as any);
+    vi.mocked(usePrompt).mockReturnValue({
+      data: {
+        ...mockPrompt,
+        visibility: "SHARED" as const,
+        status: "DRAFT" as const,
+        public_permission: "WRITE" as const,
+      },
+    } as any);
+    vi.mocked(usePromptShares).mockReturnValue({ data: [] } as any);
+
+    const { result } = renderHook(() => usePromptPermission("prompt-1"));
+
+    expect(result.current.permission).toBe(null);
     expect(result.current.canEdit).toBe(false);
     expect(result.current.canCreateVersion).toBe(false);
     expect(result.current.isOwner).toBe(false);
@@ -148,6 +170,7 @@ describe("usePromptPermission", () => {
       data: {
         ...mockPrompt,
         visibility: "SHARED" as const,
+        status: "PUBLISHED" as const,
         public_permission: "READ" as const,
       },
     } as any);

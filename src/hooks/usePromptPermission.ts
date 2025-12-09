@@ -68,8 +68,8 @@ export function usePromptPermission(promptId: string | undefined): PromptPermiss
       };
     }
 
-    // 3. Vérifier partage public
-    if (prompt.visibility === "SHARED") {
+    // 3. Vérifier partage public (seulement si PUBLISHED - cohérent avec RLS)
+    if (prompt.visibility === "SHARED" && prompt.status === "PUBLISHED") {
       const isWrite = prompt.public_permission === "WRITE";
       return {
         permission: prompt.public_permission || "READ",
