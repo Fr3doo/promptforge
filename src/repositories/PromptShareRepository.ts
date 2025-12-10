@@ -38,10 +38,10 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
       return [];
     }
 
-    // Fetch profiles for each shared user (via vue sécurisée sans email)
+    // Fetch profiles via public_profiles view (SECURITY DEFINER, sans email)
     const userIds = sharesData.map(s => s.shared_with_user_id);
     const { data: profilesData, error: profilesError } = await supabase
-      .from("profiles")
+      .from("public_profiles")
       .select("id, name, pseudo, image")
       .in("id", userIds);
 
