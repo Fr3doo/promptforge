@@ -91,6 +91,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "prompt_shares_shared_with_user_id_fkey"
+            columns: ["shared_with_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       prompt_usage: {
@@ -187,6 +194,13 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompts_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -385,7 +399,38 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "prompts_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      public_profiles: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          image: string | null
+          name: string | null
+          pseudo: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          image?: string | null
+          name?: string | null
+          pseudo?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          image?: string | null
+          name?: string | null
+          pseudo?: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {

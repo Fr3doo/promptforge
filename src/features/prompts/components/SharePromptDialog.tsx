@@ -159,8 +159,7 @@ export const SharePromptDialog = ({
               <div className="space-y-2 max-h-64 overflow-y-auto">
               {shares.map((share) => {
                 const profile = share.shared_with_profile;
-                const displayName = profile?.pseudo || profile?.email || "Utilisateur inconnu";
-                const hasSecondaryInfo = profile?.pseudo && profile?.email;
+                const displayName = profile?.pseudo || profile?.name || "Utilisateur inconnu";
                 
                 return (
                   <Card key={share.id} className="p-3">
@@ -169,11 +168,6 @@ export const SharePromptDialog = ({
                         <p className="text-sm font-medium truncate">
                           {displayName}
                         </p>
-                        {hasSecondaryInfo && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {profile.email}
-                          </p>
-                        )}
                         <p className="text-xs text-muted-foreground mt-1">
                           {messages.sharedWith.sharedOn} {format(new Date(share.created_at), "d MMM yyyy", { locale: fr })}
                         </p>

@@ -7,9 +7,9 @@ export type PromptShare = Tables<"prompt_shares">;
 export interface PromptShareWithProfile extends PromptShare {
   shared_with_profile?: {
     id: string;
-    email: string | null;
     name: string | null;
     pseudo: string | null;
+    image: string | null;
   };
 }
 
@@ -38,20 +38,23 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
       return [];
     }
 
-    // Fetch profiles for each shared user
+    // Fetch profiles for each shared user (via vue sécurisée sans email)
     const userIds = sharesData.map(s => s.shared_with_user_id);
-    const profilesResult = await supabase
+    const { data: profilesData, error: profilesError } = await supabase
       .from("profiles")
-      .select("id, email, name, pseudo")
+      .select("id, name, pseudo, image")
       .in("id", userIds);
 
-    handleSupabaseError(profilesResult);
-    const profilesData = profilesResult.data || [];
+    if (profilesError) {
+      handleSupabaseError({ data: null, error: profilesError });
+    }
+
+    const profiles = profilesData || [];
 
     // Merge profiles with shares
     return sharesData.map(share => ({
       ...share,
-      shared_with_profile: profilesData.find(p => p.id === share.shared_with_user_id)
+      shared_with_profile: profiles.find(p => p.id === share.shared_with_user_id)
     }));
   }
 

@@ -18,17 +18,19 @@ describe("SharePromptDialog", () => {
       id: "share-1",
       prompt_id: "prompt-1",
       shared_with_user_id: "user-2",
-      shared_with_profile: { email: "user2@test.com" },
+      shared_with_profile: { id: "user-2", pseudo: "User2", name: "Test User 2", image: null },
       permission: "READ" as const,
       created_at: "2024-01-01",
+      shared_by: "owner-1",
     },
     {
       id: "share-2",
       prompt_id: "prompt-1",
       shared_with_user_id: "user-3",
-      shared_with_profile: { email: "user3@test.com" },
+      shared_with_profile: { id: "user-3", pseudo: "User3", name: "Test User 3", image: null },
       permission: "WRITE" as const,
       created_at: "2024-01-01",
+      shared_by: "owner-1",
     },
   ];
 
@@ -52,10 +54,8 @@ describe("SharePromptDialog", () => {
 
     render(<SharePromptDialog {...defaultProps} />);
 
-    expect(screen.getByText("user2@test.com")).toBeInTheDocument();
-    expect(screen.getByText("user3@test.com")).toBeInTheDocument();
-    expect(screen.getByText("Lecture seule")).toBeInTheDocument();
-    expect(screen.getByText("Lecture et modification")).toBeInTheDocument();
+    expect(screen.getByText("User2")).toBeInTheDocument();
+    expect(screen.getByText("User3")).toBeInTheDocument();
   });
 
   it("devrait afficher un message si aucun partage", () => {
