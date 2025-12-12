@@ -39,6 +39,109 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ============================================
+// RATE LIMITING (IP-based, in-memory)
+// ============================================
+const RATE_LIMIT = {
+  WINDOW_MS: 60_000,           // Fenêtre de 1 minute
+  MAX_REQUESTS_PER_WINDOW: 10, // 10 requêtes max par minute par IP
+  MAX_REQUESTS_PER_DAY: 50,    // 50 requêtes max par jour par IP
+  CLEANUP_INTERVAL_MS: 300_000 // Nettoyage toutes les 5 minutes
+} as const;
+
+interface RateLimitEntry {
+  count: number;
+  resetTime: number;
+  dailyCount: number;
+  dailyResetTime: number;
+}
+
+const rateLimitStore = new Map<string, RateLimitEntry>();
+let lastCleanup = Date.now();
+
+function cleanupExpiredEntries(): void {
+  const now = Date.now();
+  if (now - lastCleanup < RATE_LIMIT.CLEANUP_INTERVAL_MS) return;
+  
+  for (const [ip, entry] of rateLimitStore.entries()) {
+    if (now > entry.dailyResetTime) {
+      rateLimitStore.delete(ip);
+    }
+  }
+  lastCleanup = now;
+  console.log(`[RATE-LIMIT] Nettoyage effectué, ${rateLimitStore.size} entrées restantes`);
+}
+
+function isRateLimited(ip: string): { limited: boolean; retryAfter?: number; reason?: string } {
+  cleanupExpiredEntries();
+  
+  const now = Date.now();
+  let entry = rateLimitStore.get(ip);
+  
+  if (!entry) {
+    entry = {
+      count: 0,
+      resetTime: now + RATE_LIMIT.WINDOW_MS,
+      dailyCount: 0,
+      dailyResetTime: now + 86_400_000 // 24h
+    };
+  }
+  
+  // Reset minute window if expired
+  if (now > entry.resetTime) {
+    entry.count = 0;
+    entry.resetTime = now + RATE_LIMIT.WINDOW_MS;
+  }
+  
+  // Reset daily window if expired
+  if (now > entry.dailyResetTime) {
+    entry.dailyCount = 0;
+    entry.dailyResetTime = now + 86_400_000;
+  }
+  
+  // Check daily limit first (more restrictive)
+  if (entry.dailyCount >= RATE_LIMIT.MAX_REQUESTS_PER_DAY) {
+    return { 
+      limited: true, 
+      retryAfter: Math.ceil((entry.dailyResetTime - now) / 1000),
+      reason: 'daily'
+    };
+  }
+  
+  // Check minute limit
+  if (entry.count >= RATE_LIMIT.MAX_REQUESTS_PER_WINDOW) {
+    return { 
+      limited: true, 
+      retryAfter: Math.ceil((entry.resetTime - now) / 1000),
+      reason: 'minute'
+    };
+  }
+  
+  // Increment counters
+  entry.count++;
+  entry.dailyCount++;
+  rateLimitStore.set(ip, entry);
+  
+  return { limited: false };
+}
+
+function getClientIP(req: Request): string {
+  // Try x-forwarded-for first (proxy/load balancer)
+  const forwarded = req.headers.get('x-forwarded-for');
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  
+  // Try x-real-ip (nginx)
+  const realIP = req.headers.get('x-real-ip');
+  if (realIP) {
+    return realIP.trim();
+  }
+  
+  // Fallback
+  return 'unknown';
+}
+
 // === VALIDATION (FAIL-FAST) ===
 function validateInput(promptContent: unknown): string {
   if (!promptContent || typeof promptContent !== 'string') {
@@ -415,6 +518,30 @@ function handleAIError(status: number): Response {
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limiting check (before any processing)
+  const clientIP = getClientIP(req);
+  const { limited, retryAfter, reason } = isRateLimited(clientIP);
+  
+  if (limited) {
+    console.warn(`[RATE-LIMIT] IP ${clientIP} bloquée (raison: ${reason}, retry-after: ${retryAfter}s)`);
+    return new Response(
+      JSON.stringify({ 
+        error: reason === 'daily' 
+          ? 'Limite journalière atteinte (50 requêtes/jour). Réessayez demain.'
+          : 'Trop de requêtes. Veuillez patienter avant de réessayer.',
+        retry_after: retryAfter 
+      }),
+      { 
+        status: 429,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Retry-After': String(retryAfter)
+        }
+      }
+    );
   }
 
   try {
