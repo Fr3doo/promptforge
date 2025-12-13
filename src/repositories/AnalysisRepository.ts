@@ -14,6 +14,21 @@ export class AnalysisTimeoutError extends Error {
 }
 
 /**
+ * Custom error class for rate limiting scenarios
+ */
+export class RateLimitError extends Error {
+  readonly retryAfter: number;
+  readonly reason: 'minute' | 'daily';
+  
+  constructor(message: string, retryAfter: number, reason: 'minute' | 'daily' = 'minute') {
+    super(message);
+    this.name = 'RateLimitError';
+    this.retryAfter = retryAfter;
+    this.reason = reason;
+  }
+}
+
+/**
  * Result structure returned by prompt analysis
  */
 export interface AnalysisResult {
@@ -87,6 +102,14 @@ export class SupabaseAnalysisRepository implements AnalysisRepository {
       
       const duration = Date.now() - startTime;
       console.log(`[ANALYSIS] ✅ Completed in ${duration}ms`);
+      
+      // Détecter le rate limiting (status 429)
+      if (result.error?.message?.includes('429') || result.data?.retry_after) {
+        const retryAfter = result.data?.retry_after || 60;
+        const errorMessage = result.data?.error || 'Trop de requêtes';
+        const isDaily = errorMessage.includes('journalière') || errorMessage.includes('50');
+        throw new RateLimitError(errorMessage, retryAfter, isDaily ? 'daily' : 'minute');
+      }
       
       handleSupabaseError(result);
 

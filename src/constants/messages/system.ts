@@ -107,6 +107,16 @@ export const systemMessages = {
           title: "Délai dépassé",
           description: "L'analyse a pris trop de temps. Veuillez réessayer avec un prompt plus court.",
         },
+        rateLimit: {
+          minute: {
+            title: "Trop de requêtes",
+            description: "Vous avez atteint la limite de 10 analyses par minute.",
+          },
+          daily: {
+            title: "Limite journalière atteinte",
+            description: "Vous avez utilisé vos 50 analyses quotidiennes.",
+          },
+        },
       },
     },
     // Messages de progression dynamique pendant l'analyse

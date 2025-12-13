@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAnalysisMessages } from "@/features/prompts/hooks/useAnalysisMessages";
 import { useAnalysisRepository } from "@/contexts/AnalysisRepositoryContext";
 import { useAnalysisProgress } from "./useAnalysisProgress";
 import type { AnalysisResult } from "@/repositories/AnalysisRepository";
-import { AnalysisTimeoutError } from "@/repositories/AnalysisRepository";
+import { AnalysisTimeoutError, RateLimitError } from "@/repositories/AnalysisRepository";
 import { captureException } from "@/lib/logger";
 import { VALIDATION } from "@/constants/application-config";
 import { toast } from "sonner";
@@ -16,9 +16,41 @@ export function usePromptAnalysis() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isTimeout, setIsTimeout] = useState(false);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [rateLimitRetryAfter, setRateLimitRetryAfter] = useState(0);
+  const [rateLimitReason, setRateLimitReason] = useState<'minute' | 'daily'>('minute');
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const analysisRepository = useAnalysisRepository();
   const analysisMessages = useAnalysisMessages();
   const progress = useAnalysisProgress();
+
+  // Countdown automatique pour rate limiting
+  useEffect(() => {
+    if (!isRateLimited || rateLimitRetryAfter <= 0) {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+        countdownRef.current = null;
+      }
+      return;
+    }
+
+    countdownRef.current = setInterval(() => {
+      setRateLimitRetryAfter((prev) => {
+        if (prev <= 1) {
+          setIsRateLimited(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+        countdownRef.current = null;
+      }
+    };
+  }, [isRateLimited, rateLimitRetryAfter > 0]);
 
   const analyze = async (promptContent: string) => {
     if (!promptContent.trim()) {
@@ -54,17 +86,26 @@ export function usePromptAnalysis() {
       analysisMessages.showAnalysisComplete();
     } catch (error: any) {
       const isTimeoutError = error instanceof AnalysisTimeoutError;
+      const isRateLimitError = error instanceof RateLimitError;
+      
       setIsTimeout(isTimeoutError);
       
-      captureException(error, 'Erreur lors de l\'analyse du prompt', {
-        promptContentLength: promptContent.length,
-        isTimeout: isTimeoutError,
-      });
-      
-      if (isTimeoutError) {
-        analysisMessages.showTimeoutError();
+      if (isRateLimitError) {
+        setIsRateLimited(true);
+        setRateLimitRetryAfter(error.retryAfter);
+        setRateLimitReason(error.reason);
+        analysisMessages.showRateLimitError(error.reason, error.retryAfter);
       } else {
-        analysisMessages.showAnalysisFailed(error.message);
+        captureException(error, 'Erreur lors de l\'analyse du prompt', {
+          promptContentLength: promptContent.length,
+          isTimeout: isTimeoutError,
+        });
+        
+        if (isTimeoutError) {
+          analysisMessages.showTimeoutError();
+        } else {
+          analysisMessages.showAnalysisFailed(error.message);
+        }
       }
       
       setResult(null);
@@ -77,12 +118,17 @@ export function usePromptAnalysis() {
   const reset = () => {
     setResult(null);
     setIsTimeout(false);
+    setIsRateLimited(false);
+    setRateLimitRetryAfter(0);
   };
 
   return { 
     result, 
     isAnalyzing, 
     isTimeout, 
+    isRateLimited,
+    rateLimitRetryAfter,
+    rateLimitReason,
     analyze, 
     reset,
     progressMessage: progress.getProgressMessage(),

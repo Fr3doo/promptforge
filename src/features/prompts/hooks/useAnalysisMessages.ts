@@ -7,7 +7,7 @@ import { TIMING } from "@/constants/application-config";
  * Suit le principe SRP : responsabilité unique des messages d'analyse
  */
 export function useAnalysisMessages() {
-  const { notifySuccess, notifyError, notifyLoading } = useToastNotifier();
+  const { notifySuccess, notifyError, notifyLoading, notifyWarning } = useToastNotifier();
 
   return {
     showAnalyzing: () => {
@@ -33,7 +33,21 @@ export function useAnalysisMessages() {
     showTimeoutError: () => {
       const msg = messages.analysis.notifications.errors.timeout;
       notifyError(msg.title, msg.description, {
-        duration: TIMING.TOAST_DURATION + 2000, // 5 secondes pour timeout
+        duration: TIMING.TOAST_DURATION + 2000,
+      });
+    },
+
+    showRateLimitError: (reason: 'minute' | 'daily', retryAfter: number) => {
+      const msg = reason === 'daily' 
+        ? messages.analysis.notifications.errors.rateLimit.daily
+        : messages.analysis.notifications.errors.rateLimit.minute;
+      
+      const timeStr = retryAfter >= 60 
+        ? `${Math.ceil(retryAfter / 60)} minute(s)` 
+        : `${retryAfter} secondes`;
+      
+      notifyWarning(msg.title, `${msg.description} Réessayez dans ${timeStr}.`, {
+        duration: TIMING.TOAST_DURATION + 2000,
       });
     },
   };
