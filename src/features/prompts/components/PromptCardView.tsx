@@ -31,14 +31,14 @@ export const PromptCardView = ({
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
     >
-      <Card className="cursor-pointer transition-all hover:border-primary hover:shadow-lg">
-        <CardHeader>
+      <Card className="cursor-pointer transition-all hover:border-primary hover:shadow-lg h-full flex flex-col">
+        <CardHeader className="flex-none">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 flex flex-col gap-2" onClick={onClick}>
               <div className="flex items-center gap-2">
-                <CardTitle className="text-lg">{prompt.title}</CardTitle>
+                <CardTitle className="text-lg line-clamp-1">{prompt.title}</CardTitle>
                 {isDraft && (
-                  <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+                  <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500/20 flex-shrink-0">
                     <FileText className="h-3 w-3 mr-1" />
                     Brouillon
                   </Badge>
@@ -47,12 +47,12 @@ export const PromptCardView = ({
             </div>
             {actions}
           </div>
-          <CardDescription className="line-clamp-2" onClick={onClick}>
+          <CardDescription className="line-clamp-2 h-10" onClick={onClick}>
             {prompt.description || "Aucune description"}
           </CardDescription>
         </CardHeader>
-        <CardContent onClick={onClick}>
-          <div className="flex flex-wrap gap-2 mb-3">
+        <CardContent onClick={onClick} className="flex-1 flex flex-col justify-between">
+          <div className="flex flex-wrap gap-2 mb-3 min-h-[28px]">
             {prompt.tags?.slice(0, 3).map((tag: string) => (
               <Badge key={tag} variant="secondary" className="text-xs">
                 {tag}
