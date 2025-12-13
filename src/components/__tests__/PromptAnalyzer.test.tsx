@@ -43,6 +43,21 @@ const mockAnalysisResult = {
   },
 };
 
+// Helper pour créer un mock complet de usePromptAnalysis avec les propriétés rate limit
+const createMockPromptAnalysis = (overrides = {}) => ({
+  result: null,
+  isAnalyzing: false,
+  isTimeout: false,
+  isRateLimited: false,
+  rateLimitRetryAfter: 0,
+  rateLimitReason: 'minute' as const,
+  analyze: vi.fn(),
+  reset: vi.fn(),
+  progressMessage: '',
+  elapsedSeconds: 0,
+  ...overrides,
+});
+
 describe('PromptAnalyzer - Save Function', () => {
   let mockCreatePrompt: ReturnType<typeof vi.fn>;
   let mockSaveVariables: ReturnType<typeof vi.fn>;
@@ -55,15 +70,9 @@ describe('PromptAnalyzer - Save Function', () => {
     mockCreateVersion = vi.fn();
     mockOnClose = vi.fn();
 
-    vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue({
-      result: null,
-      isAnalyzing: false,
-      isTimeout: false,
-      analyze: vi.fn(),
-      reset: vi.fn(),
-      progressMessage: '',
-      elapsedSeconds: 0,
-    });
+    vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue(
+      createMockPromptAnalysis()
+    );
 
     vi.spyOn(usePromptsModule, 'useCreatePrompt').mockReturnValue({
       mutate: mockCreatePrompt,
@@ -80,15 +89,9 @@ describe('PromptAnalyzer - Save Function', () => {
   });
 
   it('should save prompt with variables and create initial version', async () => {
-    vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue({
-      result: mockAnalysisResult,
-      isAnalyzing: false,
-      isTimeout: false,
-      analyze: vi.fn(),
-      reset: vi.fn(),
-      progressMessage: '',
-      elapsedSeconds: 0,
-    });
+    vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue(
+      createMockPromptAnalysis({ result: mockAnalysisResult })
+    );
 
     render(<PromptAnalyzer onClose={mockOnClose} />);
 
@@ -171,15 +174,9 @@ describe('PromptAnalyzer - Save Function', () => {
       variables: [],
     };
 
-    vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue({
-      result: resultWithoutVariables,
-      isAnalyzing: false,
-      isTimeout: false,
-      analyze: vi.fn(),
-      reset: vi.fn(),
-      progressMessage: '',
-      elapsedSeconds: 0,
-    });
+    vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue(
+      createMockPromptAnalysis({ result: resultWithoutVariables })
+    );
 
     render(<PromptAnalyzer onClose={mockOnClose} />);
 
@@ -210,15 +207,9 @@ describe('PromptAnalyzer - Save Function', () => {
       },
     };
 
-    vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue({
-      result: invalidResult,
-      isAnalyzing: false,
-      isTimeout: false,
-      analyze: vi.fn(),
-      reset: vi.fn(),
-      progressMessage: '',
-      elapsedSeconds: 0,
-    });
+    vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue(
+      createMockPromptAnalysis({ result: invalidResult })
+    );
 
     render(<PromptAnalyzer onClose={mockOnClose} />);
 
@@ -231,15 +222,9 @@ describe('PromptAnalyzer - Save Function', () => {
   });
 
   it('should continue even if version creation fails', async () => {
-    vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue({
-      result: mockAnalysisResult,
-      isAnalyzing: false,
-      isTimeout: false,
-      analyze: vi.fn(),
-      reset: vi.fn(),
-      progressMessage: '',
-      elapsedSeconds: 0,
-    });
+    vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue(
+      createMockPromptAnalysis({ result: mockAnalysisResult })
+    );
 
     render(<PromptAnalyzer onClose={mockOnClose} />);
 
@@ -275,15 +260,9 @@ describe('PromptAnalyzer - Save Function', () => {
   });
 
   it('should handle prompt creation errors', async () => {
-    vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue({
-      result: mockAnalysisResult,
-      isAnalyzing: false,
-      isTimeout: false,
-      analyze: vi.fn(),
-      reset: vi.fn(),
-      progressMessage: '',
-      elapsedSeconds: 0,
-    });
+    vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue(
+      createMockPromptAnalysis({ result: mockAnalysisResult })
+    );
 
     render(<PromptAnalyzer onClose={mockOnClose} />);
 
@@ -320,15 +299,9 @@ describe('PromptAnalyzer - Save Function', () => {
       },
     };
 
-    vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue({
-      result: resultWithOriginalContent,
-      isAnalyzing: false,
-      isTimeout: false,
-      analyze: vi.fn(),
-      reset: vi.fn(),
-      progressMessage: '',
-      elapsedSeconds: 0,
-    });
+    vi.spyOn(usePromptAnalysisModule, 'usePromptAnalysis').mockReturnValue(
+      createMockPromptAnalysis({ result: resultWithOriginalContent })
+    );
 
     render(<PromptAnalyzer onClose={mockOnClose} />);
 

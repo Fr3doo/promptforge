@@ -19,6 +19,7 @@ import { ExportActions } from "./analyzer/ExportActions";
 import { MobileExportActions } from "./analyzer/MobileExportActions";
 import { CharacterCounter } from "./analyzer/CharacterCounter";
 import { AnalysisLoadingState } from "./analyzer/AnalysisLoadingState";
+import { RateLimitState } from "./analyzer/RateLimitState";
 import { Badge } from "@/components/ui/badge";
 import { successToast, errorToast } from "@/lib/toastUtils";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
@@ -34,7 +35,17 @@ interface PromptAnalyzerProps {
 
 export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
   const [promptContent, setPromptContent] = useState("");
-  const { result, isAnalyzing, analyze, reset, progressMessage, elapsedSeconds } = usePromptAnalysis();
+  const { 
+    result, 
+    isAnalyzing, 
+    isRateLimited, 
+    rateLimitRetryAfter, 
+    rateLimitReason,
+    analyze, 
+    reset, 
+    progressMessage, 
+    elapsedSeconds 
+  } = usePromptAnalysis();
   const breakpoint = useBreakpoint();
   const { mutate: createPrompt, isPending: isSaving } = useCreatePrompt();
   const { mutate: saveVariables } = useBulkUpsertVariables();
@@ -229,7 +240,12 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
               <CharacterCounter length={promptContent.length} />
             )}
           </div>
-          {isAnalyzing ? (
+          {isRateLimited ? (
+            <RateLimitState 
+              retryAfter={rateLimitRetryAfter} 
+              reason={rateLimitReason} 
+            />
+          ) : isAnalyzing ? (
             <AnalysisLoadingState
               progressMessage={progressMessage}
               elapsedSeconds={elapsedSeconds}
