@@ -74,6 +74,7 @@ export const uiMessages = {
     home: "Accueil",
     prompts: "Mes Prompts",
     resources: "Ressources",
+    faq: "FAQ",
     newPrompt: "Nouveau prompt",
     untitled: "Sans titre",
   },

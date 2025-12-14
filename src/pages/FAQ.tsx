@@ -15,6 +15,8 @@ import { faqData } from "@/data/faqData";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { PageBreadcrumb } from "@/components/PageBreadcrumb";
+import { messages } from "@/constants/messages";
 
 const FAQ = () => {
   const navigate = useNavigate();
@@ -49,6 +51,10 @@ const FAQ = () => {
       
       <div className="min-h-screen bg-background">
         <Header />
+
+        <div className="container mx-auto px-4 pt-4">
+          <PageBreadcrumb items={[{ label: messages.breadcrumb.faq }]} />
+        </div>
 
         <main id="main-content" className="container mx-auto px-4 py-12">
           <div className="max-w-4xl mx-auto space-y-8">
