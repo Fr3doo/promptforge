@@ -111,6 +111,7 @@ export const messages = {
   // Messages UI (composants réutilisables)
   ui: uiMessages.ui,
   analyzer: uiMessages.analyzer,
+  breadcrumb: uiMessages.breadcrumb,
   
   // Messages App (pages de l'application)
   navigation: appMessages.navigation,

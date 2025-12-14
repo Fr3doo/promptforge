@@ -5,11 +5,14 @@ import { Card } from "@/components/ui/card";
 import { Code2, ArrowLeft, Clock, User, Calendar } from "lucide-react";
 import { blogArticles } from "@/data/blogArticles";
 import { SEO } from "@/components/SEO";
+import { PageBreadcrumb, BreadcrumbItemData } from "@/components/PageBreadcrumb";
+import { messages } from "@/constants/messages";
 import ReactMarkdown from "react-markdown";
 
 const ResourceArticle = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const breadcrumbMessages = messages.breadcrumb;
   
   const article = blogArticles.find(a => a.id === id);
 
@@ -26,6 +29,11 @@ const ResourceArticle = () => {
     );
   }
 
+  const breadcrumbItems: BreadcrumbItemData[] = [
+    { label: breadcrumbMessages.resources, href: "/resources" },
+    { label: article.title },
+  ];
+
   return (
     <>
       <SEO 
@@ -36,7 +44,10 @@ const ResourceArticle = () => {
       
       <div className="min-h-screen bg-background">
         <header className="border-b border-border bg-card sticky top-0 z-10">
-          <div className="container mx-auto px-4 py-4">
+          <div className="container mx-auto px-4 py-3">
+            <PageBreadcrumb items={breadcrumbItems} />
+          </div>
+          <div className="container mx-auto px-4 pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <Button 
