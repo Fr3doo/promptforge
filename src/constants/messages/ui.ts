@@ -68,4 +68,13 @@ export const uiMessages = {
       clear: "Effacer l'analyse",
     },
   },
+
+  // Breadcrumb navigation
+  breadcrumb: {
+    home: "Accueil",
+    prompts: "Mes Prompts",
+    resources: "Ressources",
+    newPrompt: "Nouveau prompt",
+    untitled: "Sans titre",
+  },
 } as const;
