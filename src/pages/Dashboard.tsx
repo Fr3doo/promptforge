@@ -6,6 +6,7 @@ import { useToggleFavorite, useToggleVisibility } from "@/hooks/usePrompts";
 import { TrendingUp, Star, Share2, Clock } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { messages } from "@/constants/messages";
 import { useLoadingState } from "@/hooks/useLoadingState";
 import { DashboardSkeleton } from "@/components/DashboardSkeleton";
@@ -46,6 +47,9 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-background">
         <Header />
+        <div className="container mx-auto px-4 pt-4">
+          <PageBreadcrumb items={[{ label: messages.breadcrumb.dashboard }]} />
+        </div>
         {loadingState.content}
         <Footer />
       </div>
@@ -55,6 +59,10 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+
+      <div className="container mx-auto px-4 pt-4">
+        <PageBreadcrumb items={[{ label: messages.breadcrumb.dashboard }]} />
+      </div>
       
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4">
