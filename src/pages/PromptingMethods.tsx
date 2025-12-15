@@ -9,6 +9,8 @@ import { promptingMethods, type PromptingMethod } from "@/data/promptingMethods"
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { PageBreadcrumb } from "@/components/PageBreadcrumb";
+import { messages } from "@/constants/messages";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,6 +62,10 @@ const PromptingMethods = () => {
       
       <div className="min-h-screen bg-background">
         <Header />
+
+        <div className="container mx-auto px-4 pt-4">
+          <PageBreadcrumb items={[{ label: messages.breadcrumb.methods }]} />
+        </div>
 
         <main id="main-content" className="container mx-auto px-4 py-12">
           <div className="max-w-7xl mx-auto">
