@@ -17,6 +17,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
+import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { messages } from "@/constants/messages";
 
 export default function Settings() {
@@ -161,6 +162,10 @@ export default function Settings() {
       />
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
+
+        <div className="container mx-auto px-4 pt-4">
+          <PageBreadcrumb items={[{ label: messages.breadcrumb.settings }]} />
+        </div>
         
         <main id="main-content" className="flex-1 container mx-auto px-4 py-8">
           <div className="mb-8">
