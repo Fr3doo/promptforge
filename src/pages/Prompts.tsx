@@ -12,6 +12,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, Dr
 import { PromptAnalyzer } from "@/components/PromptAnalyzer";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { SharePromptDialog } from "@/features/prompts/components/SharePromptDialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { messages } from "@/constants/messages";
@@ -87,6 +88,10 @@ const Prompts = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+
+      <div className="container mx-auto px-4 pt-4">
+        <PageBreadcrumb items={[{ label: messages.breadcrumb.prompts }]} />
+      </div>
       
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4">
