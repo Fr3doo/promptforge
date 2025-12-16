@@ -82,5 +82,6 @@ export const uiMessages = {
     signup: "Inscription",
     newPrompt: "Nouveau prompt",
     untitled: "Sans titre",
+    notFound: "Page non trouvée",
   },
 } as const;
