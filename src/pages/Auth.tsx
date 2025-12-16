@@ -11,6 +11,7 @@ import { authSchema } from "@/lib/validation";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { messages } from "@/constants/messages";
 
 const Auth = () => {
@@ -47,8 +48,12 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
+
+      <div className="container mx-auto px-4 pt-4">
+        <PageBreadcrumb items={[{ label: messages.breadcrumb.login }]} />
+      </div>
       
-      <div className="flex-1 flex items-center justify-center p-4 pt-12">
+      <div className="flex-1 flex items-center justify-center p-4 pt-8">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
