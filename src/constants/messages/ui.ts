@@ -78,6 +78,8 @@ export const uiMessages = {
     methods: "Méthodes de Prompting",
     dashboard: "Tableau de bord",
     settings: "Paramètres",
+    login: "Connexion",
+    signup: "Inscription",
     newPrompt: "Nouveau prompt",
     untitled: "Sans titre",
   },
