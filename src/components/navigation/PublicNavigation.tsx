@@ -9,9 +9,9 @@ import { messages } from "@/constants/messages";
 import { useState } from "react";
 
 const publicNavItems = [
-  { to: "#what-is", label: messages.navigation.public.whatIs, isAnchor: true },
-  { to: "#how-it-works", label: messages.navigation.public.howItWorks, isAnchor: true },
-  { to: "#features", label: messages.navigation.public.features, isAnchor: true },
+  { to: "/#what-is", label: messages.navigation.public.whatIs, isAnchor: true },
+  { to: "/#how-it-works", label: messages.navigation.public.howItWorks, isAnchor: true },
+  { to: "/#features", label: messages.navigation.public.features, isAnchor: true },
   { to: "/faq", label: messages.navigation.faq, isAnchor: false },
 ];
 
@@ -33,7 +33,7 @@ export const PublicNavigation = () => {
           <Logo />
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-4 lg:gap-6">
             {publicNavItems.map((item) => (
               <NavLink key={item.to} to={item.to} isAnchor={item.isAnchor}>
                 {item.label}
