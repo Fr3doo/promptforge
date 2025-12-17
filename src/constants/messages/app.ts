@@ -29,6 +29,13 @@ export const appMessages = {
     signOut: "Se déconnecter",
     skipToContent: "Aller au contenu principal",
     copyright: (year: number) => `© ${year} PromptForge. Tous droits réservés.`,
+    // Navigation publique (visiteurs non connectés)
+    public: {
+      whatIs: "Qu'est-ce que c'est",
+      howItWorks: "Comment ça marche",
+      features: "Fonctionnalités",
+      language: "Langue",
+    },
   },
 
   // Marketing / Landing page
