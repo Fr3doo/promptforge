@@ -4,6 +4,7 @@ import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useProfileRepository } from "@/contexts/ProfileRepositoryContext";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import {
   HeroSection,
   WhatIsSection,
@@ -57,6 +58,7 @@ const Index = () => {
           <CTASection />
         </main>
         <Footer />
+        <ScrollToTopButton />
       </div>
     </>
   );

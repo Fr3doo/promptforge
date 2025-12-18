@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { messages } from "@/constants/messages";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { scrollToSection } from "@/lib/scrollUtils";
 
 export const HeroSection = () => {
   const navigate = useNavigate();
@@ -43,24 +42,16 @@ export const HeroSection = () => {
             {messages.marketing.hero.subtitle}
           </p>
 
-          {/* CTA Buttons */}
+          {/* CTA Button */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+            className="flex justify-center"
           >
             <Button size="lg" onClick={() => navigate("/signup")} className="gap-2 text-base px-8">
               {messages.marketing.hero.cta}
               <ArrowRight className="h-4 w-4" />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => scrollToSection("how-it-works")}
-              className="text-base px-8"
-            >
-              {messages.marketing.hero.ctaSecondary}
             </Button>
           </motion.div>
         </motion.div>
