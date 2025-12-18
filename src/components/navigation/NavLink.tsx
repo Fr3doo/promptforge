@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
+import { scrollToSection } from "@/lib/scrollUtils";
 
 interface NavLinkProps {
   to: string;
@@ -8,9 +9,10 @@ interface NavLinkProps {
   onClick?: () => void;
   className?: string;
   isAnchor?: boolean;
+  activeSection?: string | null;
 }
 
-export const NavLink = ({ to, children, onClick, className, isAnchor = false }: NavLinkProps) => {
+export const NavLink = ({ to, children, onClick, className, isAnchor = false, activeSection }: NavLinkProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -18,31 +20,29 @@ export const NavLink = ({ to, children, onClick, className, isAnchor = false }: 
   const getIsActive = () => {
     if (isAnchor && to.includes('#')) {
       const hash = to.split('#')[1];
+      // Priorité au scroll spy si disponible
+      if (activeSection !== undefined) {
+        return activeSection === hash;
+      }
       return location.hash === `#${hash}`;
     }
     return location.pathname === to;
   };
   
   const isActive = getIsActive();
-  const baseClasses = "text-sm font-medium transition-colors hover:text-primary";
+  const baseClasses = "text-sm font-medium transition-all duration-300 hover:text-primary relative";
   const activeClasses = isActive ? "text-primary font-semibold" : "text-foreground";
 
   if (isAnchor) {
     const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-      // Extraire le chemin et le hash (ex: "/#what-is" -> "/" et "what-is")
       const [path, hash] = to.split('#');
       const targetPath = path || '/';
       
-      // Si on est sur la page cible, scroll smooth
       if (location.pathname === targetPath) {
         e.preventDefault();
-        const element = document.getElementById(hash);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-          window.history.pushState(null, '', `#${hash}`);
-        }
+        scrollToSection(hash);
+        window.history.pushState(null, '', `#${hash}`);
       } else {
-        // Sinon, naviguer vers la page avec le hash
         e.preventDefault();
         navigate(to);
       }
@@ -56,6 +56,13 @@ export const NavLink = ({ to, children, onClick, className, isAnchor = false }: 
         className={cn(baseClasses, activeClasses, className)}
       >
         {children}
+        {/* Indicateur visuel de section active */}
+        <span 
+          className={cn(
+            "absolute -bottom-1 left-0 h-0.5 bg-primary rounded-full transition-all duration-300",
+            isActive ? "w-full" : "w-0"
+          )}
+        />
       </a>
     );
   }
@@ -67,6 +74,13 @@ export const NavLink = ({ to, children, onClick, className, isAnchor = false }: 
       className={cn(baseClasses, activeClasses, className)}
     >
       {children}
+      {/* Indicateur visuel pour les liens de page */}
+      <span 
+        className={cn(
+          "absolute -bottom-1 left-0 h-0.5 bg-primary rounded-full transition-all duration-300",
+          isActive ? "w-full" : "w-0"
+        )}
+      />
     </Link>
   );
 };

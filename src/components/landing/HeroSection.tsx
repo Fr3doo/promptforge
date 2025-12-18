@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { messages } from "@/constants/messages";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { scrollToSection } from "@/lib/scrollUtils";
 
 export const HeroSection = () => {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ export const HeroSection = () => {
             <Button
               size="lg"
               variant="outline"
-              onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
+              onClick={() => scrollToSection("how-it-works")}
               className="text-base px-8"
             >
               {messages.marketing.hero.ctaSecondary}

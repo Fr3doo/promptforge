@@ -7,6 +7,7 @@ import { NavLink } from "./NavLink";
 import { LanguageSelector } from "./LanguageSelector";
 import { messages } from "@/constants/messages";
 import { useState } from "react";
+import { useActiveSection } from "@/hooks/useActiveSection";
 
 const publicNavItems = [
   { to: "/#what-is", label: messages.navigation.public.whatIs, isAnchor: true },
@@ -18,6 +19,7 @@ const publicNavItems = [
 export const PublicNavigation = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const activeSection = useActiveSection();
 
   const handleNavigation = (to: string, isAnchor: boolean) => {
     setMobileMenuOpen(false);
@@ -35,7 +37,12 @@ export const PublicNavigation = () => {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-4 lg:gap-6">
             {publicNavItems.map((item) => (
-              <NavLink key={item.to} to={item.to} isAnchor={item.isAnchor}>
+              <NavLink 
+                key={item.to} 
+                to={item.to} 
+                isAnchor={item.isAnchor}
+                activeSection={item.isAnchor ? activeSection : undefined}
+              >
                 {item.label}
               </NavLink>
             ))}
