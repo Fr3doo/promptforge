@@ -31,14 +31,17 @@ export const ScrollToTopButton = () => {
           transition={{ duration: 0.2 }}
           className="fixed bottom-6 right-6 z-50"
         >
-          <Button
-            onClick={scrollToTop}
-            size="icon"
-            className="rounded-full shadow-xl ring-4 ring-primary/30 h-12 w-12 transition-transform duration-200 hover:-translate-y-1"
-            aria-label="Retour en haut"
-          >
-            <ArrowUp className="h-5 w-5" />
-          </Button>
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+            <Button
+              onClick={scrollToTop}
+              size="icon"
+              className="relative rounded-full shadow-xl ring-4 ring-primary/30 h-12 w-12 transition-transform duration-200 hover:-translate-y-1"
+              aria-label="Retour en haut"
+            >
+              <ArrowUp className="h-5 w-5" />
+            </Button>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
