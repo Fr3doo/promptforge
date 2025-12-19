@@ -31,8 +31,8 @@ export const ScrollToTopButton = () => {
           transition={{ duration: 0.2 }}
           className="fixed bottom-6 right-6 z-50"
         >
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+          <div className="relative group">
+            <div className="absolute inset-0 rounded-full bg-primary/10 animate-pulse group-hover:animate-none" />
             <Button
               onClick={scrollToTop}
               size="icon"
