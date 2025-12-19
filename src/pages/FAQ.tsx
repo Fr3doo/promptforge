@@ -24,12 +24,29 @@ const FAQ = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  if (!loading && !user) {
-    navigate("/auth");
-    return null;
-  }
-
   const categories = ["all", ...Array.from(new Set(faqData.map(f => f.category)))];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 py-12">
+          <div className="max-w-4xl mx-auto animate-pulse space-y-8">
+            <div className="text-center space-y-4">
+              <div className="h-8 bg-muted rounded w-48 mx-auto" />
+              <div className="h-12 bg-muted rounded w-96 mx-auto" />
+            </div>
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-20 bg-muted rounded" />
+              ))}
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   const filteredFAQ = faqData.filter(item => {
     const matchesSearch = 
@@ -125,7 +142,7 @@ const FAQ = () => {
               <p className="text-muted-foreground mb-6">
                 Notre équipe est là pour vous aider
               </p>
-              <Button onClick={() => navigate("/prompts")}>
+              <Button onClick={() => navigate(user ? "/prompts" : "/auth")}>
                 Commencer avec PromptForge
               </Button>
             </div>
