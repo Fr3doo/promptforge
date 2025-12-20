@@ -2,12 +2,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Tests d'intégration pour vérifier la sécurité des emails
+ * Tests d'intégration pour vérifier la sécurité des profils
  * 
- * Ces tests simulent le comportement RLS côté serveur.
- * En environnement réel, les politiques RLS sont appliquées par Supabase.
+ * Après la migration, la colonne email a été supprimée de public.profiles.
+ * L'email est désormais uniquement stocké dans auth.users (source de vérité).
+ * Ces tests vérifient que :
+ * 1. La table profiles ne contient plus d'email
+ * 2. La vue public_profiles n'expose pas d'email
+ * 3. Les politiques RLS fonctionnent correctement
  */
-describe("Profile Email Security", () => {
+describe("Profile Security (Email removed from public.profiles)", () => {
   const currentUserId = "current-user-123";
   const otherUserId = "other-user-456";
 
@@ -15,11 +19,11 @@ describe("Profile Email Security", () => {
     vi.clearAllMocks();
   });
 
-  describe("Table profiles avec RLS", () => {
-    it("devrait permettre à un utilisateur de voir son propre profil complet (avec email)", async () => {
+  describe("Table profiles avec RLS (sans email)", () => {
+    it("devrait permettre à un utilisateur de voir son propre profil (sans email)", async () => {
+      // L'email n'est plus dans profiles, il est dans auth.users
       const mockOwnProfile = {
         id: currentUserId,
-        email: "currentuser@example.com",
         pseudo: "currentuser",
         name: "Current User",
         image: null,
@@ -42,11 +46,13 @@ describe("Profile Email Security", () => {
         .eq("id", currentUserId)
         .single();
 
-      expect(result.data).toHaveProperty("email", "currentuser@example.com");
+      // Vérifie que l'email n'est PAS dans le profil (colonne supprimée)
+      expect(result.data).not.toHaveProperty("email");
       expect(result.data).toHaveProperty("pseudo", "currentuser");
+      expect(result.data).toHaveProperty("id", currentUserId);
     });
 
-    it("NE devrait PAS permettre de récupérer l'email d'un autre utilisateur via profiles", async () => {
+    it("NE devrait PAS permettre de voir le profil d'un autre utilisateur", async () => {
       const mockSingle = vi.fn().mockResolvedValue({
         data: null,
         error: { code: "PGRST116", message: "No rows found" },
@@ -68,12 +74,11 @@ describe("Profile Email Security", () => {
       expect(result.error).toBeDefined();
     });
 
-    it("NE devrait PAS retourner l'email lors d'une requête IN sur plusieurs IDs", async () => {
+    it("devrait retourner uniquement son propre profil lors d'une requête IN", async () => {
       const mockIn = vi.fn().mockResolvedValue({
         data: [
           {
             id: currentUserId,
-            email: "currentuser@example.com",
             pseudo: "currentuser",
             name: "Current User",
             image: null,
@@ -89,11 +94,12 @@ describe("Profile Email Security", () => {
 
       const result = await supabase
         .from("profiles")
-        .select("id, email, pseudo, name")
+        .select("id, pseudo, name")
         .in("id", [currentUserId, otherUserId]);
 
       expect(result.data).toHaveLength(1);
       expect(result.data?.[0].id).toBe(currentUserId);
+      expect(result.data?.[0]).not.toHaveProperty("email");
       
       const otherProfile = result.data?.find(p => p.id === otherUserId);
       expect(otherProfile).toBeUndefined();
