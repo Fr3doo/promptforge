@@ -11,9 +11,9 @@ vi.mock("@/integrations/supabase/client", () => ({
 describe("SupabaseProfileRepository", () => {
   let repository: SupabaseProfileRepository;
   const mockUserId = "user-123";
+  // Note: email a été supprimé de public.profiles (stocké uniquement dans auth.users)
   const mockProfile = {
     id: mockUserId,
-    email: "test@example.com",
     pseudo: "testuser",
     name: "Test User",
     image: null,
