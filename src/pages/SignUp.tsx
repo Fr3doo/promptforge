@@ -30,14 +30,15 @@ const SignUp = () => {
       const validatedData = authSchema.parse({
         email,
         password,
-        name: pseudo || email,
+        name: pseudo || undefined,
       });
 
       await authRepository.signUp(
         validatedData.email,
         validatedData.password,
         {
-          pseudo: validatedData.name || validatedData.email,
+          // Pseudo optionnel : le trigger DB gère le fallback non-sensible
+          pseudo: validatedData.name || undefined,
           emailRedirectTo: `${window.location.origin}/`,
         }
       );
