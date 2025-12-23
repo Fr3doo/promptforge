@@ -9,10 +9,12 @@ Ce document décrit les patterns de Row-Level Security (RLS) utilisés dans le p
 | Métrique | Valeur |
 |----------|--------|
 | Tables protégées | 8 |
-| Policies totales | 34 |
-| Policies `anon` | 7 (blocage) |
+| Policies totales | 35 |
+| Policies `anon` | 8 (blocage) |
 | Policies `authenticated` | 27 (contrôle d'accès) |
 | Policies `public` | 0 (sécurité renforcée) |
+| Tables avec Force RLS | 1 (`user_roles`) |
+| Privilèges `anon` révoqués | 8 tables + séquences |
 
 ### Tables protégées
 
@@ -425,6 +427,24 @@ USING (
   WITH CHECK (owner_id = auth.uid());  -- Doit rester propriétaire après modification
   ```
 
+- [ ] **7. Révoquer les privilèges `anon` et `public`**
+  ```sql
+  REVOKE ALL PRIVILEGES ON TABLE public.new_table FROM anon;
+  REVOKE ALL PRIVILEGES ON TABLE public.new_table FROM public;
+  ```
+
+- [ ] **8. Révoquer les privilèges sur les séquences associées**
+  ```sql
+  REVOKE ALL PRIVILEGES ON SEQUENCE public.new_table_id_seq FROM anon;
+  REVOKE ALL PRIVILEGES ON SEQUENCE public.new_table_id_seq FROM public;
+  ```
+
+- [ ] **9. Activer FORCE RLS pour les tables critiques (rôles, permissions)**
+  ```sql
+  -- Uniquement pour les tables ultra-sensibles comme user_roles
+  ALTER TABLE public.new_table FORCE ROW LEVEL SECURITY;
+  ```
+
 ### Tests obligatoires
 
 - [ ] **Test 1 : Accès anonyme bloqué**
@@ -509,6 +529,169 @@ REVOKE ALL ON TABLE public.prompt_shares FROM public;
 
 ---
 
+## Pattern 7 : Privilege Hardening (Défense en profondeur)
+
+### Description
+
+La RLS est la **première ligne de défense**, mais les privilèges PostgreSQL (GRANT/REVOKE) constituent une **deuxième couche de protection**. Ce pattern applique le principe du **moindre privilège** : même si RLS bloque, on retire les GRANT inutiles.
+
+### Pourquoi c'est important
+
+- **Réduction de la surface d'attaque** : Un GRANT existe = une porte potentielle
+- **Protection contre les régressions** : Une policy mal modifiée + GRANT = fuite
+- **Audit simplifié** : Moins de "faux positifs" des scanners de sécurité
+- **Defense in depth** : RLS (ceinture) + REVOKE (bretelles)
+
+### Configuration recommandée
+
+#### Étape 1 : Révoquer tous les privilèges `anon` et `public`
+
+```sql
+-- Pour chaque table sensible
+REVOKE ALL PRIVILEGES ON TABLE public.table_name FROM anon;
+REVOKE ALL PRIVILEGES ON TABLE public.table_name FROM public;
+```
+
+#### Étape 2 : Révoquer les privilèges sur les séquences
+
+```sql
+-- Les séquences peuvent révéler des informations (nombres de lignes, patterns)
+DO $$
+DECLARE s record;
+BEGIN
+  FOR s IN
+    SELECT sequence_schema, sequence_name
+    FROM information_schema.sequences
+    WHERE sequence_schema = 'public'
+  LOOP
+    EXECUTE format('REVOKE ALL PRIVILEGES ON SEQUENCE %I.%I FROM anon', 
+                   s.sequence_schema, s.sequence_name);
+    EXECUTE format('REVOKE ALL PRIVILEGES ON SEQUENCE %I.%I FROM public', 
+                   s.sequence_schema, s.sequence_name);
+  END LOOP;
+END$$;
+```
+
+#### Étape 3 : Activer FORCE RLS sur les tables critiques
+
+```sql
+-- FORCE RLS empêche même l'owner de bypass les policies
+ALTER TABLE public.user_roles FORCE ROW LEVEL SECURITY;
+```
+
+### Tables avec privilèges durcis
+
+| Table | anon SELECT | anon DML | public | Force RLS |
+|-------|-------------|----------|--------|-----------|
+| `profiles` | ❌ | ❌ | ❌ | ❌ |
+| `prompts` | ❌ | ❌ | ❌ | ❌ |
+| `prompt_shares` | ❌ | ❌ | ❌ | ❌ |
+| `prompt_usage` | ❌ | ❌ | ❌ | ❌ |
+| `user_roles` | ❌ | ❌ | ❌ | ✅ |
+| `variable_sets` | ❌ | ❌ | ❌ | ❌ |
+| `variables` | ❌ | ❌ | ❌ | ❌ |
+| `versions` | ❌ | ❌ | ❌ | ❌ |
+
+### Diagramme de défense en profondeur
+
+```mermaid
+flowchart TD
+    A[Requête anon] --> B{GRANT existe?}
+    B -->|Non| C[🛡️ Bloqué par privilèges]
+    B -->|Oui| D{RLS activée?}
+    D -->|Oui| E{Policy permet?}
+    E -->|Non| F[🛡️ Bloqué par RLS]
+    E -->|Oui| G[⚠️ Accès accordé]
+    D -->|Non| H[⚠️ Accès accordé]
+    
+    style C fill:#51cf66
+    style F fill:#74c0fc
+    style G fill:#ffd43b
+    style H fill:#ff6b6b
+```
+
+### Vérification post-durcissement
+
+```sql
+-- Vérifier qu'anon n'a plus aucun privilège
+SELECT 
+  'table_name' as tbl,
+  has_table_privilege('anon', 'public.table_name', 'select') as anon_select,
+  has_table_privilege('anon', 'public.table_name', 'insert') as anon_insert,
+  has_table_privilege('anon', 'public.table_name', 'update') as anon_update,
+  has_table_privilege('anon', 'public.table_name', 'delete') as anon_delete;
+-- Tous doivent retourner FALSE
+```
+
+---
+
+## Audit de sécurité
+
+### Requêtes d'audit des privilèges
+
+#### Vérifier les privilèges anon sur toutes les tables
+
+```sql
+SELECT 
+  c.relname as table_name,
+  has_table_privilege('anon', c.oid, 'select') as anon_select,
+  has_table_privilege('anon', c.oid, 'insert') as anon_insert,
+  has_table_privilege('anon', c.oid, 'update') as anon_update,
+  has_table_privilege('anon', c.oid, 'delete') as anon_delete
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public' 
+  AND c.relkind = 'r'
+ORDER BY c.relname;
+```
+
+#### Vérifier le statut RLS de toutes les tables
+
+```sql
+SELECT 
+  c.relname as table_name,
+  c.relrowsecurity as rls_enabled,
+  c.relforcerowsecurity as rls_forced
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public' 
+  AND c.relkind = 'r'
+ORDER BY c.relname;
+```
+
+#### Vérifier les privilèges sur les vues
+
+```sql
+SELECT 
+  c.relname as view_name,
+  has_table_privilege('anon', c.oid, 'select') as anon_select,
+  has_table_privilege('authenticated', c.oid, 'select') as auth_select
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public' 
+  AND c.relkind = 'v'
+ORDER BY c.relname;
+```
+
+#### Audit complet des policies par table
+
+```sql
+SELECT 
+  schemaname,
+  tablename,
+  policyname,
+  permissive,
+  roles,
+  cmd,
+  qual as using_expression,
+  with_check
+FROM pg_policies
+WHERE schemaname = 'public'
+ORDER BY tablename, policyname;
+```
+
+---
+
 ## Références
 
 - [SHARING_GUIDE.md](./SHARING_GUIDE.md) - Guide complet du système de partage
@@ -525,3 +708,6 @@ REVOKE ALL ON TABLE public.prompt_shares FROM public;
 | 2025-01-23 | Création du document |
 | 2025-01-23 | Correction policies `public` → `anon` |
 | 2025-12-23 | Ajout Pattern 6 : Views avec security_invoker + documentation share_count |
+| 2025-12-23 | Ajout Pattern 7 : Privilege Hardening + REVOKE anon/public + FORCE RLS user_roles |
+| 2025-12-23 | Ajout section Audit de sécurité avec requêtes SQL |
+| 2025-12-23 | Mise à jour checklist avec étapes 7-9 (REVOKE + FORCE RLS) |
