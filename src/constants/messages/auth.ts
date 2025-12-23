@@ -60,4 +60,13 @@ export const authMessages = {
     addLength: "Utilisez au moins 8 caractères",
     addMoreLength: "Utilisez au moins 12 caractères pour plus de sécurité",
   },
+
+  // Password strength levels
+  strength: {
+    title: "Force du mot de passe",
+    weak: "Faible",
+    fair: "Moyen",
+    good: "Bon",
+    strong: "Fort",
+  },
 } as const;

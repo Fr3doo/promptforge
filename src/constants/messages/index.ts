@@ -144,6 +144,9 @@ export const messages = {
   
   // Feedback pour la force du mot de passe
   feedback: authMessages.feedback,
+  
+  // Niveaux de force du mot de passe
+  strength: authMessages.strength,
 } as const;
 
 export type MessageKey = typeof messages;
