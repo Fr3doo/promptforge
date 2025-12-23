@@ -16,7 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Copy, Download, Loader2 } from "lucide-react";
+import { Copy, Download, Loader2, Maximize2, Minimize2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { messages } from "@/constants/messages";
 import { usePromptExport } from "@/hooks/usePromptExport";
 import type { Tables } from "@/integrations/supabase/types";
@@ -48,6 +49,7 @@ export function ExportPromptDialog({
   const [format, setFormat] = useState<ExportFormat>("json");
   const [includeVersions, setIncludeVersions] = useState(false);
   const [versions, setVersions] = useState<Version[]>([]);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const {
     exportPrompt,
@@ -72,6 +74,7 @@ export function ExportPromptDialog({
       setFormat("json");
       setIncludeVersions(false);
       setVersions([]);
+      setIsFullscreen(false);
     }
   }, [open]);
 
@@ -90,15 +93,40 @@ export function ExportPromptDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] lg:max-w-[900px] max-h-[95vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>{exportMessages.title}</DialogTitle>
-          <DialogDescription>
-            {exportMessages.description(prompt.title)}
-          </DialogDescription>
+      <DialogContent 
+        className={cn(
+          "flex flex-col transition-all duration-200",
+          isFullscreen 
+            ? "w-screen h-screen max-w-none max-h-none rounded-none" 
+            : "sm:max-w-[800px] lg:max-w-[900px] max-h-[95vh]"
+        )}
+      >
+        <DialogHeader className="flex flex-row items-start justify-between gap-4">
+          <div className="flex-1">
+            <DialogTitle>{exportMessages.title}</DialogTitle>
+            <DialogDescription>
+              {exportMessages.description(prompt.title)}
+            </DialogDescription>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="shrink-0"
+            aria-label={isFullscreen ? "Réduire" : "Agrandir"}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="h-4 w-4" />
+            ) : (
+              <Maximize2 className="h-4 w-4" />
+            )}
+          </Button>
         </DialogHeader>
 
-        <div className="space-y-6 flex-1 flex flex-col">
+        <div className={cn(
+          "space-y-6 flex flex-col",
+          isFullscreen ? "flex-1 min-h-0" : ""
+        )}>
           {/* Format selection */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">{exportMessages.format}</Label>
@@ -141,9 +169,19 @@ export function ExportPromptDialog({
           </div>
 
           {/* Preview */}
-          <div className="space-y-2">
+          <div className={cn(
+            "space-y-2 flex flex-col",
+            isFullscreen ? "flex-1 min-h-0" : ""
+          )}>
             <Label className="text-sm font-medium">{exportMessages.preview}</Label>
-            <ScrollArea className="h-[300px] sm:h-[400px] lg:h-[450px] rounded-md border bg-muted/30">
+            <ScrollArea 
+              className={cn(
+                "rounded-md border bg-muted/30",
+                isFullscreen 
+                  ? "flex-1" 
+                  : "h-[300px] sm:h-[400px] lg:h-[450px]"
+              )}
+            >
               <pre className="p-4 text-xs font-mono whitespace-pre-wrap break-all">
                 {preview}
               </pre>
