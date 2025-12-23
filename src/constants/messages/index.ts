@@ -138,6 +138,9 @@ export const messages = {
   // Messages de versioning et d'authentification
   versions: versionsMessages.versions,
   auth: authMessages.auth,
+  
+  // Messages de sécurité
+  security: authMessages.security,
 } as const;
 
 export type MessageKey = typeof messages;

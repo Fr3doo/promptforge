@@ -2,3 +2,6 @@ project_id = "blwjxiryohsrevcdynss"
 
 [functions.analyze-prompt]
 verify_jwt = true
+
+[functions.check-password-breach]
+verify_jwt = false

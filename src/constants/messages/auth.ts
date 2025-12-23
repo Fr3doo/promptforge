@@ -37,6 +37,13 @@ export const authMessages = {
   errors: {
     auth: {
       signOutFailed: "Impossible de se déconnecter",
+      passwordBreached: "Ce mot de passe a été compromis dans une fuite de données. Veuillez en choisir un autre plus sécurisé.",
+      passwordCheckFailed: "Impossible de vérifier la sécurité du mot de passe. Réessayez.",
     },
+  },
+
+  // Security checks
+  security: {
+    checkingPassword: "Vérification de la sécurité du mot de passe...",
   },
 } as const;
