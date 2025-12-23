@@ -179,23 +179,28 @@ export function ExportPromptDialog({
             </RadioGroup>
           </div>
 
-          {/* Options - Versions uniquement pour JSON */}
-          {format === "json" && (
-            <div className="flex items-center gap-3">
-              <Checkbox
-                id="include-versions"
-                checked={includeVersions}
-                onCheckedChange={(checked) => setIncludeVersions(checked === true)}
-              />
-              <Label
-                htmlFor="include-versions"
-                className="text-sm cursor-pointer flex items-center gap-2"
-              >
-                {exportMessages.options.includeVersions}
-                {isLoadingVersions && <Loader2 className="h-3 w-3 animate-spin" />}
-              </Label>
-            </div>
-          )}
+          {/* Options - Versions (grisé pour Markdown/TOON) */}
+          <div className="flex items-center gap-3">
+            <Checkbox
+              id="include-versions"
+              checked={includeVersions}
+              onCheckedChange={(checked) => setIncludeVersions(checked === true)}
+              disabled={format !== "json"}
+            />
+            <Label
+              htmlFor="include-versions"
+              className={cn(
+                "text-sm flex items-center gap-2",
+                format !== "json" ? "text-muted-foreground cursor-not-allowed" : "cursor-pointer"
+              )}
+            >
+              {exportMessages.options.includeVersions}
+              {format !== "json" && (
+                <span className="text-xs">(fonction à venir)</span>
+              )}
+              {isLoadingVersions && <Loader2 className="h-3 w-3 animate-spin" />}
+            </Label>
+          </div>
 
           {/* Preview */}
           <div className={cn(
