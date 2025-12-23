@@ -457,6 +457,58 @@ USING (
 
 ---
 
+## Pattern 6 : Views with security_invoker
+
+### Description
+
+Les vues PostgreSQL peuvent contourner la RLS si elles s'exécutent avec les droits du propriétaire. L'option `security_invoker = true` force la vue à respecter la RLS du **caller** (appelant).
+
+### Configuration recommandée
+
+```sql
+-- Création d'une vue sécurisée
+CREATE VIEW public.prompts_with_share_count
+WITH (security_invoker = true, security_barrier = true)
+AS
+SELECT 
+  p.*,
+  count(ps.id) as share_count
+FROM public.prompts p
+LEFT JOIN public.prompt_shares ps ON p.id = ps.prompt_id
+GROUP BY p.id;
+```
+
+### Options de sécurité
+
+| Option | Effet |
+|--------|-------|
+| `security_invoker = true` | La vue s'exécute avec les droits de l'appelant (RLS respectée) |
+| `security_barrier = true` | Empêche les optimisations de requête de contourner les conditions de sécurité |
+
+### Comportement du `share_count`
+
+**Important** : Le `share_count` dans `prompts_with_share_count` est **filtré par RLS** :
+
+- **Pour l'owner** : Voit le count de tous ses partages (car `shared_by = owner`)
+- **Pour un destinataire** : Voit uniquement 1 (son propre partage), même si le prompt a été partagé à 10 personnes
+
+Ce comportement est **intentionnel** : il évite de révéler la diffusion totale du prompt aux non-propriétaires.
+
+### Principe du moindre privilège pour les vues
+
+En plus de `security_invoker`, il est recommandé de :
+
+1. **Révoquer les GRANT inutiles** sur les tables source
+2. **Ne pas exposer `content`** dans les vues "liste" (préférer une route dédiée pour le détail)
+
+```sql
+-- Retirer les GRANT inutiles (même si RLS bloque)
+REVOKE SELECT ON TABLE public.prompt_shares FROM anon;
+REVOKE ALL ON TABLE public.prompt_shares FROM public;
+```
+
+---
+
 ## Références
 
 - [SHARING_GUIDE.md](./SHARING_GUIDE.md) - Guide complet du système de partage
@@ -472,3 +524,4 @@ USING (
 |------|--------------|
 | 2025-01-23 | Création du document |
 | 2025-01-23 | Correction policies `public` → `anon` |
+| 2025-12-23 | Ajout Pattern 6 : Views avec security_invoker + documentation share_count |
