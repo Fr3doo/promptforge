@@ -764,6 +764,135 @@ ORDER BY n.nspname, p.proname;
 
 ---
 
+## Pattern 8 : CI/CD Security Gate avec has_table_privilege()
+
+### Description
+
+Utilise `has_table_privilege()` pour des preuves booléennes robustes plutôt que de parser les GRANT/ACL manuellement. Ce pattern est conçu pour être exécuté en CI à chaque déploiement.
+
+### Pourquoi has_table_privilege() ?
+
+| Méthode | Fiabilité | Raison |
+|---------|-----------|--------|
+| `information_schema.role_table_grants` | ⚠️ Moyenne | Peut manquer les héritages de rôles |
+| `pg_class.relacl` (ACL) | ⚠️ Moyenne | Nécessite parsing, peut manquer PUBLIC |
+| `has_table_privilege()` | ✅ Haute | Booléen direct, inclut héritages |
+
+### Requêtes CI/CD Security Gate
+
+#### 1. Vérifier qu'anon n'a aucun privilège
+
+```sql
+-- DOIT retourner 0 lignes, sinon FAIL CI
+SELECT 
+  c.relname as object_name,
+  c.relkind as kind,
+  has_table_privilege('anon', c.oid, 'SELECT') as anon_select,
+  has_table_privilege('anon', c.oid, 'INSERT') as anon_insert,
+  has_table_privilege('anon', c.oid, 'UPDATE') as anon_update,
+  has_table_privilege('anon', c.oid, 'DELETE') as anon_delete
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public'
+  AND c.relkind IN ('r', 'v')
+  AND (
+    has_table_privilege('anon', c.oid, 'SELECT') = true
+    OR has_table_privilege('anon', c.oid, 'INSERT') = true
+    OR has_table_privilege('anon', c.oid, 'UPDATE') = true
+    OR has_table_privilege('anon', c.oid, 'DELETE') = true
+  )
+ORDER BY c.relname;
+```
+
+#### 2. Vérifier qu'aucun GRANT PUBLIC n'existe
+
+```sql
+-- DOIT retourner 0 lignes, sinon FAIL CI
+-- PUBLIC grants sont représentés par '=' dans ACL
+SELECT 
+  c.relname as object_name,
+  c.relkind as kind,
+  array_to_string(c.relacl, ', ') as acl
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public'
+  AND c.relkind IN ('r', 'v')
+  AND EXISTS (
+    SELECT 1 
+    FROM unnest(c.relacl) as acl 
+    WHERE acl::text LIKE '=%'
+  )
+ORDER BY c.relname;
+```
+
+#### 3. Vérifier security_invoker sur les vues
+
+```sql
+-- DOIT retourner 0 lignes, sinon FAIL CI
+SELECT 
+  c.relname as view_name,
+  pg_get_viewdef(c.oid) as definition
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public'
+  AND c.relkind = 'v'
+  AND NOT EXISTS (
+    SELECT 1 
+    FROM pg_options_to_table(c.reloptions) 
+    WHERE option_name = 'security_invoker' 
+      AND option_value = 'true'
+  )
+ORDER BY c.relname;
+```
+
+#### 4. Audit complet de sécurité
+
+```sql
+-- Résumé de tous les paramètres de sécurité
+SELECT 
+  c.relname as object_name,
+  CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' END as type,
+  c.relrowsecurity as rls_enabled,
+  c.relforcerowsecurity as rls_forced,
+  has_table_privilege('anon', c.oid, 'SELECT') as anon_select,
+  has_table_privilege('PUBLIC', c.oid, 'SELECT') as public_select,
+  CASE 
+    WHEN c.relkind = 'v' THEN (
+      SELECT option_value 
+      FROM pg_options_to_table(c.reloptions) 
+      WHERE option_name = 'security_invoker'
+    )
+    ELSE NULL
+  END as security_invoker
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public'
+  AND c.relkind IN ('r', 'v')
+ORDER BY c.relkind, c.relname;
+```
+
+### Fichier de test TypeScript
+
+Voir `src/repositories/__tests__/SecurityPrivilegeRegression.test.ts` pour les tests unitaires correspondants.
+
+### Intégration CI/CD
+
+```yaml
+# Exemple GitHub Actions
+security-check:
+  runs-on: ubuntu-latest
+  steps:
+    - name: Check anon privileges
+      run: |
+        result=$(psql $DATABASE_URL -t -c "SELECT count(*) FROM (...) WHERE has_anon_access")
+        if [ "$result" -gt 0 ]; then
+          echo "SECURITY VIOLATION: anon has privileges on protected objects"
+          exit 1
+        fi
+```
+
+---
+
 ## Historique des modifications
 
 | Date | Modification |
@@ -776,3 +905,4 @@ ORDER BY n.nspname, p.proname;
 | 2025-12-23 | Mise à jour checklist avec étapes 7-9 (REVOKE + FORCE RLS) |
 | 2025-12-23 | FORCE RLS activé sur 7 tables (profiles, prompts, prompt_shares, variables, versions, variable_sets, user_roles) |
 | 2025-12-23 | Ajout avertissement BYPASSRLS + scripts rollback + checklist régression |
+| 2025-12-23 | Ajout Pattern 8 : CI/CD Security Gate avec has_table_privilege() + tests regression |
