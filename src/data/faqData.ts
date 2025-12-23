@@ -70,7 +70,7 @@ export const faqData: FAQItem[] = [
   },
   {
     question: "Puis-je exporter mes prompts pour les utiliser ailleurs ?",
-    answer: "Absolument. Vous pouvez exporter vos prompts au format JSON (pour intégration API) ou Markdown (pour documentation). L'export inclut le contenu, les métadonnées, les variables, et l'historique des versions si vous le souhaitez.",
+    answer: "Absolument. Vous pouvez exporter vos prompts au format JSON (pour intégration API), Markdown (pour documentation) ou TOON (format compact optimisé pour les LLM). L'export inclut le contenu, les métadonnées, les variables, et optionnellement l'historique des versions.",
     category: "Import/Export",
     featureStatus: "available"
   },

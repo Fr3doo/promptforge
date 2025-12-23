@@ -20,6 +20,9 @@ export interface PromptCardActionsProps {
   /** Callback pour dupliquer le prompt */
   onDuplicate: (id: string) => void;
   
+  /** Callback pour exporter le prompt */
+  onExport?: (prompt: Prompt) => void;
+  
   /** Callback pour basculer la visibilité */
   onToggleVisibility: (
     id: string,
