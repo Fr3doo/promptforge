@@ -21,6 +21,30 @@ export const faqData: FAQItem[] = [
     featureStatus: "informational"
   },
   {
+    question: "Qu'est-ce qu'un prompt engineering ?",
+    answer: "Le prompt engineering est l'art de formuler des instructions précises pour les modèles d'IA. Cela inclut la définition du contexte, du rôle, des contraintes, et du format de sortie souhaité. Un bon prompt peut significativement améliorer la qualité et la pertinence des réponses de l'IA.",
+    category: "Concepts",
+    featureStatus: "informational"
+  },
+  {
+    question: "Quelle est la différence entre un prompt et un template ?",
+    answer: "Un prompt est une instruction complète envoyée à l'IA. Un template est un prompt réutilisable contenant des variables ({{variable}}) qui seront remplacées par des valeurs spécifiques à chaque utilisation. PromptForge excelle dans la gestion de templates structurés.",
+    category: "Concepts",
+    featureStatus: "informational"
+  },
+  {
+    question: "Pourquoi structurer ses prompts ?",
+    answer: "La structuration des prompts améliore la cohérence des résultats, facilite la réutilisation, permet le versioning, et simplifie la collaboration. Un prompt bien structuré avec rôle, contexte, objectifs et format de sortie produit des résultats plus prévisibles et de meilleure qualité.",
+    category: "Bonnes pratiques",
+    featureStatus: "informational"
+  },
+  {
+    question: "Qu'est-ce que le versioning sémantique (SemVer) ?",
+    answer: "SemVer est un système de numérotation des versions au format MAJOR.MINOR.PATCH. MAJOR change pour des modifications incompatibles, MINOR pour des ajouts rétrocompatibles, et PATCH pour des corrections. Cela permet de suivre l'évolution de vos prompts de manière standardisée.",
+    category: "Concepts",
+    featureStatus: "informational"
+  },
+  {
     question: "Comment fonctionne le versioning SemVer ?",
     answer: "PromptForge utilise le versioning sémantique (SemVer) : MAJOR.MINOR.PATCH. Chaque modification de votre prompt crée une nouvelle version avec un historique complet et un diff visuel. Vous pouvez revenir à n'importe quelle version précédente à tout moment.",
     category: "Versioning",
