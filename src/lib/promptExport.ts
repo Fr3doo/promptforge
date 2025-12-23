@@ -217,67 +217,150 @@ export function generateMarkdown(
   return lines.join("\n");
 }
 
+// ============ TOON HELPERS ============
+// @see https://toonformat.dev/reference/spec.html
+
+const TOON_INDENT = "  ";
+const TOON_DEFAULT_DELIM = ",";
+
+/**
+ * TOON: seuls échappements autorisés: \\ \" \n \r \t
+ */
+function escapeToonQuotedString(input: string): string {
+  return input
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r")
+    .replace(/\t/g, "\\t");
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function isBooleanNullLiteral(s: string): boolean {
+  return s === "true" || s === "false" || s === "null";
+}
+
+/**
+ * Heuristique: si ça ressemble à un nombre, un parseur TOON peut le typer en number.
+ * On quote donc pour préserver une string.
+ */
+function looksNumeric(s: string): boolean {
+  return /^-?\d+(\.\d+)?$/.test(s);
+}
+
+/**
+ * Détermine si une string doit être quotée selon la spec TOON.
+ * Delimiter-aware: dépend du délimiteur actif.
+ */
+function mustQuoteString(value: string, activeDelimiter: string): boolean {
+  if (value.length === 0) return true;
+  
+  // réservés (sinon typés bool/null)
+  if (isBooleanNullLiteral(value)) return true;
+  
+  // risque de typage number
+  if (looksNumeric(value)) return true;
+  
+  // caractères/contrôles nécessitant quoting + escaping
+  if (/[\\\"\n\r\t]/.test(value)) return true;
+  
+  // delimiter-aware quoting + séparateur clé/valeur + structure
+  const structural = new RegExp(`[${escapeRegExp(activeDelimiter)}:\\[\\]\\{\\}]`);
+  if (structural.test(value)) return true;
+  
+  // espaces en début/fin (peuvent être normalisés/ambigus)
+  if (value.startsWith(" ") || value.endsWith(" ")) return true;
+  
+  // tokens qui commencent par "-" peuvent être confondus avec des items de liste
+  if (value.startsWith("-")) return true;
+  
+  return false;
+}
+
+/**
+ * Quote une string si nécessaire selon les règles TOON.
+ */
+function quoteIfNeeded(value: string, activeDelimiter: string = TOON_DEFAULT_DELIM): string {
+  if (!mustQuoteString(value, activeDelimiter)) return value;
+  return `"${escapeToonQuotedString(value)}"`;
+}
+
 /**
  * Génère l'export au format TOON (Token-Oriented Object Notation)
  * Format compact optimisé pour les LLM
- * @see https://openapi.fr/blog/quest-ce-que-le-format-toon-token-oriented-object-notation
+ * @see https://toonformat.dev/guide/format-overview.html
  */
 export function generateTOON(
   prompt: ExportablePrompt,
   variables: ExportableVariable[],
   versions: ExportableVersion[]
 ): string {
+  const delim = TOON_DEFAULT_DELIM;
   const lines: string[] = [];
 
-  // Meta section
+  // --- Meta section
   lines.push("meta:");
-  lines.push(`  title: ${prompt.title}`);
+  lines.push(`${TOON_INDENT}title: ${quoteIfNeeded(prompt.title, delim)}`);
   if (prompt.description) {
-    lines.push(`  description: ${prompt.description}`);
+    lines.push(`${TOON_INDENT}description: ${quoteIfNeeded(prompt.description, delim)}`);
   }
-  lines.push(`  version: ${prompt.version}`);
+  lines.push(`${TOON_INDENT}version: ${quoteIfNeeded(prompt.version, delim)}`);
+  
   if (prompt.tags.length > 0) {
-    lines.push(`  tags[${prompt.tags.length}]: ${prompt.tags.join(",")}`);
+    const encodedTags = prompt.tags.map(t => quoteIfNeeded(t, delim)).join(delim);
+    lines.push(`${TOON_INDENT}tags[${prompt.tags.length}]: ${encodedTags}`);
   }
-  lines.push(`  visibility: ${prompt.visibility}`);
-  lines.push(`  created_at: ${prompt.created_at}`);
-  lines.push(`  updated_at: ${prompt.updated_at}`);
+  
+  lines.push(`${TOON_INDENT}visibility: ${quoteIfNeeded(prompt.visibility, delim)}`);
+  lines.push(`${TOON_INDENT}created_at: ${quoteIfNeeded(prompt.created_at, delim)}`);
+  lines.push(`${TOON_INDENT}updated_at: ${quoteIfNeeded(prompt.updated_at, delim)}`);
 
-  // Content - multiline avec indentation
-  lines.push("content: |");
-  const contentLines = prompt.content.split("\n");
-  for (const line of contentLines) {
-    lines.push(`  ${line}`);
-  }
+  // --- Content (multi-ligne → string quotée avec \n, pas de bloc |)
+  lines.push(`content: ${quoteIfNeeded(prompt.content, delim)}`);
 
-  // Variables en format tabulaire TOON
+  // --- Variables (format liste car options[] est non-primitive)
   if (variables.length > 0) {
-    lines.push(`variables[${variables.length}]{name,type,required,defaultValue,help}:`);
+    lines.push(`variables[${variables.length}]:`);
+    
     for (const v of variables) {
-      const parts = [
-        v.name,
-        v.type,
-        String(v.required),
-        v.defaultValue || "",
-        v.help || "",
-      ];
-      lines.push(`  ${parts.join(",")}`);
+      // Première clé sur la ligne du "-"
+      lines.push(`${TOON_INDENT}- name: ${quoteIfNeeded(v.name, delim)}`);
+      lines.push(`${TOON_INDENT}${TOON_INDENT}type: ${quoteIfNeeded(v.type, delim)}`);
+      lines.push(`${TOON_INDENT}${TOON_INDENT}required: ${v.required ? "true" : "false"}`);
+      
+      // Utiliser !== undefined && !== null pour gérer defaultValue: ""
+      if (v.defaultValue !== undefined && v.defaultValue !== null) {
+        lines.push(`${TOON_INDENT}${TOON_INDENT}defaultValue: ${quoteIfNeeded(v.defaultValue, delim)}`);
+      }
+      if (v.help !== undefined && v.help !== null) {
+        lines.push(`${TOON_INDENT}${TOON_INDENT}help: ${quoteIfNeeded(v.help, delim)}`);
+      }
+      
+      // Options: array inline de primitives (valide en TOON)
+      if (v.options && v.options.length > 0) {
+        const encodedOpts = v.options.map(o => quoteIfNeeded(o, delim)).join(delim);
+        lines.push(`${TOON_INDENT}${TOON_INDENT}options[${v.options.length}]: ${encodedOpts}`);
+      }
     }
   }
 
-  // Versions en format tabulaire TOON
+  // --- Versions (tabulaire OK: colonnes sont des primitives)
   if (versions.length > 0) {
     lines.push(`versions[${versions.length}]{semver,message,created_at}:`);
     for (const v of versions) {
-      const parts = [
-        v.semver,
-        v.message || "",
-        v.created_at,
-      ];
-      lines.push(`  ${parts.join(",")}`);
+      const row = [
+        quoteIfNeeded(v.semver, delim),
+        quoteIfNeeded(v.message || "", delim),
+        quoteIfNeeded(v.created_at, delim),
+      ].join(delim);
+      lines.push(`${TOON_INDENT}${row}`);
     }
   }
 
+  // IMPORTANT: pas de trailing newline (spec TOON)
   return lines.join("\n");
 }
 
