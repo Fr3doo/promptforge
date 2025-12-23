@@ -179,7 +179,7 @@ export function ExportPromptDialog({
                 "rounded-md border bg-muted/30",
                 isFullscreen 
                   ? "flex-1" 
-                  : "h-[300px] sm:h-[400px] lg:h-[450px]"
+                  : "h-[350px] sm:h-[500px] lg:h-[550px]"
               )}
             >
               <pre className="p-4 text-xs font-mono whitespace-pre-wrap break-all">
