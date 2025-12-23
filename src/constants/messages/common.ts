@@ -57,6 +57,10 @@ export const commonMessages = {
     search: "Rechercher des prompts...",
     searchByTitleDescriptionTags: "Rechercher par titre, description ou tags...",
     defaultConfigDescription: "Définissez les valeurs par défaut...",
+    enterFullName: "Entrez votre nom complet",
+    enterEmail: "Entrez votre email",
+    createPassword: "Créez un mot de passe",
+    confirmYourPassword: "Confirmez votre mot de passe",
   },
 
   // Dialog and modal titles
