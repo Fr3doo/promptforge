@@ -1,5 +1,4 @@
 import { FAQSearchInput } from "./FAQSearchInput";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Check, Clock, AlertCircle } from "lucide-react";
 import { FeatureStatus } from "@/data/faqData";
@@ -44,22 +43,18 @@ export const FAQFilters = ({
       {/* Filtre par catégorie */}
       <div className="flex flex-col gap-2">
         <span className="text-sm font-medium text-muted-foreground">Catégorie</span>
-        <ScrollArea className="w-full">
-          <div className="flex gap-2 pb-2">
-            {categories.map(cat => (
-              <Button
-                key={cat}
-                variant={selectedCategory === cat ? "default" : "outline"}
-                size="sm"
-                onClick={() => onCategoryChange(cat)}
-                className="flex-shrink-0 whitespace-nowrap"
-              >
-                {cat === "all" ? "Toutes" : cat}
-              </Button>
-            ))}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        <div className="flex flex-wrap gap-2">
+          {categories.map(cat => (
+            <Button
+              key={cat}
+              variant={selectedCategory === cat ? "default" : "outline"}
+              size="sm"
+              onClick={() => onCategoryChange(cat)}
+            >
+              {cat === "all" ? "Toutes" : cat}
+            </Button>
+          ))}
+        </div>
       </div>
 
       {/* Filtre par statut */}
