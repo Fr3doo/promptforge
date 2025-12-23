@@ -98,7 +98,7 @@ export function ExportPromptDialog({
           "flex flex-col transition-all duration-200",
           isFullscreen 
             ? "w-screen h-screen max-w-none max-h-none rounded-none" 
-            : "sm:max-w-[800px] lg:max-w-[900px] max-h-[95vh]"
+            : "sm:max-w-[900px] lg:max-w-[1100px] max-h-[98vh]"
         )}
       >
         <DialogHeader className="flex flex-row items-start justify-between gap-4">
