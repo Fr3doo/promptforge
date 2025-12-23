@@ -40,12 +40,17 @@ async function sha1Hash(text: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 
+/** Timeout pour l'appel HIBP (5 secondes) */
+const HIBP_TIMEOUT_MS = 5000;
+
 /**
  * Vérifie si un mot de passe est compromis via HIBP k-anonymity
  * 
  * 1. Calcule SHA-1(password)
  * 2. Envoie les 5 premiers caractères à HIBP
  * 3. Compare le suffixe avec les résultats retournés
+ * 
+ * Inclut un timeout pour éviter les blocages si HIBP est lent/indisponible
  */
 async function checkPasswordBreach(password: string): Promise<CheckPasswordResponse> {
   // Calcul du hash SHA-1
@@ -55,34 +60,51 @@ async function checkPasswordBreach(password: string): Promise<CheckPasswordRespo
 
   console.log(`[check-password-breach] Checking hash prefix: ${prefix}...`);
 
-  // Appel à l'API HIBP avec k-anonymity
-  const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
-    headers: {
-      'User-Agent': 'PromptForge-PasswordCheck',
-      'Add-Padding': 'true', // Protection contre le timing attack
-    },
-  });
+  // Timeout avec AbortController
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), HIBP_TIMEOUT_MS);
 
-  if (!response.ok) {
-    console.error(`[check-password-breach] HIBP API error: ${response.status}`);
-    throw new Error(`HIBP API error: ${response.status}`);
-  }
+  try {
+    // Appel à l'API HIBP avec k-anonymity et timeout
+    const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
+      headers: {
+        'User-Agent': 'PromptForge-PasswordCheck',
+        'Add-Padding': 'true', // Protection contre le timing attack
+      },
+      signal: controller.signal,
+    });
 
-  const text = await response.text();
-  const lines = text.split('\n');
+    clearTimeout(timeoutId);
 
-  // Recherche du suffixe dans les résultats
-  for (const line of lines) {
-    const [hashSuffix, count] = line.split(':');
-    if (hashSuffix.trim() === suffix) {
-      const breachCount = parseInt(count.trim(), 10);
-      console.log(`[check-password-breach] Password found in ${breachCount} breaches`);
-      return { isBreached: true, breachCount };
+    if (!response.ok) {
+      console.error(`[check-password-breach] HIBP API error: ${response.status}`);
+      throw new Error(`HIBP API error: ${response.status}`);
     }
-  }
 
-  console.log('[check-password-breach] Password not found in breaches');
-  return { isBreached: false };
+    const text = await response.text();
+    const lines = text.split('\n');
+
+    // Recherche du suffixe dans les résultats
+    for (const line of lines) {
+      const [hashSuffix, count] = line.split(':');
+      if (hashSuffix.trim() === suffix) {
+        const breachCount = parseInt(count.trim(), 10);
+        console.log(`[check-password-breach] Password found in ${breachCount} breaches`);
+        return { isBreached: true, breachCount };
+      }
+    }
+
+    console.log('[check-password-breach] Password not found in breaches');
+    return { isBreached: false };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('[check-password-breach] HIBP API timeout');
+      throw new Error('HIBP API timeout');
+    }
+    throw error;
+  }
 }
 
 serve(async (req) => {

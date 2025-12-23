@@ -39,11 +39,25 @@ export const authMessages = {
       signOutFailed: "Impossible de se déconnecter",
       passwordBreached: "Ce mot de passe a été compromis dans une fuite de données. Veuillez en choisir un autre plus sécurisé.",
       passwordCheckFailed: "Impossible de vérifier la sécurité du mot de passe. Réessayez.",
+      passwordTooWeak: "Votre mot de passe est trop faible. Suivez les conseils ci-dessous.",
+      passwordCheckUnavailable: "La vérification de sécurité est indisponible. Veuillez réessayer plus tard.",
     },
   },
 
   // Security checks
   security: {
     checkingPassword: "Vérification de la sécurité du mot de passe...",
+    checkingStrength: "Vérification de la force du mot de passe...",
+  },
+
+  // Password strength feedback
+  feedback: {
+    addUppercase: "Ajoutez au moins une majuscule",
+    addLowercase: "Ajoutez au moins une minuscule",
+    addNumber: "Ajoutez au moins un chiffre",
+    addSpecial: "Ajoutez un caractère spécial (!@#$...)",
+    avoidCommon: "Évitez les mots de passe courants",
+    addLength: "Utilisez au moins 8 caractères",
+    addMoreLength: "Utilisez au moins 12 caractères pour plus de sécurité",
   },
 } as const;
