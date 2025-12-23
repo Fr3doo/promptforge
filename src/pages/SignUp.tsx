@@ -2,17 +2,14 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
 import { usePasswordCheckRepository } from "@/contexts/PasswordCheckRepositoryContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Code2, ShieldCheck } from "lucide-react";
+import { User, Mail, Lock, ShieldCheck } from "lucide-react";
 import { authSchema } from "@/lib/validation";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
-import { PageBreadcrumb } from "@/components/PageBreadcrumb";
+import { AuthLayout } from "@/components/auth/AuthLayout";
+import { IconInput } from "@/components/ui/icon-input";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { Label } from "@/components/ui/label";
 import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
 import { messages } from "@/constants/messages";
 import { SECURITY } from "@/constants/application-config";
@@ -25,11 +22,22 @@ const SignUp = () => {
   const [checkingStep, setCheckingStep] = useState<'strength' | 'breach' | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [pseudo, setPseudo] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate password confirmation first
+    if (password !== confirmPassword) {
+      setConfirmPasswordError(messages.auth.passwordMismatch);
+      toast.error(messages.auth.passwordMismatch);
+      return;
+    }
+    setConfirmPasswordError(null);
+    
     setIsLoading(true);
 
     try {
@@ -48,7 +56,6 @@ const SignUp = () => {
         const strengthResult = await passwordCheckRepository.validateStrength(validatedData.password);
         if (!strengthResult.isValid) {
           toast.error(messages.errors.auth.passwordTooWeak);
-          // Afficher les feedbacks spécifiques
           strengthResult.feedback.forEach(feedbackKey => {
             const feedbackMessage = messages.feedback[feedbackKey as keyof typeof messages.feedback];
             if (feedbackMessage) {
@@ -61,7 +68,6 @@ const SignUp = () => {
           return;
         }
       } catch (strengthError) {
-        // Fail-open pour la validation de force (moins critique que HIBP)
         console.warn('[SignUp] Strength check failed, continuing:', strengthError);
       }
 
@@ -74,10 +80,9 @@ const SignUp = () => {
           setIsLoading(false);
           setIsCheckingPassword(false);
           setCheckingStep(null);
-          return; // Stop signup
+          return;
         }
       } catch (checkError) {
-        // Mode fail-open ou fail-close selon configuration
         console.warn('[SignUp] Password breach check failed:', checkError);
         
         if (SECURITY.HIBP_FAILURE_MODE === 'fail-close') {
@@ -85,9 +90,8 @@ const SignUp = () => {
           setIsLoading(false);
           setIsCheckingPassword(false);
           setCheckingStep(null);
-          return; // BLOQUER le signup
+          return;
         } else {
-          // Fail-open : continuer avec un warning
           toast.warning(messages.errors.auth.passwordCheckFailed);
         }
       } finally {
@@ -122,103 +126,117 @@ const SignUp = () => {
         ? messages.security.checkingStrength 
         : messages.security.checkingPassword;
       return (
-        <>
-          <ShieldCheck className="mr-2 h-4 w-4 animate-pulse" />
+        <span className="flex items-center justify-center gap-2">
+          <ShieldCheck className="h-4 w-4 animate-pulse" />
           {stepMessage}
-        </>
-      );
-    }
-    if (isLoading) {
-      return (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          {messages.auth.signupButton}
-        </>
+        </span>
       );
     }
     return messages.auth.signupButton;
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <AuthLayout
+      title={messages.auth.signupTitle}
+      subtitle={messages.auth.signupSubtitle}
+    >
+      <form onSubmit={handleSignUp} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="pseudo" className="text-sm font-medium">
+            {messages.labels.pseudo}
+          </Label>
+          <IconInput
+            id="pseudo"
+            type="text"
+            placeholder={messages.placeholders.enterFullName}
+            value={pseudo}
+            onChange={(e) => setPseudo(e.target.value)}
+            icon={<User className="h-5 w-5" />}
+            required
+            autoComplete="name"
+          />
+        </div>
 
-      <div className="container mx-auto px-4 pt-4">
-        <PageBreadcrumb items={[{ label: messages.breadcrumb.signup }]} />
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-sm font-medium">
+            {messages.labels.email}
+          </Label>
+          <IconInput
+            id="email"
+            type="email"
+            placeholder={messages.placeholders.enterEmail}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            icon={<Mail className="h-5 w-5" />}
+            required
+            autoComplete="email"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-sm font-medium">
+            {messages.labels.password}
+          </Label>
+          <IconInput
+            id="password"
+            type="password"
+            placeholder={messages.placeholders.createPassword}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            icon={<Lock className="h-5 w-5" />}
+            required
+            minLength={6}
+            autoComplete="new-password"
+          />
+          {password.length > 0 && (
+            <PasswordStrengthIndicator password={password} />
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword" className="text-sm font-medium">
+            {messages.auth.confirmPassword}
+          </Label>
+          <IconInput
+            id="confirmPassword"
+            type="password"
+            placeholder={messages.placeholders.confirmYourPassword}
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              if (confirmPasswordError) setConfirmPasswordError(null);
+            }}
+            icon={<Lock className="h-5 w-5" />}
+            required
+            minLength={6}
+            autoComplete="new-password"
+            className={confirmPasswordError ? "border-destructive" : ""}
+          />
+          {confirmPasswordError && (
+            <p className="text-sm text-destructive">{confirmPasswordError}</p>
+          )}
+        </div>
+
+        <GradientButton
+          type="submit"
+          isLoading={isLoading || isCheckingPassword}
+        >
+          {getButtonContent()}
+        </GradientButton>
+      </form>
+
+      <div className="mt-6 text-center">
+        <p className="text-sm text-muted-foreground">
+          {messages.auth.alreadyHaveAccount}{" "}
+          <Link
+            to="/auth"
+            className="text-primary hover:text-primary/80 font-medium transition-colors"
+          >
+            {messages.auth.signIn}
+          </Link>
+        </p>
       </div>
-      
-      <div className="flex-1 flex items-center justify-center p-4 pt-8">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1">
-            <div className="flex items-center justify-center mb-4">
-              <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center">
-                <Code2 className="h-6 w-6 text-primary-foreground" />
-              </div>
-            </div>
-            <CardTitle className="text-2xl text-center">
-              {messages.auth.signupTitle}
-            </CardTitle>
-            <CardDescription className="text-center">
-              {messages.auth.signupSubtitle}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSignUp} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="pseudo">{messages.labels.pseudo}</Label>
-                <Input
-                  id="pseudo"
-                  type="text"
-                  placeholder={messages.placeholders.pseudoPlaceholder}
-                  value={pseudo}
-                  onChange={(e) => setPseudo(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">{messages.labels.email}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={messages.placeholders.emailExample}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">{messages.labels.password}</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder={messages.placeholders.passwordPlaceholder}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                />
-                {password.length > 0 && (
-                  <PasswordStrengthIndicator password={password} />
-                )}
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {getButtonContent()}
-              </Button>
-            </form>
-            <div className="mt-4 text-center text-sm">
-              <Link
-                to="/auth"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {messages.auth.alreadyHaveAccount} {messages.auth.signIn}
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Footer />
-    </div>
+    </AuthLayout>
   );
 };
 

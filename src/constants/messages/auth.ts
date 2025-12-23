@@ -11,12 +11,12 @@
 export const authMessages = {
   // Main auth messages
   auth: {
-    loginTitle: "Connexion",
-    loginSubtitle: "Accédez à vos prompts",
+    loginTitle: "Connectez-vous à PromptForge",
+    loginSubtitle: "Commencez à créer de meilleurs prompts",
     loginSuccess: "Connexion réussie !",
     loginButton: "Se connecter",
-    signupTitle: "Créer un compte",
-    signupSubtitle: "Commencez à gérer vos prompts professionnellement",
+    signupTitle: "Rejoignez PromptForge",
+    signupSubtitle: "Créez votre compte pour commencer",
     signupSuccess: "Compte créé avec succès !",
     signupButton: "Créer mon compte",
     noAccount: "Pas de compte ?",
@@ -26,6 +26,9 @@ export const authMessages = {
     signInButton: "Se connecter",
     signUpButton: "S'inscrire",
     logout: "Déconnexion",
+    backToHome: "Retour à l'accueil",
+    confirmPassword: "Confirmer le mot de passe",
+    passwordMismatch: "Les mots de passe ne correspondent pas",
   },
 
   // Success messages

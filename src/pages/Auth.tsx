@@ -1,17 +1,14 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Code2 } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 import { authSchema } from "@/lib/validation";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
-import { PageBreadcrumb } from "@/components/PageBreadcrumb";
+import { AuthLayout } from "@/components/auth/AuthLayout";
+import { IconInput } from "@/components/ui/icon-input";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { Label } from "@/components/ui/label";
 import { messages } from "@/constants/messages";
 
 const Auth = () => {
@@ -38,7 +35,7 @@ const Auth = () => {
       
       toast.success(messages.auth.loginSuccess);
       navigate("/dashboard");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getSafeErrorMessage(error));
     } finally {
       setIsLoading(false);
@@ -46,72 +43,65 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <AuthLayout
+      title={messages.auth.loginTitle}
+      subtitle={messages.auth.loginSubtitle}
+    >
+      <form onSubmit={handleAuth} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-sm font-medium">
+            {messages.labels.email}
+          </Label>
+          <IconInput
+            id="email"
+            type="email"
+            placeholder={messages.placeholders.enterEmail}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            icon={<Mail className="h-5 w-5" />}
+            required
+            autoComplete="email"
+          />
+        </div>
 
-      <div className="container mx-auto px-4 pt-4">
-        <PageBreadcrumb items={[{ label: messages.breadcrumb.login }]} />
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-sm font-medium">
+            {messages.labels.password}
+          </Label>
+          <IconInput
+            id="password"
+            type="password"
+            placeholder={messages.placeholders.passwordPlaceholder}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            icon={<Lock className="h-5 w-5" />}
+            required
+            minLength={6}
+            autoComplete="current-password"
+          />
+        </div>
+
+        <GradientButton
+          type="submit"
+          isLoading={isLoading}
+          loadingText={messages.auth.loginButton}
+        >
+          {messages.auth.loginButton}
+        </GradientButton>
+      </form>
+
+      <div className="mt-6 text-center">
+        <p className="text-sm text-muted-foreground">
+          {messages.auth.noAccount}{" "}
+          <Link
+            to="/signup"
+            className="text-primary hover:text-primary/80 font-medium transition-colors"
+          >
+            {messages.auth.createAccount}
+          </Link>
+        </p>
       </div>
-      
-      <div className="flex-1 flex items-center justify-center p-4 pt-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-4">
-            <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center">
-              <Code2 className="h-6 w-6 text-primary-foreground" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl text-center">
-            {messages.auth.loginTitle}
-          </CardTitle>
-          <CardDescription className="text-center">
-            {messages.auth.loginSubtitle}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAuth} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">{messages.labels.email}</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder={messages.placeholders.emailExample}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">{messages.labels.password}</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder={messages.placeholders.passwordPlaceholder}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {messages.auth.loginButton}
-            </Button>
-          </form>
-          <div className="mt-4 text-center text-sm">
-            <Link
-              to="/signup"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {messages.auth.noAccount} {messages.auth.createAccount}
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-      </div>
-      
-      <Footer />
-    </div>
+    </AuthLayout>
   );
 };
 
