@@ -16,10 +16,11 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Copy, Download, Loader2, Maximize2, Minimize2 } from "lucide-react";
+import { Copy, Download, Loader2, Maximize2, Minimize2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { messages } from "@/constants/messages";
 import { usePromptExport } from "@/hooks/usePromptExport";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { Tables } from "@/integrations/supabase/types";
 import type { ExportFormat } from "@/lib/promptExport";
 
@@ -50,6 +51,7 @@ export function ExportPromptDialog({
   const [includeVersions, setIncludeVersions] = useState(false);
   const [versions, setVersions] = useState<Version[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const isMobile = useIsMobile();
 
   const {
     exportPrompt,
@@ -60,6 +62,14 @@ export function ExportPromptDialog({
   } = usePromptExport({ prompt, variables });
 
   const exportMessages = messages.prompts.export;
+
+  // Réinitialiser includeVersions quand on quitte le format JSON
+  const handleFormatChange = (newFormat: ExportFormat) => {
+    setFormat(newFormat);
+    if (newFormat !== "json") {
+      setIncludeVersions(false);
+    }
+  };
 
   // Charger les versions quand l'option est activée
   useEffect(() => {
@@ -108,19 +118,37 @@ export function ExportPromptDialog({
               {exportMessages.description(prompt.title)}
             </DialogDescription>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            className="shrink-0"
-            aria-label={isFullscreen ? "Réduire" : "Agrandir"}
-          >
-            {isFullscreen ? (
-              <Minimize2 className="h-4 w-4" />
-            ) : (
-              <Maximize2 className="h-4 w-4" />
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size={isMobile ? "icon" : "sm"}
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              aria-label={isFullscreen ? exportMessages.actions.collapse : exportMessages.actions.expand}
+            >
+              {isFullscreen ? (
+                <>
+                  <Minimize2 className="h-4 w-4" />
+                  {!isMobile && <span className="ml-2">{exportMessages.actions.collapse}</span>}
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="h-4 w-4" />
+                  {!isMobile && <span className="ml-2">{exportMessages.actions.expand}</span>}
+                </>
+              )}
+            </Button>
+            {isFullscreen && (
+              <Button
+                variant="ghost"
+                size={isMobile ? "icon" : "sm"}
+                onClick={() => onOpenChange(false)}
+                aria-label={exportMessages.actions.close}
+              >
+                <X className="h-4 w-4" />
+                {!isMobile && <span className="ml-2">{exportMessages.actions.close}</span>}
+              </Button>
             )}
-          </Button>
+          </div>
         </DialogHeader>
 
         <div className={cn(
@@ -132,7 +160,7 @@ export function ExportPromptDialog({
             <Label className="text-sm font-medium">{exportMessages.format}</Label>
             <RadioGroup
               value={format}
-              onValueChange={(v) => setFormat(v as ExportFormat)}
+              onValueChange={(v) => handleFormatChange(v as ExportFormat)}
               className="flex flex-wrap gap-4"
             >
               {FORMAT_OPTIONS.map((option) => (
@@ -152,21 +180,23 @@ export function ExportPromptDialog({
             </RadioGroup>
           </div>
 
-          {/* Options */}
-          <div className="flex items-center gap-3">
-            <Checkbox
-              id="include-versions"
-              checked={includeVersions}
-              onCheckedChange={(checked) => setIncludeVersions(checked === true)}
-            />
-            <Label
-              htmlFor="include-versions"
-              className="text-sm cursor-pointer flex items-center gap-2"
-            >
-              {exportMessages.options.includeVersions}
-              {isLoadingVersions && <Loader2 className="h-3 w-3 animate-spin" />}
-            </Label>
-          </div>
+          {/* Options - Versions uniquement pour JSON */}
+          {format === "json" && (
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="include-versions"
+                checked={includeVersions}
+                onCheckedChange={(checked) => setIncludeVersions(checked === true)}
+              />
+              <Label
+                htmlFor="include-versions"
+                className="text-sm cursor-pointer flex items-center gap-2"
+              >
+                {exportMessages.options.includeVersions}
+                {isLoadingVersions && <Loader2 className="h-3 w-3 animate-spin" />}
+              </Label>
+            </div>
+          )}
 
           {/* Preview */}
           <div className={cn(

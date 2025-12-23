@@ -191,6 +191,9 @@ export const promptsMessages = {
     actions: {
       copy: "Copier",
       download: "Télécharger",
+      expand: "Agrandir",
+      collapse: "Réduire",
+      close: "Fermer",
     },
     success: {
       copied: "Export copié dans le presse-papier",
