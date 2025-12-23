@@ -2,21 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, HelpCircle } from "lucide-react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HelpCircle } from "lucide-react";
+import { Accordion } from "@/components/ui/accordion";
 import { faqData } from "@/data/faqData";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { messages } from "@/constants/messages";
+import { FAQFilters, FAQItem, FAQStatusLegend } from "@/components/faq";
 
 const FAQ = () => {
   const navigate = useNavigate();
@@ -75,6 +69,7 @@ const FAQ = () => {
 
         <main id="main-content" className="container mx-auto px-4 py-12">
           <div className="max-w-4xl mx-auto space-y-8">
+            {/* Header */}
             <div className="text-center space-y-4">
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full">
                 <HelpCircle className="h-4 w-4" />
@@ -88,55 +83,43 @@ const FAQ = () => {
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher une question..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full sm:w-auto">
-                <TabsList className="w-full sm:w-auto flex-wrap h-auto gap-1">
-                  {categories.map(cat => (
-                    <TabsTrigger key={cat} value={cat} className="flex-1 sm:flex-none">
-                      {cat === "all" ? "Toutes" : cat}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            </div>
+            {/* Filters */}
+            <FAQFilters
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              categories={categories}
+            />
 
-            <Accordion type="single" collapsible className="space-y-4">
+            {/* Legend */}
+            <FAQStatusLegend />
+
+            {/* FAQ Items */}
+            <Accordion type="single" collapsible className="space-y-3">
               {filteredFAQ.map((item, index) => (
-                <AccordionItem 
-                  key={index} 
-                  value={`item-${index}`}
-                  className="border border-border rounded-lg px-4 sm:px-6 bg-card"
-                >
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-start gap-3 text-left">
-                      <HelpCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                      <span className="font-semibold">{item.question}</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pl-8 text-muted-foreground">
-                    {item.answer}
-                  </AccordionContent>
-                </AccordionItem>
+                <FAQItem key={index} item={item} index={index} />
               ))}
             </Accordion>
 
+            {/* Empty State */}
             {filteredFAQ.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">
+              <div className="text-center py-12 bg-muted/20 rounded-lg border border-border">
+                <HelpCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground text-lg">
                   Aucune question ne correspond à votre recherche.
                 </p>
+                <Button 
+                  variant="link" 
+                  onClick={() => { setSearchQuery(""); setSelectedCategory("all"); }}
+                  className="mt-2"
+                >
+                  Réinitialiser les filtres
+                </Button>
               </div>
             )}
 
+            {/* CTA */}
             <div className="text-center pt-8 border-t border-border">
               <h2 className="text-2xl font-bold mb-4">Vous ne trouvez pas votre réponse ?</h2>
               <p className="text-muted-foreground mb-6">
