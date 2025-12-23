@@ -10,7 +10,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { messages } from "@/constants/messages";
-import { FAQFilters, FAQItem, FAQStatusLegend } from "@/components/faq";
+import { FAQFilters, FAQItem } from "@/components/faq";
 
 const FAQ = () => {
   const navigate = useNavigate();
@@ -104,8 +104,7 @@ const FAQ = () => {
               statusCounts={statusCounts}
             />
 
-            {/* Legend */}
-            <FAQStatusLegend />
+            {/* FAQ Items */}
 
             {/* FAQ Items */}
             <Accordion type="single" collapsible className="space-y-3">
