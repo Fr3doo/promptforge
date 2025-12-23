@@ -4,12 +4,52 @@ import { supabase } from "@/integrations/supabase/client";
 /**
  * Tests de sécurité pour la vue public_profiles
  *
- * Architecture vérifiée (preuves SQL obtenues le 2025-12-22) :
+ * ============================================================================
+ * IMPORTANT : Ces tests utilisent des mocks pour documenter le comportement
+ * attendu. Pour une vérification RÉELLE de la sécurité, exécuter les requêtes
+ * SQL suivantes directement sur la base de données :
+ * ============================================================================
+ *
+ * -- Test 1: Vérifier que anon est bloqué
+ * SELECT has_table_privilege('anon', 'public.public_profiles', 'select') AS anon_blocked;
+ * -- Attendu: false
+ *
+ * -- Test 2: Vérifier la configuration de la vue
+ * SELECT relname, reloptions FROM pg_class WHERE relname = 'public_profiles';
+ * -- Attendu: {security_invoker=true,security_barrier=true}
+ *
+ * -- Test 3: Vérifier la version PostgreSQL (security_invoker nécessite >= 15)
+ * SHOW server_version;
+ * -- Attendu: 17.6 ou supérieur
+ *
+ * -- Test 4: Simuler un user sans relation de partage (remplacer les UUIDs)
+ * SET ROLE authenticated;
+ * SET request.jwt.claims = '{"sub": "user-without-relation-uuid"}';
+ * SELECT * FROM public_profiles WHERE id = 'target-user-uuid';
+ * -- Attendu: 0 lignes
+ *
+ * -- Test 5: Simuler un user avec relation de partage valide
+ * SET ROLE authenticated;
+ * SET request.jwt.claims = '{"sub": "user-with-share-uuid"}';
+ * SELECT * FROM public_profiles WHERE id = 'shared-by-user-uuid';
+ * -- Attendu: 1 ligne (le profil de l'utilisateur qui a partagé)
+ *
+ * -- Test 6: Vérifier l'impossibilité d'escalade via prompt_shares
+ * SET ROLE authenticated;
+ * SET request.jwt.claims = '{"sub": "attacker-uuid"}';
+ * INSERT INTO prompt_shares (prompt_id, shared_with_user_id, shared_by, permission)
+ * VALUES ('prompt-not-owned-by-attacker', 'victim-uuid', 'attacker-uuid', 'READ');
+ * -- Attendu: ERROR 42501 (new row violates row-level security policy)
+ *
+ * ============================================================================
+ * Architecture vérifiée (preuves SQL obtenues le 2025-12-23) :
+ * ============================================================================
  * - PostgreSQL 17.6 (security_invoker=true supporté)
  * - has_table_privilege('anon', 'public.public_profiles', 'select') = FALSE
  * - has_table_privilege('authenticated', 'public.public_profiles', 'select') = TRUE
  * - Vue avec security_invoker=true et security_barrier=true
  * - RLS sur prompt_shares : INSERT exige prompts.owner_id = auth.uid()
+ * - REVOKE SELECT ON public.public_profiles FROM anon (migration garde-fou)
  *
  * Ces tests vérifient que :
  * 1. L'accès anonyme est bloqué
