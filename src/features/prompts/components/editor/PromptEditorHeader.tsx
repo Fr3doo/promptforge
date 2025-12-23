@@ -1,20 +1,25 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUnsavedChangesWarning } from "@/hooks/useUnsavedChangesWarning";
 import { usePromptEditorContext } from "@/features/prompts/contexts/PromptEditorContext";
 import { LoadingButton } from "@/components/LoadingButton";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PageBreadcrumb, BreadcrumbItemData } from "@/components/PageBreadcrumb";
-import { ArrowLeft, Eye } from "lucide-react";
+import { ArrowLeft, Eye, Download } from "lucide-react";
 import { messages } from "@/constants/messages";
+import { ExportPromptDialog } from "@/components/prompts/ExportPromptDialog";
 
 /**
  * Header component for prompt editor
- * Handles navigation back button, breadcrumb and save button
+ * Handles navigation back button, breadcrumb, export and save button
  */
 export function PromptEditorHeader() {
   const navigate = useNavigate();
-  const { form, canEdit, permission, hasConflict, promptId } = usePromptEditorContext();
+  const { form, canEdit, permission, hasConflict, promptId, prompt, variables } = usePromptEditorContext();
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  
   const tooltips = messages.tooltips.prompts.save;
   const breadcrumbMessages = messages.breadcrumb;
   
@@ -61,6 +66,34 @@ export function PromptEditorHeader() {
                 Mode lecture seule
               </Badge>
             )}
+            
+            {/* Export button - only show for existing prompts */}
+            {promptId && prompt && (
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setExportDialogOpen(true)}
+                      aria-label={messages.promptActions.export}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{messages.promptActions.export}</p>
+                  </TooltipContent>
+                </Tooltip>
+                <ExportPromptDialog
+                  open={exportDialogOpen}
+                  onOpenChange={setExportDialogOpen}
+                  prompt={prompt}
+                  variables={variables}
+                />
+              </>
+            )}
+            
             {saveTooltip ? (
               <Tooltip>
                 <TooltipTrigger asChild>

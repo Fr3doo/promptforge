@@ -167,10 +167,38 @@ export const promptsMessages = {
     title: "Actions du prompt",
     edit: "Modifier",
     duplicate: "Dupliquer",
+    export: "Exporter",
     privateShare: "Partage Privé",
     stopPublicShare: "Arrêter le partage public",
     publicShare: "Partage Public",
     delete: "Supprimer",
+  },
+
+  // Export
+  export: {
+    title: "Exporter le prompt",
+    description: (title: string) => `Exportez "${title}" dans le format de votre choix`,
+    format: "Format d'export",
+    formats: {
+      json: "JSON - Intégration API",
+      markdown: "Markdown - Documentation",
+      toon: "TOON - Optimisé pour LLM",
+    },
+    options: {
+      includeVersions: "Inclure l'historique des versions",
+    },
+    preview: "Aperçu",
+    actions: {
+      copy: "Copier",
+      download: "Télécharger",
+    },
+    success: {
+      copied: "Export copié dans le presse-papier",
+      downloaded: (filename: string) => `${filename} téléchargé avec succès`,
+    },
+    errors: {
+      failed: "Impossible de générer l'export",
+    },
   },
 
   // Prompt List & Empty States

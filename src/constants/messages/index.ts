@@ -43,7 +43,10 @@ export const messages = {
   permissions: commonMessages.permissions,
   
   // Messages from prompts.ts
-  prompts: promptsMessages.prompts,
+  prompts: {
+    ...promptsMessages.prompts,
+    export: promptsMessages.export,
+  },
   promptActions: promptsMessages.promptActions,
   promptList: promptsMessages.promptList,
   shareBanner: promptsMessages.shareBanner,

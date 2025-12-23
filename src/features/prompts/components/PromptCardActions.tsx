@@ -12,6 +12,7 @@ export const PromptCardActions = ({
   onToggleFavorite,
   onDelete,
   onDuplicate,
+  onExport,
   onToggleVisibility,
   onEdit,
   onManageSharing,
@@ -27,6 +28,10 @@ export const PromptCardActions = ({
 
   const handleDuplicate = () => {
     onDuplicate(prompt.id);
+  };
+
+  const handleExport = () => {
+    onExport?.(prompt);
   };
 
   const handleToggleVisibility = async () => {
@@ -52,6 +57,7 @@ export const PromptCardActions = ({
           isShared={prompt.visibility === "SHARED"}
           onEdit={handleEdit}
           onDuplicate={handleDuplicate}
+          onExport={onExport ? handleExport : undefined}
           onManageSharing={onManageSharing}
           onToggleVisibility={handleToggleVisibility}
           onDelete={handleDelete}
