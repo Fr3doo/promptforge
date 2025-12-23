@@ -15,6 +15,7 @@ import { PromptDuplicationServiceProvider } from "@/contexts/PromptDuplicationSe
 import { VersionRepositoryProvider } from "@/contexts/VersionRepositoryContext";
 import { EdgeFunctionRepositoryProvider } from "@/contexts/EdgeFunctionRepositoryContext";
 import { PromptUsageRepositoryProvider } from "@/contexts/PromptUsageRepositoryContext";
+import { PasswordCheckRepositoryProvider } from "@/contexts/PasswordCheckRepositoryContext";
 import type { AppProvidersProps } from "./AppProviders.types";
 
 /**
@@ -49,12 +50,14 @@ export function AppProviders({
   favoriteService,
   visibilityService,
   duplicationService,
-  usageRepository
+  usageRepository,
+  passwordCheckRepository
 }: AppProvidersProps) {
   return (
     <ErrorBoundary>
       <AuthRepositoryProvider repository={authRepository}>
-        <AuthContextProvider>
+        <PasswordCheckRepositoryProvider repository={passwordCheckRepository}>
+          <AuthContextProvider>
           <ProfileRepositoryProvider repository={profileRepository}>
             <VariableRepositoryProvider repository={variableRepository}>
               <PromptMutationRepositoryProvider repository={mutationRepository}>
@@ -85,7 +88,8 @@ export function AppProviders({
               </PromptMutationRepositoryProvider>
             </VariableRepositoryProvider>
           </ProfileRepositoryProvider>
-        </AuthContextProvider>
+          </AuthContextProvider>
+        </PasswordCheckRepositoryProvider>
       </AuthRepositoryProvider>
     </ErrorBoundary>
   );

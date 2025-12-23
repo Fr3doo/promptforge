@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
+import { usePasswordCheckRepository } from "@/contexts/PasswordCheckRepositoryContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Code2 } from "lucide-react";
+import { Loader2, Code2, ShieldCheck } from "lucide-react";
 import { authSchema } from "@/lib/validation";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { Header } from "@/components/Header";
@@ -16,7 +17,9 @@ import { messages } from "@/constants/messages";
 
 const SignUp = () => {
   const authRepository = useAuthRepository();
+  const passwordCheckRepository = usePasswordCheckRepository();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingPassword, setIsCheckingPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pseudo, setPseudo] = useState("");
@@ -27,17 +30,36 @@ const SignUp = () => {
     setIsLoading(true);
 
     try {
+      // 1. Validation Zod
       const validatedData = authSchema.parse({
         email,
         password,
         name: pseudo || undefined,
       });
 
+      // 2. Vérification HIBP (mot de passe compromis)
+      setIsCheckingPassword(true);
+      try {
+        const { isBreached } = await passwordCheckRepository.checkBreach(validatedData.password);
+        if (isBreached) {
+          toast.error(messages.errors.auth.passwordBreached);
+          setIsLoading(false);
+          setIsCheckingPassword(false);
+          return; // Stop signup
+        }
+      } catch (checkError) {
+        // Fail-open : on continue si HIBP est indisponible, avec un warning
+        console.warn('[SignUp] Password check failed, continuing:', checkError);
+        toast.warning(messages.errors.auth.passwordCheckFailed);
+      } finally {
+        setIsCheckingPassword(false);
+      }
+
+      // 3. Signup normal
       await authRepository.signUp(
         validatedData.email,
         validatedData.password,
         {
-          // Pseudo optionnel : le trigger DB gère le fallback non-sensible
           pseudo: validatedData.name || undefined,
           emailRedirectTo: `${window.location.origin}/`,
         }
@@ -45,7 +67,7 @@ const SignUp = () => {
       
       toast.success(messages.auth.signupSuccess);
       navigate("/dashboard");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getSafeErrorMessage(error));
     } finally {
       setIsLoading(false);
@@ -112,8 +134,19 @@ const SignUp = () => {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {messages.auth.signupButton}
+                {isCheckingPassword ? (
+                  <>
+                    <ShieldCheck className="mr-2 h-4 w-4 animate-pulse" />
+                    {messages.security.checkingPassword}
+                  </>
+                ) : isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {messages.auth.signupButton}
+                  </>
+                ) : (
+                  messages.auth.signupButton
+                )}
               </Button>
             </form>
             <div className="mt-4 text-center text-sm">

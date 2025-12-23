@@ -9,6 +9,7 @@ import type { PromptUsageRepository } from "@/repositories/PromptUsageRepository
 import type { PromptFavoriteService } from "@/services/PromptFavoriteService";
 import type { PromptVisibilityService } from "@/services/PromptVisibilityService";
 import type { PromptDuplicationService } from "@/services/PromptDuplicationService";
+import type { PasswordCheckRepository } from "@/repositories/PasswordCheckRepository";
 
 /**
  * Props pour le composant AppProviders
@@ -55,4 +56,7 @@ export interface AppProvidersProps {
   
   /** Repository des statistiques d'utilisation (optionnel pour tests) */
   usageRepository?: PromptUsageRepository;
+  
+  /** Repository de vérification des mots de passe compromis (optionnel pour tests) */
+  passwordCheckRepository?: PasswordCheckRepository;
 }
