@@ -30,7 +30,7 @@ const statusConfig: Record<FeatureStatus, {
   informational: {
     label: "Info",
     icon: Info,
-    className: "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+    className: "bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30 hover:bg-purple-500/30"
   }
 };
 
