@@ -14,12 +14,14 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { messages } from "@/constants/messages";
+import { SECURITY } from "@/constants/application-config";
 
 const SignUp = () => {
   const authRepository = useAuthRepository();
   const passwordCheckRepository = usePasswordCheckRepository();
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingPassword, setIsCheckingPassword] = useState(false);
+  const [checkingStep, setCheckingStep] = useState<'strength' | 'breach' | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pseudo, setPseudo] = useState("");
@@ -30,32 +32,69 @@ const SignUp = () => {
     setIsLoading(true);
 
     try {
-      // 1. Validation Zod
+      // 1. Validation Zod (client)
       const validatedData = authSchema.parse({
         email,
         password,
         name: pseudo || undefined,
       });
 
-      // 2. Vérification HIBP (mot de passe compromis)
       setIsCheckingPassword(true);
+
+      // 2. Validation force du mot de passe (serveur)
+      setCheckingStep('strength');
+      try {
+        const strengthResult = await passwordCheckRepository.validateStrength(validatedData.password);
+        if (!strengthResult.isValid) {
+          toast.error(messages.errors.auth.passwordTooWeak);
+          // Afficher les feedbacks spécifiques
+          strengthResult.feedback.forEach(feedbackKey => {
+            const feedbackMessage = messages.feedback[feedbackKey as keyof typeof messages.feedback];
+            if (feedbackMessage) {
+              toast.info(feedbackMessage);
+            }
+          });
+          setIsLoading(false);
+          setIsCheckingPassword(false);
+          setCheckingStep(null);
+          return;
+        }
+      } catch (strengthError) {
+        // Fail-open pour la validation de force (moins critique que HIBP)
+        console.warn('[SignUp] Strength check failed, continuing:', strengthError);
+      }
+
+      // 3. Vérification HIBP (mot de passe compromis)
+      setCheckingStep('breach');
       try {
         const { isBreached } = await passwordCheckRepository.checkBreach(validatedData.password);
         if (isBreached) {
           toast.error(messages.errors.auth.passwordBreached);
           setIsLoading(false);
           setIsCheckingPassword(false);
+          setCheckingStep(null);
           return; // Stop signup
         }
       } catch (checkError) {
-        // Fail-open : on continue si HIBP est indisponible, avec un warning
-        console.warn('[SignUp] Password check failed, continuing:', checkError);
-        toast.warning(messages.errors.auth.passwordCheckFailed);
+        // Mode fail-open ou fail-close selon configuration
+        console.warn('[SignUp] Password breach check failed:', checkError);
+        
+        if (SECURITY.HIBP_FAILURE_MODE === 'fail-close') {
+          toast.error(messages.errors.auth.passwordCheckUnavailable);
+          setIsLoading(false);
+          setIsCheckingPassword(false);
+          setCheckingStep(null);
+          return; // BLOQUER le signup
+        } else {
+          // Fail-open : continuer avec un warning
+          toast.warning(messages.errors.auth.passwordCheckFailed);
+        }
       } finally {
         setIsCheckingPassword(false);
+        setCheckingStep(null);
       }
 
-      // 3. Signup normal
+      // 4. Signup normal
       await authRepository.signUp(
         validatedData.email,
         validatedData.password,
@@ -71,7 +110,32 @@ const SignUp = () => {
       toast.error(getSafeErrorMessage(error));
     } finally {
       setIsLoading(false);
+      setIsCheckingPassword(false);
+      setCheckingStep(null);
     }
+  };
+
+  const getButtonContent = () => {
+    if (isCheckingPassword) {
+      const stepMessage = checkingStep === 'strength' 
+        ? messages.security.checkingStrength 
+        : messages.security.checkingPassword;
+      return (
+        <>
+          <ShieldCheck className="mr-2 h-4 w-4 animate-pulse" />
+          {stepMessage}
+        </>
+      );
+    }
+    if (isLoading) {
+      return (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          {messages.auth.signupButton}
+        </>
+      );
+    }
+    return messages.auth.signupButton;
   };
 
   return (
@@ -134,19 +198,7 @@ const SignUp = () => {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isCheckingPassword ? (
-                  <>
-                    <ShieldCheck className="mr-2 h-4 w-4 animate-pulse" />
-                    {messages.security.checkingPassword}
-                  </>
-                ) : isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {messages.auth.signupButton}
-                  </>
-                ) : (
-                  messages.auth.signupButton
-                )}
+                {getButtonContent()}
               </Button>
             </form>
             <div className="mt-4 text-center text-sm">

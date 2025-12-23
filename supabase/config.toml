@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.check-password-breach]
 verify_jwt = false
+
+[functions.validate-password-strength]
+verify_jwt = false

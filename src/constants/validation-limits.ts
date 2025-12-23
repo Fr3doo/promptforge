@@ -83,6 +83,24 @@ export const AUTH_LIMITS = {
 } as const;
 
 // ============================================
+// PASSWORD STRENGTH LIMITS
+// ============================================
+export const PASSWORD_STRENGTH = {
+  /** Score minimum requis (0-6) */
+  MIN_SCORE: 4,
+  /** Longueur minimum */
+  MIN_LENGTH: 8,
+  /** Longueur considérée comme forte */
+  STRONG_LENGTH: 12,
+  /** Patterns communs à éviter */
+  COMMON_PATTERNS: [
+    'password', '123456', 'qwerty', 'azerty', 
+    'admin', 'letmein', 'welcome', 'monkey',
+    'dragon', 'master', 'login', 'passw0rd'
+  ],
+} as const;
+
+// ============================================
 // TAG LIMITS (re-export from tagValidation.ts)
 // ============================================
 export { TAG_CONSTRAINTS } from '@/lib/tagValidation';

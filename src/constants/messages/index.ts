@@ -141,6 +141,9 @@ export const messages = {
   
   // Messages de sécurité
   security: authMessages.security,
+  
+  // Feedback pour la force du mot de passe
+  feedback: authMessages.feedback,
 } as const;
 
 export type MessageKey = typeof messages;

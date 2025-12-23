@@ -66,3 +66,21 @@ export const FEATURES = {
   ENABLE_VERSION_CONTROL: true,
   ENABLE_PUBLIC_SHARING: true,
 } as const;
+
+// ============================================
+// SECURITY CONFIG
+// ============================================
+export const SECURITY = {
+  /** 
+   * Comportement si l'API HIBP est indisponible 
+   * - 'fail-open': Continuer le signup avec un warning (UX prioritaire)
+   * - 'fail-close': Bloquer le signup (sécurité prioritaire)
+   */
+  HIBP_FAILURE_MODE: 'fail-open' as 'fail-open' | 'fail-close',
+  
+  /** Timeout pour l'appel HIBP (5 secondes) */
+  HIBP_TIMEOUT_MS: 5000,
+  
+  /** Score minimum requis pour la force du mot de passe (0-6) */
+  PASSWORD_MIN_STRENGTH_SCORE: 4,
+} as const;
