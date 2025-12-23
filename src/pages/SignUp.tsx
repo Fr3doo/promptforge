@@ -13,6 +13,7 @@ import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
+import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
 import { messages } from "@/constants/messages";
 import { SECURITY } from "@/constants/application-config";
 
@@ -196,6 +197,9 @@ const SignUp = () => {
                   required
                   minLength={6}
                 />
+                {password.length > 0 && (
+                  <PasswordStrengthIndicator password={password} />
+                )}
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {getButtonContent()}
