@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { HelpCircle } from "lucide-react";
 import { Accordion } from "@/components/ui/accordion";
-import { faqData } from "@/data/faqData";
+import { faqData, FeatureStatus } from "@/data/faqData";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -17,6 +17,14 @@ const FAQ = () => {
   const { user, loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<FeatureStatus | "all">("all");
+
+  const statusCounts = useMemo(() => ({
+    available: faqData.filter(f => f.featureStatus === "available").length,
+    partial: faqData.filter(f => f.featureStatus === "partial").length,
+    "coming-soon": faqData.filter(f => f.featureStatus === "coming-soon").length,
+    informational: faqData.filter(f => f.featureStatus === "informational").length,
+  }), []);
 
   const categories = ["all", ...Array.from(new Set(faqData.map(f => f.category)))];
 
@@ -48,8 +56,9 @@ const FAQ = () => {
       item.answer.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
+    const matchesStatus = selectedStatus === "all" || item.featureStatus === selectedStatus;
     
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   return (
@@ -90,6 +99,9 @@ const FAQ = () => {
               selectedCategory={selectedCategory}
               onCategoryChange={setSelectedCategory}
               categories={categories}
+              selectedStatus={selectedStatus}
+              onStatusChange={setSelectedStatus}
+              statusCounts={statusCounts}
             />
 
             {/* Legend */}
@@ -111,7 +123,7 @@ const FAQ = () => {
                 </p>
                 <Button 
                   variant="link" 
-                  onClick={() => { setSearchQuery(""); setSelectedCategory("all"); }}
+                  onClick={() => { setSearchQuery(""); setSelectedCategory("all"); setSelectedStatus("all"); }}
                   className="mt-2"
                 >
                   Réinitialiser les filtres
