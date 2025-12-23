@@ -90,7 +90,7 @@ export function ExportPromptDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-[800px] lg:max-w-[900px] max-h-[95vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{exportMessages.title}</DialogTitle>
           <DialogDescription>
@@ -143,7 +143,7 @@ export function ExportPromptDialog({
           {/* Preview */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">{exportMessages.preview}</Label>
-            <ScrollArea className="h-[250px] sm:h-[300px] rounded-md border bg-muted/30">
+            <ScrollArea className="h-[300px] sm:h-[400px] lg:h-[450px] rounded-md border bg-muted/30">
               <pre className="p-4 text-xs font-mono whitespace-pre-wrap break-all">
                 {preview}
               </pre>
