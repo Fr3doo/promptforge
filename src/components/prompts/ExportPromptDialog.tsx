@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { messages } from "@/constants/messages";
 import { usePromptExport } from "@/hooks/usePromptExport";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useVersions } from "@/hooks/useVersions";
 import type { Tables } from "@/integrations/supabase/types";
 import type { ExportFormat } from "@/lib/promptExport";
 
@@ -52,6 +53,10 @@ export function ExportPromptDialog({
   const [versions, setVersions] = useState<Version[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const isMobile = useIsMobile();
+  
+  // Charger le nombre de versions dès l'ouverture
+  const { data: allVersions, isLoading: isLoadingVersionCount } = useVersions(prompt.id);
+  const versionCount = allVersions?.length ?? 0;
 
   const {
     exportPrompt,
@@ -195,6 +200,21 @@ export function ExportPromptDialog({
               )}
             >
               {exportMessages.options.includeVersions}
+              
+              {/* Badge avec le nombre de versions */}
+              {isLoadingVersionCount ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <span className={cn(
+                  "inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium",
+                  format === "json" 
+                    ? "bg-primary/10 text-primary" 
+                    : "bg-muted text-muted-foreground"
+                )}>
+                  {versionCount}
+                </span>
+              )}
+              
               {format !== "json" && (
                 <span className="text-xs">(fonction à venir)</span>
               )}
