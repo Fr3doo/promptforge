@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Code2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,9 +16,26 @@ const sizeClasses = {
 
 export const Logo = ({ size = "md", showText = true, className }: LogoProps) => {
   const classes = sizeClasses[size];
+  const location = useLocation();
+
+  const handleClick = (e: React.MouseEvent) => {
+    // Si déjà sur la page d'accueil, forcer le scroll en haut
+    if (location.pathname === '/') {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Nettoyer le hash si présent
+      if (location.hash) {
+        window.history.pushState(null, '', '/');
+      }
+    }
+  };
 
   return (
-    <Link to="/" className={cn("flex items-center gap-2", className)}>
+    <Link 
+      to="/" 
+      className={cn("flex items-center gap-2", className)}
+      onClick={handleClick}
+    >
       <div className={cn("rounded-lg bg-primary flex items-center justify-center", classes.container)}>
         <Code2 className={cn("text-primary-foreground", classes.icon)} />
       </div>
