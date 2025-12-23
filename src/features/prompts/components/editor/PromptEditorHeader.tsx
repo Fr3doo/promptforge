@@ -74,14 +74,15 @@ export function PromptEditorHeader() {
                   <TooltipTrigger asChild>
                     <Button
                       variant="outline"
-                      size="icon"
                       onClick={() => setExportDialogOpen(true)}
                       aria-label={messages.promptActions.export}
+                      className="gap-2"
                     >
                       <Download className="h-4 w-4" />
+                      <span className="hidden sm:inline">Exporter Prompt</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="sm:hidden">
                     <p>{messages.promptActions.export}</p>
                   </TooltipContent>
                 </Tooltip>

@@ -98,7 +98,7 @@ export function ExportPromptDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 flex-1 overflow-hidden flex flex-col">
+        <div className="space-y-6 flex-1 flex flex-col">
           {/* Format selection */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">{exportMessages.format}</Label>
@@ -141,9 +141,9 @@ export function ExportPromptDialog({
           </div>
 
           {/* Preview */}
-          <div className="space-y-2 flex-1 overflow-hidden flex flex-col min-h-0">
+          <div className="space-y-2">
             <Label className="text-sm font-medium">{exportMessages.preview}</Label>
-            <ScrollArea className="flex-1 rounded-md border bg-muted/30 min-h-[200px]">
+            <ScrollArea className="h-[250px] sm:h-[300px] rounded-md border bg-muted/30">
               <pre className="p-4 text-xs font-mono whitespace-pre-wrap break-all">
                 {preview}
               </pre>
