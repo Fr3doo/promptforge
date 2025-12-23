@@ -13,7 +13,7 @@ Ce document décrit les patterns de Row-Level Security (RLS) utilisés dans le p
 | Policies `anon` | 8 (blocage) |
 | Policies `authenticated` | 27 (contrôle d'accès) |
 | Policies `public` | 0 (sécurité renforcée) |
-| Tables avec Force RLS | 1 (`user_roles`) |
+| Tables avec Force RLS | 7 (toutes sauf `prompt_usage`) |
 | Privilèges `anon` révoqués | 8 tables + séquences |
 
 ### Tables protégées
@@ -575,22 +575,57 @@ END$$;
 #### Étape 3 : Activer FORCE RLS sur les tables critiques
 
 ```sql
--- FORCE RLS empêche même l'owner de bypass les policies
+-- FORCE RLS empêche le table owner de bypass les policies
+-- ⚠️ IMPORTANT: Ne protège PAS contre les rôles BYPASSRLS (postgres, service_role)
+ALTER TABLE public.profiles FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.prompts FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.prompt_shares FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.variables FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.versions FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.variable_sets FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.user_roles FORCE ROW LEVEL SECURITY;
 ```
+
+### ⚠️ Limitation importante : BYPASSRLS
+
+**FORCE RLS ne protège PAS contre** :
+- Les **superusers** PostgreSQL
+- Les rôles avec l'attribut **BYPASSRLS** (`postgres`, `service_role`, `supabase_admin`)
+
+```sql
+-- Rôles qui bypass toujours RLS (même avec FORCE)
+SELECT rolname, rolbypassrls FROM pg_roles WHERE rolbypassrls = true;
+-- Résultat: postgres, service_role, supabase_admin, supabase_read_only_user
+```
+
+**Implication** : Si la clé `service_role` fuit, FORCE RLS ne protège pas les données.
 
 ### Tables avec privilèges durcis
 
 | Table | anon SELECT | anon DML | public | Force RLS |
 |-------|-------------|----------|--------|-----------|
-| `profiles` | ❌ | ❌ | ❌ | ❌ |
-| `prompts` | ❌ | ❌ | ❌ | ❌ |
-| `prompt_shares` | ❌ | ❌ | ❌ | ❌ |
+| `profiles` | ❌ | ❌ | ❌ | ✅ |
+| `prompts` | ❌ | ❌ | ❌ | ✅ |
+| `prompt_shares` | ❌ | ❌ | ❌ | ✅ |
 | `prompt_usage` | ❌ | ❌ | ❌ | ❌ |
 | `user_roles` | ❌ | ❌ | ❌ | ✅ |
-| `variable_sets` | ❌ | ❌ | ❌ | ❌ |
-| `variables` | ❌ | ❌ | ❌ | ❌ |
-| `versions` | ❌ | ❌ | ❌ | ❌ |
+| `variable_sets` | ❌ | ❌ | ❌ | ✅ |
+| `variables` | ❌ | ❌ | ❌ | ✅ |
+| `versions` | ❌ | ❌ | ❌ | ✅ |
+
+### Rollback FORCE RLS
+
+En cas de problème (signup cassé, création de profil bloquée) :
+
+```sql
+-- Désactiver FORCE RLS sur une table
+ALTER TABLE public.profiles NO FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.prompts NO FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.prompt_shares NO FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.variables NO FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.versions NO FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.variable_sets NO FORCE ROW LEVEL SECURITY;
+```
 
 ### Diagramme de défense en profondeur
 
@@ -701,6 +736,34 @@ ORDER BY tablename, policyname;
 
 ---
 
+## Tests de régression obligatoires
+
+Avant de considérer FORCE RLS comme validé, tester :
+
+- [ ] **Signup** → Profil créé correctement via `handle_new_user`
+- [ ] **Login** → Accès aux données personnelles
+- [ ] **Création de prompt** → INSERT OK
+- [ ] **Partage de prompt** → `prompt_shares` INSERT OK
+- [ ] **Variables** → CRUD OK sur `variables`, `variable_sets`
+- [ ] **Versions** → Création et lecture OK
+
+### Fonctions SECURITY DEFINER à surveiller
+
+```sql
+-- Lister les fonctions SECURITY DEFINER qui peuvent être impactées
+SELECT n.nspname, p.proname, r.rolname as owner
+FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+JOIN pg_roles r ON r.oid = p.proowner
+WHERE n.nspname IN ('public', 'auth')
+  AND p.prosecdef = true
+ORDER BY n.nspname, p.proname;
+```
+
+**Note** : `handle_new_user` est owned par `postgres` (BYPASSRLS) donc non impacté.
+
+---
+
 ## Historique des modifications
 
 | Date | Modification |
@@ -711,3 +774,5 @@ ORDER BY tablename, policyname;
 | 2025-12-23 | Ajout Pattern 7 : Privilege Hardening + REVOKE anon/public + FORCE RLS user_roles |
 | 2025-12-23 | Ajout section Audit de sécurité avec requêtes SQL |
 | 2025-12-23 | Mise à jour checklist avec étapes 7-9 (REVOKE + FORCE RLS) |
+| 2025-12-23 | FORCE RLS activé sur 7 tables (profiles, prompts, prompt_shares, variables, versions, variable_sets, user_roles) |
+| 2025-12-23 | Ajout avertissement BYPASSRLS + scripts rollback + checklist régression |
