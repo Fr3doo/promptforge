@@ -1,0 +1,474 @@
+# Patterns RLS du Projet
+
+## Vue d'ensemble
+
+Ce document décrit les patterns de Row-Level Security (RLS) utilisés dans le projet pour sécuriser l'accès aux données.
+
+### Statistiques actuelles
+
+| Métrique | Valeur |
+|----------|--------|
+| Tables protégées | 8 |
+| Policies totales | 34 |
+| Policies `anon` | 7 (blocage) |
+| Policies `authenticated` | 27 (contrôle d'accès) |
+| Policies `public` | 0 (sécurité renforcée) |
+
+### Tables protégées
+
+- `profiles` - Profils utilisateurs
+- `prompts` - Prompts créés par les utilisateurs
+- `prompt_shares` - Partages de prompts
+- `prompt_usage` - Statistiques d'utilisation
+- `user_roles` - Rôles des utilisateurs
+- `variable_sets` - Ensembles de variables
+- `variables` - Variables des prompts
+- `versions` - Versions des prompts
+
+---
+
+## Architecture de sécurité
+
+```mermaid
+flowchart TD
+    A[Requête entrante] --> B{Rôle PostgreSQL?}
+    B -->|anon| C[❌ Blocage total]
+    B -->|authenticated| D{Type de policy?}
+    
+    D -->|Direct Ownership| E[auth.uid = owner_id]
+    D -->|Inherited| F[EXISTS sur table parent]
+    D -->|Multi-Level| G[Conditions combinées]
+    D -->|Role-Based| H[has_role function]
+    
+    E --> I[✅ Accès accordé]
+    F --> I
+    G --> I
+    H --> I
+    
+    C --> J[🚫 Accès refusé]
+    
+    style C fill:#ff6b6b
+    style I fill:#51cf66
+    style J fill:#ff6b6b
+```
+
+---
+
+## Pattern 1 : Deny Anonymous Access
+
+### Description
+
+Bloque **tout accès** pour les utilisateurs non authentifiés. Ce pattern est la première ligne de défense et doit être appliqué sur **toutes les tables** contenant des données utilisateur.
+
+### Caractéristiques
+
+- Rôle cible : `anon`
+- Opération : `ALL` (SELECT, INSERT, UPDATE, DELETE)
+- Condition : `USING (false)` - toujours faux
+
+### Exemple SQL
+
+```sql
+CREATE POLICY "Deny anonymous access to [table_name]"
+ON public.[table_name]
+FOR ALL
+TO anon
+USING (false);
+```
+
+### Tables concernées
+
+Toutes les 8 tables du projet ont cette policy :
+
+| Table | Policy |
+|-------|--------|
+| `profiles` | Deny anonymous access to profiles |
+| `prompts` | Deny anonymous access to prompts |
+| `prompt_shares` | Deny anonymous access to prompt_shares |
+| `prompt_usage` | Deny anonymous access to prompt_usage |
+| `user_roles` | Deny anonymous access to user_roles |
+| `variable_sets` | Deny anonymous access to variable_sets |
+| `variables` | Deny anonymous access to variables |
+| `versions` | Deny anonymous access to versions |
+
+### Pourquoi `TO anon` et pas `TO public` ?
+
+Le rôle `public` en PostgreSQL est un rôle spécial dont **tous les autres rôles héritent**. Une policy `TO public` s'appliquerait donc aussi aux utilisateurs `authenticated`, ce qui n'est pas le comportement souhaité.
+
+```mermaid
+graph TD
+    A[public role] --> B[anon]
+    A --> C[authenticated]
+    
+    style A fill:#ffd43b
+    style B fill:#ff6b6b
+    style C fill:#51cf66
+```
+
+---
+
+## Pattern 2 : Direct Ownership
+
+### Description
+
+Contrôle d'accès basé sur la **propriété directe** de la ressource. L'utilisateur peut accéder uniquement aux lignes qu'il possède.
+
+### Colonnes utilisées
+
+| Colonne | Tables |
+|---------|--------|
+| `id` | `profiles` (id = auth.uid()) |
+| `owner_id` | `prompts` |
+| `user_id` | `prompt_shares`, `prompt_usage`, `user_roles` |
+
+### Exemple SQL
+
+```sql
+-- Lecture de ses propres prompts
+CREATE POLICY "Users can view own prompts"
+ON public.prompts
+FOR SELECT
+TO authenticated
+USING (owner_id = auth.uid());
+
+-- Modification de son propre profil
+CREATE POLICY "Users can update own profile"
+ON public.profiles
+FOR UPDATE
+TO authenticated
+USING (id = auth.uid())
+WITH CHECK (id = auth.uid());
+```
+
+### Diagramme
+
+```mermaid
+sequenceDiagram
+    participant U as Utilisateur
+    participant DB as Base de données
+    participant RLS as Policy RLS
+    
+    U->>DB: SELECT * FROM prompts
+    DB->>RLS: Vérifier owner_id = auth.uid()
+    RLS-->>DB: Filtrer les lignes
+    DB-->>U: Retourner uniquement ses prompts
+```
+
+---
+
+## Pattern 3 : Permission Inheritance
+
+### Description
+
+Les tables enfants **héritent des permissions** de leur table parent via une jointure `EXISTS`. Ce pattern évite la duplication de logique de permissions.
+
+### Hiérarchie des tables
+
+```mermaid
+graph TD
+    P[prompts] --> V[versions]
+    P --> VAR[variables]
+    P --> VS[variable_sets]
+    P --> PS[prompt_shares]
+    P --> PU[prompt_usage]
+    
+    style P fill:#339af0
+    style V fill:#51cf66
+    style VAR fill:#51cf66
+    style VS fill:#51cf66
+    style PS fill:#ffd43b
+    style PU fill:#ffd43b
+```
+
+### Exemple SQL
+
+```sql
+-- Les versions héritent des permissions du prompt parent
+CREATE POLICY "Users can view versions of accessible prompts"
+ON public.versions
+FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.prompts p
+    WHERE p.id = versions.prompt_id
+    AND (
+      p.owner_id = auth.uid()
+      OR (p.visibility = 'SHARED' AND p.status = 'PUBLISHED')
+      OR EXISTS (
+        SELECT 1 FROM public.prompt_shares ps
+        WHERE ps.prompt_id = p.id
+        AND ps.shared_with_user_id = auth.uid()
+      )
+    )
+  )
+);
+```
+
+### Tables utilisant ce pattern
+
+| Table enfant | Table parent | Colonne de liaison |
+|--------------|--------------|-------------------|
+| `versions` | `prompts` | `prompt_id` |
+| `variables` | `prompts` | `prompt_id` |
+| `variable_sets` | `prompts` | `prompt_id` |
+| `prompt_shares` | `prompts` | `prompt_id` |
+| `prompt_usage` | `prompts` | `prompt_id` |
+
+---
+
+## Pattern 4 : Multi-Level Access
+
+### Description
+
+Combine plusieurs conditions pour déterminer le niveau d'accès. Utilisé principalement pour la table `prompts` qui supporte différents modes de partage.
+
+### Niveaux d'accès
+
+```mermaid
+flowchart TD
+    A[Requête d'accès] --> B{Est propriétaire?}
+    B -->|Oui| C[✅ Accès total]
+    B -->|Non| D{Partage privé?}
+    D -->|Oui| E{Permission?}
+    E -->|READ| F[✅ Lecture seule]
+    E -->|WRITE| G[✅ Lecture + Écriture]
+    D -->|Non| H{Partage public?}
+    H -->|visibility=SHARED| I{public_permission?}
+    I -->|READ| J[✅ Lecture seule]
+    I -->|WRITE| K[✅ Lecture + Écriture]
+    H -->|Non| L[❌ Accès refusé]
+    
+    style C fill:#51cf66
+    style F fill:#74c0fc
+    style G fill:#51cf66
+    style J fill:#74c0fc
+    style K fill:#51cf66
+    style L fill:#ff6b6b
+```
+
+### Exemple SQL
+
+```sql
+CREATE POLICY "Users can view accessible prompts"
+ON public.prompts
+FOR SELECT
+TO authenticated
+USING (
+  -- Niveau 1: Propriétaire
+  owner_id = auth.uid()
+  OR
+  -- Niveau 2: Partage public (SHARED + PUBLISHED)
+  (visibility = 'SHARED' AND status = 'PUBLISHED')
+  OR
+  -- Niveau 3: Partage privé
+  EXISTS (
+    SELECT 1 FROM public.prompt_shares ps
+    WHERE ps.prompt_id = prompts.id
+    AND ps.shared_with_user_id = auth.uid()
+  )
+);
+```
+
+### Matrice des permissions pour `prompts`
+
+| Condition | SELECT | INSERT | UPDATE | DELETE |
+|-----------|--------|--------|--------|--------|
+| `owner_id = auth.uid()` | ✅ | ✅ | ✅ | ✅ |
+| Partage privé READ | ✅ | ❌ | ❌ | ❌ |
+| Partage privé WRITE | ✅ | ❌ | ✅ | ❌ |
+| Partage public READ | ✅ | ❌ | ❌ | ❌ |
+| Partage public WRITE | ✅ | ❌ | ✅ | ❌ |
+| Aucun accès | ❌ | ❌ | ❌ | ❌ |
+
+---
+
+## Pattern 5 : Role-Based Access (SECURITY DEFINER)
+
+### Description
+
+Utilise une fonction `SECURITY DEFINER` pour vérifier les rôles utilisateur sans provoquer de **récursion infinie** dans les policies RLS.
+
+### Problème de récursion
+
+```mermaid
+flowchart TD
+    A[Policy sur user_roles] --> B[Vérifie user_roles]
+    B --> A
+    
+    style A fill:#ff6b6b
+    style B fill:#ff6b6b
+```
+
+Une policy RLS sur `user_roles` qui interroge `user_roles` créerait une boucle infinie.
+
+### Solution : SECURITY DEFINER
+
+```sql
+-- Fonction qui bypass RLS grâce à SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role app_role)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id = _user_id
+      AND role = _role
+  )
+$$;
+
+-- Policy utilisant la fonction (pas de récursion)
+CREATE POLICY "Admins can view all user roles"
+ON public.user_roles
+FOR SELECT
+TO authenticated
+USING (
+  user_id = auth.uid()
+  OR public.has_role(auth.uid(), 'admin')
+);
+```
+
+### Caractéristiques de SECURITY DEFINER
+
+| Attribut | Valeur | Raison |
+|----------|--------|--------|
+| `SECURITY DEFINER` | Obligatoire | Exécute avec les droits du créateur |
+| `STABLE` | Recommandé | Résultat constant pour mêmes arguments dans une transaction |
+| `SET search_path = public` | Sécurité | Évite les attaques par injection de schéma |
+
+---
+
+## Matrice complète des permissions
+
+### Par table et opération
+
+| Table | SELECT | INSERT | UPDATE | DELETE |
+|-------|--------|--------|--------|--------|
+| **profiles** | Own | Own | Own | ❌ |
+| **prompts** | Own + Shared + Public | Own | Own + Write | Own |
+| **prompt_shares** | Own prompt | Own prompt | Own prompt | Own prompt |
+| **prompt_usage** | Own prompt | Own | Own | Own |
+| **user_roles** | Own + Admin | ❌ | ❌ | ❌ |
+| **variable_sets** | Inherited | Write | Write | Own |
+| **variables** | Inherited | Write | Write | Own |
+| **versions** | Inherited | Write | Write | Own |
+
+### Légende
+
+- **Own** : Propriétaire uniquement (`owner_id = auth.uid()` ou `user_id = auth.uid()`)
+- **Shared** : Partagé via `prompt_shares`
+- **Public** : Visible publiquement (`visibility = 'SHARED'`)
+- **Write** : Permission WRITE requise
+- **Inherited** : Hérite des permissions du prompt parent
+- **Admin** : Requiert le rôle admin
+
+---
+
+## Checklist pour nouvelles tables
+
+### Étapes obligatoires
+
+- [ ] **1. Activer RLS**
+  ```sql
+  ALTER TABLE public.new_table ENABLE ROW LEVEL SECURITY;
+  ```
+
+- [ ] **2. Ajouter policy "Deny anonymous access"**
+  ```sql
+  CREATE POLICY "Deny anonymous access to new_table"
+  ON public.new_table
+  FOR ALL
+  TO anon
+  USING (false);
+  ```
+
+- [ ] **3. Toutes les policies → `TO authenticated`**
+  - ⚠️ Jamais `TO public` (héritage non souhaité)
+  - ⚠️ Toujours `TO authenticated` pour les policies de contrôle d'accès
+
+- [ ] **4. Utiliser `EXISTS` pour l'héritage**
+  ```sql
+  -- ✅ Correct
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.prompts p
+      WHERE p.id = new_table.prompt_id
+      AND p.owner_id = auth.uid()
+    )
+  )
+  
+  -- ❌ Incorrect (JOIN dans la clause principale)
+  USING (
+    SELECT p.owner_id = auth.uid()
+    FROM public.prompts p
+    JOIN public.new_table nt ON p.id = nt.prompt_id
+  )
+  ```
+
+- [ ] **5. Éviter les JOINs récursifs**
+  - Si une table doit vérifier ses propres données → utiliser `SECURITY DEFINER`
+  - Exemple : `has_role()` pour `user_roles`
+
+- [ ] **6. Distinguer USING vs WITH CHECK**
+  - `USING` : Filtre les lignes visibles (SELECT, UPDATE, DELETE)
+  - `WITH CHECK` : Valide les nouvelles données (INSERT, UPDATE)
+  ```sql
+  CREATE POLICY "policy_name"
+  ON public.table
+  FOR UPDATE
+  TO authenticated
+  USING (owner_id = auth.uid())        -- Peut modifier ses propres lignes
+  WITH CHECK (owner_id = auth.uid());  -- Doit rester propriétaire après modification
+  ```
+
+### Tests obligatoires
+
+- [ ] **Test 1 : Accès anonyme bloqué**
+  ```typescript
+  // Sans session utilisateur
+  const { data, error } = await supabase
+    .from('new_table')
+    .select('*');
+  expect(data).toEqual([]);
+  ```
+
+- [ ] **Test 2 : Accès cross-user bloqué**
+  ```typescript
+  // Utilisateur A ne voit pas les données de B
+  const { data } = await supabaseAsUserA
+    .from('new_table')
+    .select('*')
+    .eq('owner_id', userB.id);
+  expect(data).toEqual([]);
+  ```
+
+- [ ] **Test 3 : Modification cross-user bloquée**
+  ```typescript
+  const { error } = await supabaseAsUserA
+    .from('new_table')
+    .update({ ... })
+    .eq('id', recordOwnedByUserB);
+  expect(error).toBeDefined();
+  ```
+
+---
+
+## Références
+
+- [SHARING_GUIDE.md](./SHARING_GUIDE.md) - Guide complet du système de partage
+- [VARIABLE_UPSERT_SECURITY.md](./VARIABLE_UPSERT_SECURITY.md) - Contraintes de sécurité DB
+- [REPOSITORY_PATTERNS.md](./REPOSITORY_PATTERNS.md) - Patterns d'accès aux données
+- [Supabase RLS Documentation](https://supabase.com/docs/guides/auth/row-level-security)
+
+---
+
+## Historique des modifications
+
+| Date | Modification |
+|------|--------------|
+| 2025-01-23 | Création du document |
+| 2025-01-23 | Correction policies `public` → `anon` |
