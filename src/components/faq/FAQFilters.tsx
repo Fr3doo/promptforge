@@ -1,6 +1,6 @@
 import { FAQSearchInput } from "./FAQSearchInput";
 import { Button } from "@/components/ui/button";
-import { Check, Clock, AlertCircle } from "lucide-react";
+import { Check, Clock, AlertCircle, Info } from "lucide-react";
 import { FeatureStatus } from "@/data/faqData";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +19,8 @@ const statusFilters: { value: FeatureStatus | "all"; label: string; icon?: React
   { value: "all", label: "Tous" },
   { value: "available", label: "Disponible", icon: Check, className: "text-green-600 dark:text-green-400" },
   { value: "partial", label: "Partiel", icon: AlertCircle, className: "text-yellow-600 dark:text-yellow-400" },
-  { value: "coming-soon", label: "À venir", icon: Clock, className: "text-blue-600 dark:text-blue-400" }
+  { value: "coming-soon", label: "À venir", icon: Clock, className: "text-blue-600 dark:text-blue-400" },
+  { value: "informational", label: "Information", icon: Info, className: "text-purple-600 dark:text-purple-400" }
 ];
 
 export const FAQFilters = ({
