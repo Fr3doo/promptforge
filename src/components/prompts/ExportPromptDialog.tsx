@@ -104,6 +104,7 @@ export function ExportPromptDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
+        hideCloseButton
         className={cn(
           "flex flex-col transition-all duration-200",
           isFullscreen 
@@ -137,17 +138,15 @@ export function ExportPromptDialog({
                 </>
               )}
             </Button>
-            {isFullscreen && (
-              <Button
-                variant="ghost"
-                size={isMobile ? "icon" : "sm"}
-                onClick={() => onOpenChange(false)}
-                aria-label={exportMessages.actions.close}
-              >
-                <X className="h-4 w-4" />
-                {!isMobile && <span className="ml-2">{exportMessages.actions.close}</span>}
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size={isMobile ? "icon" : "sm"}
+              onClick={() => onOpenChange(false)}
+              aria-label={exportMessages.actions.close}
+            >
+              <X className="h-4 w-4" />
+              {!isMobile && <span className="ml-2">{exportMessages.actions.close}</span>}
+            </Button>
           </div>
         </DialogHeader>
 
