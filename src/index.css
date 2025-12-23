@@ -37,6 +37,7 @@ All colors MUST be HSL.
     --ring: 262 83% 58%;
 
     --radius: 0.5rem;
+    --header-height: 73px;
 
     --editor-bg: 220 18% 15%;
     --preview-bg: 220 20% 12%;
