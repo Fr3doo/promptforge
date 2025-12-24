@@ -893,6 +893,177 @@ security-check:
 
 ---
 
+## Pattern 9 : Audit des vues avec preuves factuelles
+
+### Description
+
+Ce pattern définit la **méthodologie d'audit exhaustive** pour valider qu'une vue ne fuit pas de données. Il répond aux faux-positifs des scanners qui détectent "vue + PII" sans vérifier les privilèges effectifs.
+
+### Pourquoi ce pattern ?
+
+Les scanners de sécurité confondent souvent :
+- "Je vois une vue avec des colonnes PII" ≠ "anon peut lire ces données"
+- "Pas de GRANT explicite visible" ≠ "Pas d'accès effectif"
+
+La **seule preuve robuste** est `has_table_privilege()` + vérification du pseudo-rôle `PUBLIC`.
+
+### ⚠️ Pièges courants
+
+| Piège | Risque | Solution |
+|-------|--------|----------|
+| Ignorer `PUBLIC` | `PUBLIC` est hérité par tous les rôles | Vérifier `grantee=0` dans ACL |
+| Parser les GRANT affichés | Manque les héritages de rôles | Utiliser `has_table_privilege()` |
+| Croire que RLS protège la vue | Les vues peuvent bypass RLS | Vérifier `security_invoker=true` |
+| Oublier `security_barrier` | Optimizer peut leaker via predicates | Vérifier `security_barrier=true` |
+
+### Requêtes d'audit obligatoires
+
+#### 1. Privilèges effectifs (PREUVE PRINCIPALE)
+
+```sql
+SELECT 
+  has_table_privilege('anon', 'public.VIEW_NAME', 'SELECT') as anon_select,
+  has_table_privilege('authenticated', 'public.VIEW_NAME', 'SELECT') as auth_select,
+  has_schema_privilege('anon', 'public', 'USAGE') as anon_schema_usage;
+```
+
+**Interprétation :**
+- `anon_select=false` : ✅ anon ne peut pas lire
+- `auth_select=true` : ✅ attendu pour vues user-facing
+- `anon_schema_usage=true` : ⚠️ normal, mais `anon_select` doit être `false`
+
+#### 2. Vérification PUBLIC pseudo-role (ACL)
+
+```sql
+SELECT 
+  a.grantee,
+  r.rolname as grantee_name,
+  a.privilege_type
+FROM (
+  SELECT 
+    (aclexplode(relacl)).grantee,
+    (aclexplode(relacl)).privilege_type
+  FROM pg_class 
+  WHERE relname = 'VIEW_NAME'
+) a
+LEFT JOIN pg_roles r ON r.oid = a.grantee;
+```
+
+**Interprétation :**
+- Si `grantee=0` (ou `grantee_name=NULL`) apparaît : ❌ FUITE - `PUBLIC` a un grant
+- Seuls `postgres`, `authenticated`, `service_role` attendus : ✅
+
+#### 3. Configuration de la vue
+
+```sql
+SELECT 
+  c.relname as view_name,
+  (SELECT option_value FROM pg_options_to_table(c.reloptions) 
+   WHERE option_name = 'security_invoker') as security_invoker,
+  (SELECT option_value FROM pg_options_to_table(c.reloptions) 
+   WHERE option_name = 'security_barrier') as security_barrier
+FROM pg_class c 
+WHERE c.relname = 'VIEW_NAME';
+```
+
+**Interprétation :**
+- `security_invoker=true` : ✅ RLS des tables sous-jacentes appliquée
+- `security_barrier=true` : ✅ Protection contre les leaks via optimizer
+
+### Exemple complet : Audit `public_profiles`
+
+```sql
+-- Requête combinée pour audit complet
+SELECT 
+  'public_profiles' as view_name,
+  has_table_privilege('anon', 'public.public_profiles', 'SELECT') as anon_select,
+  has_table_privilege('authenticated', 'public.public_profiles', 'SELECT') as auth_select,
+  (
+    SELECT EXISTS (
+      SELECT 1 
+      FROM pg_class c, unnest(c.relacl) as acl 
+      WHERE c.relname = 'public_profiles' 
+        AND (aclexplode(c.relacl)).grantee = 0
+    )
+  ) as has_public_grant,
+  (
+    SELECT option_value 
+    FROM pg_class c, pg_options_to_table(c.reloptions) 
+    WHERE c.relname = 'public_profiles' 
+      AND option_name = 'security_invoker'
+  ) as security_invoker,
+  (
+    SELECT option_value 
+    FROM pg_class c, pg_options_to_table(c.reloptions) 
+    WHERE c.relname = 'public_profiles' 
+      AND option_name = 'security_barrier'
+  ) as security_barrier;
+```
+
+**Résultat attendu :**
+
+| Column | Value | Status |
+|--------|-------|--------|
+| anon_select | false | ✅ |
+| auth_select | true | ✅ |
+| has_public_grant | false | ✅ |
+| security_invoker | true | ✅ |
+| security_barrier | true | ✅ |
+
+### Template pour ignore reason d'un finding
+
+Quand vous marquez un finding comme faux-positif, incluez :
+
+```markdown
+FAUX-POSITIF CONFIRMÉ par audit SQL exhaustif (DATE).
+
+## Preuves factuelles
+
+### 1. Privilèges effectifs (has_table_privilege)
+[Requête SQL exécutée]
+Résultat: anon_select=FALSE, auth_select=TRUE
+
+### 2. Vérification PUBLIC pseudo-role (ACL)
+[Requête SQL exécutée]
+Résultat: grantee=0 ABSENT, seuls postgres/authenticated/service_role
+
+### 3. Configuration vue
+[Requête SQL exécutée]
+Résultat: security_invoker=true, security_barrier=true
+
+## Conclusion
+- anon n'a PAS de SELECT effectif
+- PUBLIC n'a PAS de GRANT explicite
+- security_invoker force la RLS
+```
+
+### Fichier de tests
+
+Voir `src/repositories/__tests__/SecurityPrivilegeRegression.test.ts` :
+- `describe('public_profiles view - Complete Audit')` - Tests unitaires
+- `CI_SECURITY_GATE_QUERIES.checkPublicProfilesAnonSelect` - Query CI/CD
+- `CI_SECURITY_GATE_QUERIES.viewAuditTemplate` - Template réutilisable
+
+### Diagramme de décision
+
+```mermaid
+flowchart TD
+    A[Scanner signale: vue + PII] --> B{has_table_privilege anon SELECT?}
+    B -->|true| C[❌ FUITE RÉELLE]
+    B -->|false| D{PUBLIC a un GRANT?}
+    D -->|Oui, grantee=0| E[❌ FUITE via PUBLIC]
+    D -->|Non| F{security_invoker=true?}
+    F -->|Non| G[⚠️ RISQUE: vue peut bypass RLS]
+    F -->|Oui| H[✅ FAUX-POSITIF CONFIRMÉ]
+    
+    style C fill:#ff6b6b
+    style E fill:#ff6b6b
+    style G fill:#ffd43b
+    style H fill:#51cf66
+```
+
+---
+
 ## Historique des modifications
 
 | Date | Modification |
@@ -906,3 +1077,4 @@ security-check:
 | 2025-12-23 | FORCE RLS activé sur 7 tables (profiles, prompts, prompt_shares, variables, versions, variable_sets, user_roles) |
 | 2025-12-23 | Ajout avertissement BYPASSRLS + scripts rollback + checklist régression |
 | 2025-12-23 | Ajout Pattern 8 : CI/CD Security Gate avec has_table_privilege() + tests regression |
+| 2025-12-24 | Ajout Pattern 9 : Audit des vues avec preuves factuelles (méthodologie + pièges + template ignore reason) |
