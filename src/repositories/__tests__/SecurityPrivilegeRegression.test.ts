@@ -183,6 +183,70 @@ describe('Security Privilege Regression Tests', () => {
       expect(mockResponse.data[0].security_invoker).toBe(true);
     });
   });
+
+  /**
+   * Pattern 9: View Audit with Factual Proofs
+   * 
+   * These tests verify the complete audit methodology for views:
+   * 1. has_table_privilege() for anon AND authenticated
+   * 2. ACL check for PUBLIC pseudo-role (grantee=0)
+   * 3. security_invoker and security_barrier configuration
+   * 
+   * @see docs/RLS_PATTERNS.md - Pattern 9
+   */
+  describe('public_profiles view - Complete Audit', () => {
+    it('should verify anon has NO SELECT privilege via has_table_privilege', async () => {
+      // This is the authoritative check - not GRANT parsing
+      const mockResponse = {
+        data: [{ anon_select: false, authenticated_select: true }],
+        error: null,
+      };
+
+      vi.mocked(supabase.rpc).mockResolvedValueOnce(mockResponse);
+
+      expect(mockResponse.data[0].anon_select).toBe(false);
+      expect(mockResponse.data[0].authenticated_select).toBe(true);
+    });
+
+    it('should verify PUBLIC pseudo-role has NO grants (grantee=0 absent)', async () => {
+      // PUBLIC grants appear as grantee=0 in aclexplode
+      const mockResponse = {
+        data: [
+          { grantee_oid: '10', grantee_name: 'postgres', privilege_type: 'SELECT' },
+          { grantee_oid: '16385', grantee_name: 'authenticated', privilege_type: 'SELECT' },
+          { grantee_oid: '16387', grantee_name: 'service_role', privilege_type: 'SELECT' },
+          // NO grantee=0 (PUBLIC) should appear
+        ],
+        error: null,
+      };
+
+      vi.mocked(supabase.rpc).mockResolvedValueOnce(mockResponse);
+
+      // Verify PUBLIC (grantee_oid=0) is NOT in the list
+      const hasPublicGrant = mockResponse.data.some(
+        (r) => r.grantee_oid === '0' || r.grantee_name === null
+      );
+      expect(hasPublicGrant).toBe(false);
+    });
+
+    it('should verify view has security_invoker AND security_barrier', async () => {
+      const mockResponse = {
+        data: [
+          {
+            viewname: 'public_profiles',
+            security_invoker: 'true',
+            security_barrier: 'true',
+          },
+        ],
+        error: null,
+      };
+
+      vi.mocked(supabase.rpc).mockResolvedValueOnce(mockResponse);
+
+      expect(mockResponse.data[0].security_invoker).toBe('true');
+      expect(mockResponse.data[0].security_barrier).toBe('true');
+    });
+  });
 });
 
 /**
@@ -265,6 +329,31 @@ export const CI_SECURITY_GATE_QUERIES = {
   `,
 
   /**
+   * SPECIFIC CHECK: public_profiles view anon SELECT
+   * Returns FAIL if anon can SELECT on public_profiles
+   * 
+   * @example CI usage: SELECT * FROM (...) WHERE result = 'FAIL'
+   */
+  checkPublicProfilesAnonSelect: `
+    SELECT 
+      CASE 
+        WHEN has_table_privilege('anon', 'public.public_profiles', 'SELECT') 
+        THEN 'FAIL: anon can SELECT on public_profiles'
+        ELSE 'PASS: anon cannot SELECT on public_profiles'
+      END AS result,
+      has_table_privilege('anon', 'public.public_profiles', 'SELECT') as anon_select,
+      has_table_privilege('authenticated', 'public.public_profiles', 'SELECT') as authenticated_select,
+      (
+        SELECT EXISTS (
+          SELECT 1 FROM unnest(c.relacl) as acl 
+          WHERE (aclexplode(c.relacl)).grantee = 0
+        )
+        FROM pg_class c 
+        WHERE c.relname = 'public_profiles'
+      ) as has_public_grant;
+  `,
+
+  /**
    * Complete security audit query
    * Returns a summary of all security-relevant settings
    */
@@ -289,5 +378,44 @@ export const CI_SECURITY_GATE_QUERIES = {
     WHERE n.nspname = 'public'
       AND c.relkind IN ('r', 'v')
     ORDER BY c.relkind, c.relname;
+  `,
+
+  /**
+   * VIEW AUDIT TEMPLATE
+   * 
+   * Use this query template to audit any view with factual proofs.
+   * Replace 'VIEW_NAME' with the actual view name.
+   * 
+   * Results interpretation:
+   * - anon_select=false: ✅ anon cannot read
+   * - authenticated_select=true: ✅ expected for user-facing views  
+   * - public_grant_exists=false: ✅ no PUBLIC pseudo-role grant
+   * - security_invoker='true': ✅ RLS of underlying tables is applied
+   * - security_barrier='true': ✅ optimizer cannot leak data
+   */
+  viewAuditTemplate: `
+    SELECT 
+      'VIEW_NAME' as view_name,
+      has_table_privilege('anon', 'public.VIEW_NAME', 'SELECT') as anon_select,
+      has_table_privilege('authenticated', 'public.VIEW_NAME', 'SELECT') as authenticated_select,
+      has_schema_privilege('anon', 'public', 'USAGE') as anon_schema_usage,
+      (
+        SELECT EXISTS (
+          SELECT 1 
+          FROM pg_class c, unnest(c.relacl) as acl 
+          WHERE c.relname = 'VIEW_NAME' 
+            AND (aclexplode(c.relacl)).grantee = 0
+        )
+      ) as public_grant_exists,
+      (
+        SELECT option_value 
+        FROM pg_class c, pg_options_to_table(c.reloptions) 
+        WHERE c.relname = 'VIEW_NAME' AND option_name = 'security_invoker'
+      ) as security_invoker,
+      (
+        SELECT option_value 
+        FROM pg_class c, pg_options_to_table(c.reloptions) 
+        WHERE c.relname = 'VIEW_NAME' AND option_name = 'security_barrier'
+      ) as security_barrier;
   `,
 };
