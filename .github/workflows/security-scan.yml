@@ -43,3 +43,31 @@ jobs:
             fi
           fi
           echo "✅ .env.example contains only allowed variables"
+
+  security-gate:
+    name: Database Security Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run Security Gate SQL
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "⚠️ SUPABASE_DB_URL secret not configured - skipping security gate"
+            echo "To enable: add SUPABASE_DB_URL secret in repository settings"
+            exit 0
+          fi
+          
+          echo "🔒 Running security gate checks..."
+          psql "$DATABASE_URL" -f scripts/security-gate.sql
+          
+          if [ $? -eq 0 ]; then
+            echo "✅ All security checks passed"
+          else
+            echo "❌ Security gate failed - check logs above"
+            exit 1
+          fi
