@@ -899,6 +899,26 @@ security-check:
 
 Ce pattern définit la **méthodologie d'audit exhaustive** pour valider qu'une vue ne fuit pas de données. Il répond aux faux-positifs des scanners qui détectent "vue + PII" sans vérifier les privilèges effectifs.
 
+### ⚠️ CRITIQUE : Les tests JavaScript mockés NE FONCTIONNENT PAS
+
+**Les tests unitaires JavaScript avec `vi.fn()` ou `jest.fn()` ne vérifient RIEN en matière de sécurité :**
+
+```typescript
+// ❌ CE TEST NE PROUVE RIEN - IL TESTE DU CODE JS, PAS LA DB
+const mockSupabase = { rpc: vi.fn().mockResolvedValue({ data: false }) };
+expect(mockSupabase.rpc('has_table_privilege', ...)).resolves.toEqual({ data: false });
+// Le mock retourne ce qu'on lui dit, pas la réalité !
+```
+
+**Pourquoi c'est dangereux :**
+- Un mock retourne ce que vous programmez, pas la réalité de la base de données
+- Donne un faux sentiment de sécurité
+- Ne détecte pas les régressions réelles
+
+**Solution : exécuter du vrai SQL en CI via psql/Supabase CLI.**
+
+Voir `scripts/security-gate.sql` pour l'implémentation.
+
 ### Pourquoi ce pattern ?
 
 Les scanners de sécurité confondent souvent :
@@ -911,10 +931,25 @@ La **seule preuve robuste** est `has_table_privilege()` + vérification du pseud
 
 | Piège | Risque | Solution |
 |-------|--------|----------|
+| **Tests mockés JS** | Ne testent pas la DB réelle | Utiliser `scripts/security-gate.sql` |
 | Ignorer `PUBLIC` | `PUBLIC` est hérité par tous les rôles | Vérifier `grantee=0` dans ACL |
 | Parser les GRANT affichés | Manque les héritages de rôles | Utiliser `has_table_privilege()` |
 | Croire que RLS protège la vue | Les vues peuvent bypass RLS | Vérifier `security_invoker=true` |
 | Oublier `security_barrier` | Optimizer peut leaker via predicates | Vérifier `security_barrier=true` |
+
+### Intégration CI/CD
+
+Le script `scripts/security-gate.sql` exécute automatiquement toutes les vérifications :
+
+```bash
+# Dans le pipeline CI (voir .github/workflows/security-scan.yml)
+psql $DATABASE_URL -f scripts/security-gate.sql
+```
+
+Le script échoue si :
+- `anon` a SELECT sur un objet protégé
+- `PUBLIC` (grantee=0) a des grants
+- Une vue n'a pas `security_invoker=true`
 
 ### Requêtes d'audit obligatoires
 
@@ -1037,12 +1072,15 @@ Résultat: security_invoker=true, security_barrier=true
 - security_invoker force la RLS
 ```
 
-### Fichier de tests
+### Fichiers de référence
 
-Voir `src/repositories/__tests__/SecurityPrivilegeRegression.test.ts` :
-- `describe('public_profiles view - Complete Audit')` - Tests unitaires
-- `CI_SECURITY_GATE_QUERIES.checkPublicProfilesAnonSelect` - Query CI/CD
-- `CI_SECURITY_GATE_QUERIES.viewAuditTemplate` - Template réutilisable
+| Fichier | Contenu |
+|---------|---------|
+| `scripts/security-gate.sql` | Script SQL exécutable en CI - **source de vérité** |
+| `src/lib/security-gate-queries.ts` | Export des requêtes SQL pour documentation |
+| `.github/workflows/security-scan.yml` | Workflow CI qui exécute le script |
+
+**Important :** Les tests mockés dans `src/repositories/__tests__/` ne sont PAS des preuves de sécurité.
 
 ### Diagramme de décision
 
@@ -1078,3 +1116,4 @@ flowchart TD
 | 2025-12-23 | Ajout avertissement BYPASSRLS + scripts rollback + checklist régression |
 | 2025-12-23 | Ajout Pattern 8 : CI/CD Security Gate avec has_table_privilege() + tests regression |
 | 2025-12-24 | Ajout Pattern 9 : Audit des vues avec preuves factuelles (méthodologie + pièges + template ignore reason) |
+| 2025-12-25 | Ajout avertissement tests mockés + refonte vers script SQL CI (`scripts/security-gate.sql`) |
