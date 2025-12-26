@@ -149,6 +149,40 @@ BEGIN
 END $$;
 
 -- ============================================================================
+-- CHECK 6: Vérifier que les tables ont des policies RESTRICTIVE require-auth
+-- ============================================================================
+DO $$
+DECLARE
+  missing_count INTEGER;
+  missing_tables TEXT;
+BEGIN
+  -- Vérifier que profiles, prompts, prompt_shares ont chacun une policy RESTRICTIVE pour SELECT
+  WITH required_tables AS (
+    SELECT unnest(ARRAY['profiles', 'prompts', 'prompt_shares']) AS tablename
+  ),
+  tables_with_restrictive AS (
+    SELECT DISTINCT tablename
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename IN ('profiles', 'prompts', 'prompt_shares')
+      AND permissive = 'RESTRICTIVE'
+      AND cmd = 'SELECT'
+      AND qual::text LIKE '%auth.uid()%'
+  )
+  SELECT COUNT(*), string_agg(r.tablename, ', ')
+  INTO missing_count, missing_tables
+  FROM required_tables r
+  LEFT JOIN tables_with_restrictive t ON r.tablename = t.tablename
+  WHERE t.tablename IS NULL;
+  
+  IF missing_count > 0 THEN
+    RAISE EXCEPTION 'SECURITY GATE FAILED: % table(s) missing RESTRICTIVE require-auth policy: %', missing_count, missing_tables;
+  END IF;
+  
+  RAISE NOTICE 'CHECK 6 PASSED: all protected tables have RESTRICTIVE require-auth policies';
+END $$;
+
+-- ============================================================================
 -- SUMMARY
 -- ============================================================================
 DO $$
