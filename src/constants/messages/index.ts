@@ -47,6 +47,7 @@ export const messages = {
     ...promptsMessages.prompts,
     export: promptsMessages.export,
   },
+  import: promptsMessages.import,
   promptActions: promptsMessages.promptActions,
   promptList: promptsMessages.promptList,
   shareBanner: promptsMessages.shareBanner,

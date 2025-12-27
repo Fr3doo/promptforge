@@ -12,7 +12,7 @@ export const faqData: FAQItem[] = [
     question: "Puis-je importer mes prompts existants ?",
     answer: "Oui, PromptForge permet d'importer vos prompts au format JSON ou Markdown. Vous pouvez également copier-coller directement vos prompts depuis n'importe quelle source. L'outil détectera automatiquement les variables si vous utilisez la syntaxe {{variable}}.",
     category: "Import/Export",
-    featureStatus: "coming-soon"
+    featureStatus: "available"
   },
   {
     question: "Quel type de modèles d'IA est pris en charge ?",

@@ -204,6 +204,45 @@ export const promptsMessages = {
     },
   },
 
+  // Import
+  import: {
+    title: "Importer un prompt",
+    description: "Importez un prompt depuis un fichier JSON, Markdown ou par copier-coller",
+    methods: {
+      file: "Depuis un fichier",
+      paste: "Copier-coller",
+    },
+    dropzone: {
+      title: "Glissez un fichier ici",
+      subtitle: "ou cliquez pour sélectionner",
+      acceptedFormats: "Formats acceptés : JSON, Markdown (.json, .md)",
+    },
+    paste: {
+      placeholder: "Collez votre prompt ici...\n\nL'outil détectera automatiquement les variables au format {{variable}}",
+    },
+    preview: {
+      title: "Aperçu de l'import",
+      variables: (count: number) => `${count} variable${count > 1 ? "s" : ""} détectée${count > 1 ? "s" : ""}`,
+      noVariables: "Aucune variable détectée",
+      format: (format: string) => `Format détecté : ${format.toUpperCase()}`,
+    },
+    actions: {
+      import: "Importer",
+      cancel: "Annuler",
+      clear: "Effacer",
+    },
+    success: {
+      imported: (title: string) => `"${title}" importé avec succès`,
+    },
+    errors: {
+      invalidFormat: "Format de fichier non reconnu",
+      parseError: "Impossible de parser le contenu",
+      missingTitle: "Le titre est requis",
+      missingContent: "Le contenu est requis",
+      emptyContent: "Le contenu ne peut pas être vide",
+    },
+  },
+
   // Prompt List & Empty States
   promptList: {
     noResults: "Aucun résultat",
