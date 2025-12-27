@@ -12,6 +12,7 @@ import { PromptShareRepositoryProvider } from "@/contexts/PromptShareRepositoryC
 import { PromptFavoriteServiceProvider } from "@/contexts/PromptFavoriteServiceContext";
 import { PromptVisibilityServiceProvider } from "@/contexts/PromptVisibilityServiceContext";
 import { PromptDuplicationServiceProvider } from "@/contexts/PromptDuplicationServiceContext";
+import { PromptImportServiceProvider } from "@/contexts/PromptImportServiceContext";
 import { VersionRepositoryProvider } from "@/contexts/VersionRepositoryContext";
 import { EdgeFunctionRepositoryProvider } from "@/contexts/EdgeFunctionRepositoryContext";
 import { PromptUsageRepositoryProvider } from "@/contexts/PromptUsageRepositoryContext";
@@ -73,7 +74,9 @@ export function AppProviders({
                                   <PromptFavoriteServiceProvider service={favoriteService}>
                                     <PromptVisibilityServiceProvider service={visibilityService}>
                                       <PromptDuplicationServiceProvider service={duplicationService}>
-                                        {children}
+                                        <PromptImportServiceProvider>
+                                          {children}
+                                        </PromptImportServiceProvider>
                                       </PromptDuplicationServiceProvider>
                                     </PromptVisibilityServiceProvider>
                                   </PromptFavoriteServiceProvider>

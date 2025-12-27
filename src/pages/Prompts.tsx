@@ -6,7 +6,7 @@ import { usePromptFilters } from "@/features/prompts/hooks/usePromptFilters";
 import { PromptList } from "@/features/prompts/components/PromptList";
 import { PromptSearchBar } from "@/features/prompts/components/PromptSearchBar";
 import { Button } from "@/components/ui/button";
-import { Plus, Sparkles, Share2, X } from "lucide-react";
+import { Plus, Sparkles, Share2, X, Upload } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerTrigger } from "@/components/ui/drawer";
 import { PromptAnalyzer } from "@/components/PromptAnalyzer";
@@ -14,6 +14,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { SharePromptDialog } from "@/features/prompts/components/SharePromptDialog";
+import { ImportPromptDialog } from "@/components/prompts/ImportPromptDialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { messages } from "@/constants/messages";
 
@@ -24,6 +25,7 @@ const Prompts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [analyzerOpen, setAnalyzerOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [showShareBanner, setShowShareBanner] = useState(false);
   const navigate = useNavigate();
   
@@ -118,6 +120,11 @@ const Prompts = () => {
                   </div>
                 </DrawerContent>
               </Drawer>
+              <Button variant="outline" onClick={() => setImportDialogOpen(true)} className="gap-2 w-full sm:w-auto justify-center">
+                <Upload className="h-4 w-4" />
+                <span className="hidden sm:inline">Importer</span>
+                <span className="sm:hidden">Importer</span>
+              </Button>
               <Button onClick={() => navigate("/prompts/new")} className="gap-2 w-full sm:w-auto justify-center">
                 <Plus className="h-4 w-4" />
                 Nouveau prompt
@@ -215,6 +222,12 @@ const Prompts = () => {
           promptTitle={justCreatedPrompt.title}
         />
       )}
+      
+      {/* Import Dialog */}
+      <ImportPromptDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+      />
       
       <Footer />
     </div>
