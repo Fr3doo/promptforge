@@ -122,7 +122,7 @@ const Prompts = () => {
               </Drawer>
               <Button variant="outline" onClick={() => setImportDialogOpen(true)} className="gap-2 w-full sm:w-auto justify-center">
                 <Upload className="h-4 w-4" />
-                <span className="hidden sm:inline">Importer</span>
+                <span className="hidden sm:inline">Importer un prompt</span>
                 <span className="sm:hidden">Importer</span>
               </Button>
               <Button onClick={() => navigate("/prompts/new")} className="gap-2 w-full sm:w-auto justify-center">
