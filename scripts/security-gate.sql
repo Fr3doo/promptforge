@@ -183,6 +183,69 @@ BEGIN
 END $$;
 
 -- ============================================================================
+-- CHECK 7: prompts_with_share_count (regression guard)
+--   Objectif: empêcher qu'une recréation de la vue retire security_invoker
+-- ============================================================================
+DO $$
+DECLARE
+  v_reg regclass;
+  anon_can_select boolean;
+  public_can_select boolean;
+  invoker_ok boolean;
+  barrier_ok boolean;
+  anon_bypassrls boolean;
+  auth_bypassrls boolean;
+BEGIN
+  v_reg := to_regclass('public.prompts_with_share_count');
+  IF v_reg IS NULL THEN
+    RAISE EXCEPTION 'SECURITY GATE FAILED: view public.prompts_with_share_count is missing';
+  END IF;
+
+  -- reloptions peut être NULL => on coalesce proprement
+  SELECT
+    (coalesce(c.reloptions, ARRAY[]::text[]) @> ARRAY['security_invoker=true']),
+    (coalesce(c.reloptions, ARRAY[]::text[]) @> ARRAY['security_barrier=true'])
+  INTO invoker_ok, barrier_ok
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = 'public'
+    AND c.relname = 'prompts_with_share_count';
+
+  SELECT
+    has_table_privilege('anon',   v_reg, 'SELECT'),
+    has_table_privilege('public', v_reg, 'SELECT')
+  INTO anon_can_select, public_can_select;
+
+  IF anon_can_select THEN
+    RAISE EXCEPTION 'SECURITY GATE FAILED: anon can SELECT on public.prompts_with_share_count';
+  END IF;
+
+  IF public_can_select THEN
+    RAISE EXCEPTION 'SECURITY GATE FAILED: PUBLIC can SELECT on public.prompts_with_share_count';
+  END IF;
+
+  IF NOT invoker_ok THEN
+    RAISE EXCEPTION 'SECURITY GATE FAILED: prompts_with_share_count missing security_invoker=true';
+  END IF;
+
+  -- Fail-fast si les rôles client ont BYPASSRLS (régression sécurité majeure)
+  SELECT rolbypassrls INTO anon_bypassrls FROM pg_roles WHERE rolname = 'anon';
+  SELECT rolbypassrls INTO auth_bypassrls FROM pg_roles WHERE rolname = 'authenticated';
+
+  IF coalesce(anon_bypassrls, false) THEN
+    RAISE EXCEPTION 'SECURITY GATE FAILED: role anon has BYPASSRLS=true';
+  END IF;
+
+  IF coalesce(auth_bypassrls, false) THEN
+    RAISE EXCEPTION 'SECURITY GATE FAILED: role authenticated has BYPASSRLS=true';
+  END IF;
+
+  -- Note: security_barrier est optionnel (trade-off perf). On log, mais non bloquant.
+  RAISE NOTICE 'CHECK 7 PASSED: prompts_with_share_count secured (security_invoker=%, security_barrier=%)',
+    invoker_ok, barrier_ok;
+END $$;
+
+-- ============================================================================
 -- SUMMARY
 -- ============================================================================
 DO $$

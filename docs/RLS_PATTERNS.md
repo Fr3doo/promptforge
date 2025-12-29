@@ -527,6 +527,45 @@ REVOKE SELECT ON TABLE public.prompt_shares FROM anon;
 REVOKE ALL ON TABLE public.prompt_shares FROM public;
 ```
 
+### Anti-régression : CHECK CI pour les vues
+
+Le risque principal avec les vues `security_invoker` est la **régression silencieuse** : un `CREATE OR REPLACE VIEW` (via UI, migration, ou refactor) peut recréer la vue **sans** l'option `security_invoker=true`, rendant l'accès potentiellement plus permissif que prévu.
+
+#### Protection CI
+
+Le fichier `scripts/security-gate.sql` inclut un CHECK dédié (CHECK 7) qui :
+
+1. Vérifie que la vue existe
+2. Valide `security_invoker=true` dans `reloptions`
+3. Vérifie que `anon` et `PUBLIC` ne peuvent pas `SELECT`
+4. Vérifie que `anon` et `authenticated` n'ont pas `BYPASSRLS`
+5. Log le statut de `security_barrier` (optionnel, trade-off perf)
+
+Extrait :
+```sql
+IF NOT invoker_ok THEN
+  RAISE EXCEPTION 'SECURITY GATE FAILED: prompts_with_share_count missing security_invoker=true';
+END IF;
+```
+
+#### Scanners de sécurité et faux positifs
+
+Certains scanners (notamment LLM-based) utilisent une heuristique simpliste :
+
+- "Vue sans policies RLS directes" → "Vue non sécurisée"
+
+Cette heuristique est **incorrecte** pour PostgreSQL car :
+
+- Les vues n'ont pas de "policies RLS" au sens table
+- Le mécanisme correct est `security_invoker=true` + RLS/Force RLS sur les tables de base
+
+En cas d'alerte sur une vue :
+
+1. Vérifier les accès réels avec `has_table_privilege()`
+2. Vérifier `reloptions` pour `security_invoker`
+3. Documenter le faux positif avec preuves SQL
+4. S'assurer que le CHECK CI empêche toute régression
+
 ---
 
 ## Pattern 7 : Privilege Hardening (Défense en profondeur)
