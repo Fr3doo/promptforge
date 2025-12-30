@@ -41,6 +41,7 @@ export const messages = {
   dialogs: commonMessages.dialogs,
   buttons: commonMessages.buttons,
   permissions: commonMessages.permissions,
+  loadingErrors: commonMessages.loadingErrors,
   
   // Messages from prompts.ts
   prompts: {
