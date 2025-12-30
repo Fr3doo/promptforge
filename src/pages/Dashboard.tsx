@@ -11,11 +11,12 @@ import { messages } from "@/constants/messages";
 import { useLoadingState } from "@/hooks/useLoadingState";
 import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 import { DashboardPromptSection } from "@/components/DashboardPromptSection";
+import { ErrorCard } from "@/components/ErrorCard";
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { data: dashboardData, isLoading } = useDashboard();
+  const { data: dashboardData, isLoading, error, refetch } = useDashboard();
   const { mutate: toggleFavorite } = useToggleFavorite();
   const { mutateAsync: toggleVisibility } = useToggleVisibility();
 
@@ -27,7 +28,18 @@ const Dashboard = () => {
   const loadingState = useLoadingState({
     isLoading,
     data: dashboardData,
+    error,
     loadingComponent: <DashboardSkeleton />,
+    errorComponent: (err) => (
+      <div className="container mx-auto px-4 py-8">
+        <ErrorCard
+          title={messages.loadingErrors.dashboard.title}
+          description={messages.loadingErrors.dashboard.description}
+          error={err}
+          onRetry={() => refetch()}
+        />
+      </div>
+    ),
     emptyComponent: (
       <Card>
         <CardHeader>

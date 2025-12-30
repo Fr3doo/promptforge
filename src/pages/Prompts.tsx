@@ -17,6 +17,7 @@ import { SharePromptDialog } from "@/features/prompts/components/SharePromptDial
 import { ImportPromptDialog } from "@/components/prompts/ImportPromptDialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { messages } from "@/constants/messages";
+import { ErrorCard } from "@/components/ErrorCard";
 
 
 const Prompts = () => {
@@ -33,8 +34,8 @@ const Prompts = () => {
   const { data: justCreatedPrompt } = usePrompt(justCreatedId || undefined);
   
   const debouncedSearch = useDebounce(searchQuery, 300);
-  const { data: prompts = [], isLoading } = useOwnedPrompts();
-  const { data: sharedWithMe = [], isLoading: isLoadingShared } = useSharedWithMePrompts();
+  const { data: prompts = [], isLoading, error: promptsError, refetch: refetchPrompts } = useOwnedPrompts();
+  const { data: sharedWithMe = [], isLoading: isLoadingShared, error: sharedError, refetch: refetchShared } = useSharedWithMePrompts();
   const { mutate: toggleFavorite } = useToggleFavorite();
   const { mutate: deletePrompt } = useDeletePrompt();
   const { mutate: duplicatePrompt } = useDuplicatePrompt();
@@ -178,18 +179,27 @@ const Prompts = () => {
 
         <section>
           <h2 className="text-xl font-semibold mb-4">Mes Prompts</h2>
-          <PromptList
-            prompts={filteredPrompts}
-            isLoading={isLoading}
-            onToggleFavorite={(id, currentState) =>
-              toggleFavorite({ id, currentState })
-            }
-            onDelete={(id) => deletePrompt(id)}
-            onDuplicate={handleDuplicate}
-            onToggleVisibility={handleToggleVisibility}
-            emptySearchState={!!searchQuery}
-            currentUserId={user?.id}
-          />
+          {promptsError ? (
+          <ErrorCard
+              title={messages.loadingErrors.prompts.title}
+              description={messages.loadingErrors.prompts.description}
+              error={promptsError as Error}
+              onRetry={() => refetchPrompts()}
+            />
+          ) : (
+            <PromptList
+              prompts={filteredPrompts}
+              isLoading={isLoading}
+              onToggleFavorite={(id, currentState) =>
+                toggleFavorite({ id, currentState })
+              }
+              onDelete={(id) => deletePrompt(id)}
+              onDuplicate={handleDuplicate}
+              onToggleVisibility={handleToggleVisibility}
+              emptySearchState={!!searchQuery}
+              currentUserId={user?.id}
+            />
+          )}
         </section>
 
         <section>
@@ -197,19 +207,28 @@ const Prompts = () => {
             <Share2 className="h-5 w-5 text-primary" />
             <h2 className="text-xl font-semibold">Partagés avec moi</h2>
           </div>
-          <PromptList
-            prompts={filteredSharedPrompts}
-            isLoading={isLoadingShared}
-            onToggleFavorite={(id, currentState) =>
-              toggleFavorite({ id, currentState })
-            }
-            onDelete={(id) => deletePrompt(id)}
-            onDuplicate={handleDuplicate}
-            onToggleVisibility={handleToggleVisibility}
-            emptySearchState={!!searchQuery}
-            currentUserId={user?.id}
-            isSharedSection={true}
-          />
+          {sharedError ? (
+          <ErrorCard
+              title={messages.loadingErrors.sharedPrompts.title}
+              description={messages.loadingErrors.sharedPrompts.description}
+              error={sharedError as Error}
+              onRetry={() => refetchShared()}
+            />
+          ) : (
+            <PromptList
+              prompts={filteredSharedPrompts}
+              isLoading={isLoadingShared}
+              onToggleFavorite={(id, currentState) =>
+                toggleFavorite({ id, currentState })
+              }
+              onDelete={(id) => deletePrompt(id)}
+              onDuplicate={handleDuplicate}
+              onToggleVisibility={handleToggleVisibility}
+              emptySearchState={!!searchQuery}
+              currentUserId={user?.id}
+              isSharedSection={true}
+            />
+          )}
         </section>
       </main>
       

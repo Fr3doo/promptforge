@@ -191,6 +191,27 @@ export const commonMessages = {
     },
   },
 
+  // Loading error cards with retry
+  loadingErrors: {
+    dashboard: {
+      title: "Impossible de charger le tableau de bord",
+      description: "Une erreur est survenue lors du chargement de vos données.",
+    },
+    prompts: {
+      title: "Impossible de charger les prompts",
+      description: "Une erreur est survenue lors du chargement de vos prompts.",
+    },
+    sharedPrompts: {
+      title: "Impossible de charger les prompts partagés",
+      description: "Une erreur est survenue lors du chargement des prompts partagés avec vous.",
+    },
+    generic: {
+      title: "Erreur de chargement",
+      description: "Une erreur est survenue. Veuillez réessayer.",
+    },
+    retryButton: "Réessayer",
+  },
+
   // Tooltips (Migrated from Step 10.2)
   tooltips: {
     search: {
