@@ -13,6 +13,8 @@ interface UsePromptFormOptions {
   existingVariables?: Variable[];
   isEditMode: boolean;
   canEdit?: boolean;
+  promptId?: string;
+  clientUpdatedAt?: string;
 }
 
 /**
@@ -25,7 +27,9 @@ export function usePromptForm({
   prompt, 
   existingVariables = [], 
   isEditMode, 
-  canEdit = true 
+  canEdit = true,
+  promptId,
+  clientUpdatedAt,
 }: UsePromptFormOptions) {
   // Messages centralisés
   const promptMessages = usePromptMessages();
@@ -76,6 +80,8 @@ export function usePromptForm({
   // 7. Sauvegarde avec callback pour nettoyer le brouillon
   const { savePrompt, isSaving } = usePromptSave({ 
     isEditMode,
+    promptId,
+    clientUpdatedAt,
     onSuccess: () => {
       // Supprimer le brouillon après enregistrement réussi (mode création uniquement)
       if (!isEditMode) {

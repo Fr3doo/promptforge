@@ -1,5 +1,4 @@
-import { useOptimisticLocking, type OptimisticLockError } from "@/hooks/useOptimisticLocking";
-import { usePrompt } from "@/hooks/usePrompts";
+import { useOptimisticLocking } from "@/hooks/useOptimisticLocking";
 import { toast } from "sonner";
 
 export interface ConflictCheckResult {
@@ -9,46 +8,38 @@ export interface ConflictCheckResult {
 
 /**
  * Hook pour gérer les conflits de concurrence (optimistic locking)
- * Isole la logique complexe de détection de conflicts
+ * Utilise checkForServerUpdates pour une vraie vérification serveur
  */
-export function useConflictHandler(promptId?: string) {
-  const { checkForConflicts } = useOptimisticLocking();
-  const { data: currentServerPrompt } = usePrompt(promptId);
+export function useConflictHandler(promptId?: string, clientUpdatedAt?: string) {
+  const { checkForServerUpdates } = useOptimisticLocking();
 
-  const checkConflict = (): ConflictCheckResult => {
-    // Pas de conflit possible en mode création
-    if (!promptId || !currentServerPrompt) {
+  const checkConflict = async (): Promise<ConflictCheckResult> => {
+    // Pas de conflit possible en mode création ou sans timestamp client
+    if (!promptId || !clientUpdatedAt) {
       return { hasConflict: false };
     }
 
-    try {
-      // Créer un prompt client fictif avec updated_at de la dernière lecture
-      const clientPrompt = {
-        ...currentServerPrompt,
-        updated_at: currentServerPrompt.updated_at,
+    const result = await checkForServerUpdates(promptId, clientUpdatedAt);
+
+    if (result.hasConflict) {
+      const message =
+        "Ce prompt a été modifié par un autre utilisateur. Veuillez recharger la page pour voir les dernières modifications.";
+
+      toast.error("Conflit détecté", {
+        description: message,
+        action: {
+          label: "Recharger",
+          onClick: () => window.location.reload(),
+        },
+      });
+
+      return {
+        hasConflict: true,
+        conflictMessage: message,
       };
-
-      checkForConflicts(clientPrompt, currentServerPrompt);
-      return { hasConflict: false };
-    } catch (error) {
-      const lockError = error as OptimisticLockError;
-      if (lockError.type === "CONFLICT") {
-        // Toast avec action de rechargement
-        toast.error("Conflit détecté", {
-          description: lockError.message,
-          action: {
-            label: "Recharger",
-            onClick: () => window.location.reload(),
-          },
-        });
-
-        return {
-          hasConflict: true,
-          conflictMessage: lockError.message,
-        };
-      }
-      return { hasConflict: false };
     }
+
+    return { hasConflict: false };
   };
 
   return { checkConflict };
