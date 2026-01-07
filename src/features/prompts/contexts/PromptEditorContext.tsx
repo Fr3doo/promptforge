@@ -73,12 +73,14 @@ export function PromptEditorProvider({ children, promptId }: PromptEditorProvide
     canEdit
   );
   
-  // Form
+  // Form - passe clientUpdatedAt capturé à l'ouverture
   const form = usePromptForm({
     prompt,
     existingVariables,
     isEditMode,
     canEdit,
+    promptId,
+    clientUpdatedAt: prompt?.updated_at ?? undefined,
   });
   
   const handleRefreshPrompt = () => {

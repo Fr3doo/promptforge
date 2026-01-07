@@ -10,6 +10,7 @@ interface UsePromptSaveOptions {
   isEditMode: boolean;
   onSuccess?: () => void;
   promptId?: string;
+  clientUpdatedAt?: string;
 }
 
 interface PromptSaveData {
@@ -32,11 +33,12 @@ export function usePromptSave({
   isEditMode,
   onSuccess,
   promptId,
+  clientUpdatedAt,
 }: UsePromptSaveOptions = { isEditMode: false }) {
   // Composition des hooks spécialisés
   const { validate } = usePromptValidation();
   const { checkPermission } = usePromptPermissionCheck(promptId);
-  const { checkConflict } = useConflictHandler(promptId);
+  const { checkConflict } = useConflictHandler(promptId, clientUpdatedAt);
   const { create, update, isSaving } = usePromptMutations();
   const { createInitialVersion } = useInitialVersionCreator();
   const { handleError } = usePromptSaveErrorHandler();
@@ -60,8 +62,8 @@ export function usePromptSave({
         return;
       }
 
-      // Étape 3 : Vérification des conflits
-      const conflictResult = checkConflict();
+      // Étape 3 : Vérification des conflits (async)
+      const conflictResult = await checkConflict();
       if (conflictResult.hasConflict) {
         return; // Toast déjà affiché par useConflictHandler
       }
