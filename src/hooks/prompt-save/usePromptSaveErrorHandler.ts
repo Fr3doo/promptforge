@@ -1,4 +1,6 @@
+import { ZodError } from "zod";
 import { usePromptMessages } from "@/features/prompts/hooks/usePromptMessages";
+import { extractZodError } from "@/lib/zodErrorUtils";
 
 export type SaveErrorType = 
   | "VALIDATION"
@@ -27,14 +29,14 @@ export function usePromptSaveErrorHandler() {
     retry?: () => void
   ) => {
     // 1. Erreurs de validation Zod
-    if (error?.errors?.[0]?.message) {
-      const validationError = error.errors[0];
-      const field = validationError.path?.[0] || "Champ";
-      promptMessages.showValidationError(field.toString(), validationError.message);
+    const zodError = extractZodError(error);
+    if (zodError) {
+      promptMessages.showValidationError(zodError.field, zodError.message);
       return;
     }
 
-    if (error?.name === "ZodError") {
+    // Fallback pour ZodError sans issues extractibles
+    if (error instanceof ZodError) {
       promptMessages.showValidationError("Données", "Veuillez vérifier les données saisies");
       return;
     }
