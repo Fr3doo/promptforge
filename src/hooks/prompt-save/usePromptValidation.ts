@@ -1,4 +1,5 @@
 import { promptSchema, variableSchema } from "@/lib/validation";
+import { extractZodError } from "@/lib/zodErrorUtils";
 import type { Variable } from "@/features/prompts/types";
 
 export interface ValidatedPromptData {
@@ -72,14 +73,12 @@ export function usePromptValidation() {
         },
         variables: validatedVariables,
       };
-    } catch (error: any) {
-      // Extraction message d'erreur Zod
-      if (error?.errors?.[0]?.message) {
-        const validationError = error.errors[0];
-        const field = validationError.path?.[0] || "Champ";
+    } catch (error: unknown) {
+      const zodError = extractZodError(error);
+      if (zodError) {
         return {
           isValid: false,
-          error: `${field}: ${validationError.message}`,
+          error: `${zodError.field}: ${zodError.message}`,
         };
       }
       return {
