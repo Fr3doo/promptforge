@@ -958,4 +958,90 @@ describe('usePromptSave', () => {
       expect(mockNotifyError).toHaveBeenCalledTimes(3);
     });
   });
+
+  describe('Integration with zodErrorUtils', () => {
+    it('should display field-specific error via extractZodError on validation failure', async () => {
+      const { result } = renderHook(() => usePromptSave({ isEditMode: false }));
+
+      // Title validation triggers ZodError internally
+      const invalidData = { ...validPromptData, title: '' };
+      await result.current.savePrompt(invalidData);
+
+      // Should extract field name from ZodError and display specific message
+      expect(mockNotifyError).toHaveBeenCalledWith(
+        messages.errors.validation.failed,
+        expect.stringContaining('titre')
+      );
+      expect(mockCreatePrompt).not.toHaveBeenCalled();
+    });
+
+    it('should display content-specific error from ZodError', async () => {
+      const { result } = renderHook(() => usePromptSave({ isEditMode: false }));
+
+      const invalidData = { ...validPromptData, content: '   ' };
+      await result.current.savePrompt(invalidData);
+
+      expect(mockNotifyError).toHaveBeenCalledWith(
+        messages.errors.validation.failed,
+        expect.stringContaining('contenu')
+      );
+      expect(mockCreatePrompt).not.toHaveBeenCalled();
+    });
+
+    it('should handle variable validation errors via ZodError extraction', async () => {
+      const { result } = renderHook(() => usePromptSave({ isEditMode: false }));
+
+      const invalidVariable = {
+        name: '123invalid', // Invalid: starts with number
+        type: 'STRING' as const,
+        required: false,
+      } as Variable;
+
+      const dataWithInvalidVariable = {
+        ...validPromptData,
+        variables: [invalidVariable],
+      };
+
+      await result.current.savePrompt(dataWithInvalidVariable);
+
+      expect(mockNotifyError).toHaveBeenCalled();
+      expect(mockCreatePrompt).not.toHaveBeenCalled();
+    });
+
+    it('should handle non-Zod errors without extractZodError interference', async () => {
+      mockCreatePrompt.mockImplementation(() => {
+        throw new Error('Network error');
+      });
+
+      const { result } = renderHook(() => usePromptSave({ isEditMode: false }));
+
+      await result.current.savePrompt(validPromptData);
+
+      // Network errors should be handled by error handler, not zodErrorUtils
+      expect(mockNotifyError).toHaveBeenCalled();
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('should extract nested field paths from ZodError', async () => {
+      const { result } = renderHook(() => usePromptSave({ isEditMode: false }));
+
+      // Variable with empty name triggers nested validation error
+      const invalidVariable = {
+        name: '',
+        type: 'STRING' as const,
+        required: false,
+      } as Variable;
+
+      const dataWithInvalidVariable = {
+        ...validPromptData,
+        variables: [invalidVariable],
+      };
+
+      await result.current.savePrompt(dataWithInvalidVariable);
+
+      // Should handle nested path like variables[0].name
+      expect(mockNotifyError).toHaveBeenCalled();
+      expect(mockCreatePrompt).not.toHaveBeenCalled();
+    });
+  });
 });
