@@ -13,17 +13,18 @@ import { PromptCardView } from "./PromptCardView";
 import { PromptCardActions } from "./PromptCardActions";
 import { SharePromptDialog } from "./SharePromptDialog";
 import { PublicShareDialog } from "./PublicShareDialog";
-import type { Prompt } from "../types";
+import type { Prompt, Visibility, Permission } from "../types";
 import type { SharingState } from "./VisibilityBadge";
 import { useUpdatePublicPermission } from "@/hooks/usePrompts";
 import { messages } from "@/constants/messages";
+import { VISIBILITY } from "@/constants/domain-types";
 
 interface PromptCardProps {
   prompt: Prompt;
   onToggleFavorite: (id: string, currentState: boolean) => void;
   onDelete?: (id: string) => void;
   onDuplicate?: (id: string) => void;
-  onToggleVisibility?: (id: string, currentVisibility: "PRIVATE" | "SHARED", permission?: "READ" | "WRITE") => Promise<void>;
+  onToggleVisibility?: (id: string, currentVisibility: Visibility, permission?: Permission) => Promise<void>;
   onClick: () => void;
   index?: number;
   currentUserId?: string;
@@ -45,12 +46,12 @@ export const PromptCard = ({
   const { mutateAsync: updatePublicPermission } = useUpdatePublicPermission();
   const isOwner = currentUserId && prompt.owner_id === currentUserId;
   const isDraft = prompt.status === "DRAFT";
-  const isShared = prompt.visibility === "SHARED";
+  const isShared = prompt.visibility === VISIBILITY.SHARED;
   
   // Calculer le véritable état de partage en utilisant share_count de la vue SQL
   const shareCount = prompt.share_count || 0;
   const sharingState: SharingState = 
-    prompt.visibility === "SHARED" 
+    prompt.visibility === VISIBILITY.SHARED 
       ? "PUBLIC" 
       : shareCount > 0 
         ? "PRIVATE_SHARED" 
@@ -63,13 +64,13 @@ export const PromptCard = ({
     }
   };
 
-  const handleToggleVisibility = async (permission?: "READ" | "WRITE") => {
+  const handleToggleVisibility = async (permission?: Permission) => {
     if (onToggleVisibility) {
       await onToggleVisibility(prompt.id, prompt.visibility, permission);
     }
   };
 
-  const handleUpdatePermission = async (permission: "READ" | "WRITE") => {
+  const handleUpdatePermission = async (permission: Permission) => {
     await updatePublicPermission({ id: prompt.id, permission });
   };
 

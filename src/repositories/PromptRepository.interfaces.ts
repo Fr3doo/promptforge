@@ -1,7 +1,8 @@
 import type { Tables } from "@/integrations/supabase/types";
+import type { Permission } from "@/constants/domain-types";
 
-// Type de permission de partage
-export type SharePermission = "READ" | "WRITE";
+// Type de permission de partage (alias pour rétrocompatibilité)
+export type SharePermission = Permission;
 
 // Type de base - données persistées
 export type Prompt = Tables<"prompts"> & { share_count?: number };

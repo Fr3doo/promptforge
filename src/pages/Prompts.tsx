@@ -18,6 +18,7 @@ import { ImportPromptDialog } from "@/components/prompts/ImportPromptDialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { messages } from "@/constants/messages";
 import { ErrorCard } from "@/components/ErrorCard";
+import type { Visibility, Permission } from "@/constants/domain-types";
 
 
 const Prompts = () => {
@@ -58,7 +59,7 @@ const Prompts = () => {
     });
   };
 
-  const handleToggleVisibility = async (id: string, currentVisibility: "PRIVATE" | "SHARED", permission?: "READ" | "WRITE") => {
+  const handleToggleVisibility = async (id: string, currentVisibility: Visibility, permission?: Permission) => {
     if (permission !== undefined) {
       await toggleVisibility({ id, currentVisibility, publicPermission: permission });
     } else {

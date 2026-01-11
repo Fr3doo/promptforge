@@ -7,7 +7,7 @@ import {
   AUTH_LIMITS 
 } from '@/constants/validation-limits';
 import { VARIABLE_NAME_REGEX } from '@/constants/regex-patterns';
-
+import { VISIBILITY_VALUES, VARIABLE_TYPE_VALUES } from '@/constants/domain-types';
 /**
  * NORMALISATION DE LA DESCRIPTION
  * ================================
@@ -42,7 +42,7 @@ export const promptSchema = z.object({
     .min(PROMPT_LIMITS.CONTENT.MIN, 'Le contenu est requis')
     .max(PROMPT_LIMITS.CONTENT.MAX, `Le contenu ne peut pas dépasser ${PROMPT_LIMITS.CONTENT.MAX} caractères`),
   tags: tagsArraySchema,
-  visibility: z.enum(['PRIVATE', 'SHARED'], { errorMap: () => ({ message: 'Visibilité invalide' }) }),
+  visibility: z.enum(VISIBILITY_VALUES, { errorMap: () => ({ message: 'Visibilité invalide' }) }),
 });
 
 // Variable validation schema
@@ -52,7 +52,7 @@ export const variableSchema = z.object({
     .min(VARIABLE_LIMITS.NAME.MIN, 'Le nom de la variable est requis')
     .max(VARIABLE_LIMITS.NAME.MAX, `Le nom ne peut pas dépasser ${VARIABLE_LIMITS.NAME.MAX} caractères`)
     .regex(VARIABLE_NAME_REGEX, 'Le nom ne peut contenir que des lettres, chiffres et underscores'),
-  type: z.enum(['STRING', 'NUMBER', 'BOOLEAN', 'ENUM', 'DATE', 'MULTISTRING'], {
+  type: z.enum(VARIABLE_TYPE_VALUES, {
     errorMap: () => ({ message: 'Type de variable invalide' })
   }),
   required: z.boolean(),

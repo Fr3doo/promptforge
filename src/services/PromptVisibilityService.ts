@@ -2,6 +2,8 @@ import type {
   PromptMutationRepository, 
   PromptQueryRepository 
 } from "@/repositories/PromptRepository.interfaces";
+import type { Visibility, Permission, PromptStatus } from "@/constants/domain-types";
+import { VISIBILITY, PERMISSION, PROMPT_STATUS } from "@/constants/domain-types";
 
 /**
  * Service dédié à la gestion de la visibilité et des permissions publiques des prompts
@@ -36,9 +38,9 @@ export interface PromptVisibilityService {
    */
   toggleVisibility(
     id: string,
-    currentVisibility: "PRIVATE" | "SHARED",
-    publicPermission?: "READ" | "WRITE"
-  ): Promise<"PRIVATE" | "SHARED">;
+    currentVisibility: Visibility,
+    publicPermission?: Permission
+  ): Promise<Visibility>;
 
   /**
    * Met à jour uniquement la permission publique d'un prompt SHARED
@@ -51,7 +53,7 @@ export interface PromptVisibilityService {
    * Cette méthode ne change PAS la visibilité, seulement la permission.
    * Le prompt doit être SHARED, sinon une erreur est levée.
    */
-  updatePublicPermission(id: string, permission: "READ" | "WRITE"): Promise<void>;
+  updatePublicPermission(id: string, permission: Permission): Promise<void>;
 }
 
 export class SupabasePromptVisibilityService implements PromptVisibilityService {
@@ -62,36 +64,38 @@ export class SupabasePromptVisibilityService implements PromptVisibilityService 
 
   async toggleVisibility(
     id: string,
-    currentVisibility: "PRIVATE" | "SHARED",
-    publicPermission?: "READ" | "WRITE"
-  ): Promise<"PRIVATE" | "SHARED"> {
+    currentVisibility: Visibility,
+    publicPermission?: Permission
+  ): Promise<Visibility> {
     // Toggle PRIVATE <-> SHARED
-    const newVisibility = currentVisibility === "PRIVATE" ? "SHARED" : "PRIVATE";
+    const newVisibility = currentVisibility === VISIBILITY.PRIVATE 
+      ? VISIBILITY.SHARED 
+      : VISIBILITY.PRIVATE;
     
     const updateData: {
-      visibility: "PRIVATE" | "SHARED";
-      status?: "PUBLISHED";
-      public_permission: "READ" | "WRITE";
+      visibility: Visibility;
+      status?: PromptStatus;
+      public_permission: Permission;
     } = {
       visibility: newVisibility,
-      public_permission: "READ", // Reset to default
+      public_permission: PERMISSION.READ, // Reset to default
     };
 
     // Force PUBLISHED status and set permission when going public
-    if (newVisibility === "SHARED") {
-      updateData.status = "PUBLISHED";
-      updateData.public_permission = publicPermission || "READ";
+    if (newVisibility === VISIBILITY.SHARED) {
+      updateData.status = PROMPT_STATUS.PUBLISHED;
+      updateData.public_permission = publicPermission || PERMISSION.READ;
     }
 
     await this.mutationRepository.update(id, updateData);
     return newVisibility;
   }
 
-  async updatePublicPermission(id: string, permission: "READ" | "WRITE"): Promise<void> {
+  async updatePublicPermission(id: string, permission: Permission): Promise<void> {
     // First, check if the prompt is SHARED (public permission only applies to SHARED prompts)
     const prompt = await this.queryRepository.fetchById(id);
 
-    if (prompt.visibility !== "SHARED") {
+    if (prompt.visibility !== VISIBILITY.SHARED) {
       throw new Error("PERMISSION_UPDATE_ON_PRIVATE_PROMPT");
     }
 
