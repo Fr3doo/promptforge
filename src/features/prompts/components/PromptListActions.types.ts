@@ -1,3 +1,5 @@
+import type { Visibility, Permission } from "@/constants/domain-types";
+
 export interface PromptListActionsProps {
   // Callbacks requis
   onPromptClick: (promptId: string) => void;
@@ -8,8 +10,8 @@ export interface PromptListActionsProps {
   onDuplicate?: (id: string) => void;
   onToggleVisibility?: (
     id: string,
-    currentVisibility: "PRIVATE" | "SHARED",
-    permission: "READ" | "WRITE"
+    currentVisibility: Visibility,
+    permission: Permission
   ) => Promise<void>;
   
   // Métadonnées

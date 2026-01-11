@@ -2,10 +2,12 @@ import { useNavigate } from "react-router-dom";
 import { useCreatePrompt, useUpdatePrompt } from "@/hooks/usePrompts";
 import { useBulkUpsertVariables } from "@/hooks/useVariables";
 import { useToastNotifier } from "@/hooks/useToastNotifier";
+import type { Visibility, VariableType } from "@/constants/domain-types";
+import { PERMISSION, PROMPT_STATUS } from "@/constants/domain-types";
 
 export interface SimpleVariable {
   name: string;
-  type: "STRING" | "NUMBER" | "BOOLEAN" | "DATE" | "ENUM" | "MULTISTRING";
+  type: VariableType;
   required: boolean;
   default_value?: string;
   help?: string;
@@ -18,7 +20,7 @@ export interface PromptFormData {
   description: string | null;
   content: string;
   tags: string[];
-  visibility: "PRIVATE" | "SHARED";
+  visibility: Visibility;
 }
 
 export interface MutationOptions {
@@ -66,8 +68,8 @@ export function usePromptMutations() {
         ...promptData,
         is_favorite: false,
         version: "1.0.0",
-        status: "PUBLISHED",
-        public_permission: "READ" as const,
+        status: PROMPT_STATUS.PUBLISHED,
+        public_permission: PERMISSION.READ,
       },
       {
         onSuccess: async (newPrompt) => {

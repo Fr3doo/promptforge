@@ -1,13 +1,14 @@
 import { promptSchema, variableSchema } from "@/lib/validation";
 import { extractZodError } from "@/lib/zodErrorUtils";
 import type { Variable } from "@/features/prompts/types";
+import type { Visibility, VariableType } from "@/constants/domain-types";
 
 export interface ValidatedPromptData {
   title: string;
   description: string | null;
   content: string;
   tags: string[];
-  visibility: "PRIVATE" | "SHARED";
+  visibility: Visibility;
 }
 
 export interface ValidationResult {
@@ -15,7 +16,7 @@ export interface ValidationResult {
   promptData?: ValidatedPromptData;
   variables?: Array<{
     name: string;
-    type: "STRING" | "NUMBER" | "BOOLEAN" | "DATE" | "ENUM" | "MULTISTRING";
+    type: VariableType;
     required: boolean;
     default_value?: string;
     help?: string;
@@ -35,7 +36,7 @@ export function usePromptValidation() {
     description: string;
     content: string;
     tags: string[];
-    visibility: "PRIVATE" | "SHARED";
+    visibility: Visibility;
     variables: Variable[];
   }): ValidationResult => {
     try {

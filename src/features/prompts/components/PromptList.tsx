@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { PromptListSkeleton } from "@/components/PromptCardSkeleton";
 import { EmptyPromptState } from "./EmptyPromptState";
-import type { Prompt } from "../types";
+import type { Prompt, Visibility, Permission } from "../types";
 import { PromptListView } from "./PromptListView";
 import { PromptListActionsItem } from "./PromptListActions";
 
@@ -11,7 +11,7 @@ interface PromptListProps {
   onToggleFavorite: (id: string, currentState: boolean) => void;
   onDelete?: (id: string) => void;
   onDuplicate?: (id: string) => void;
-  onToggleVisibility?: (id: string, currentVisibility: "PRIVATE" | "SHARED", permission: "READ" | "WRITE") => Promise<void>;
+  onToggleVisibility?: (id: string, currentVisibility: Visibility, permission: Permission) => Promise<void>;
   emptySearchState?: boolean;
   currentUserId?: string;
   isSharedSection?: boolean;

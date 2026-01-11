@@ -1,4 +1,4 @@
-import type { Prompt } from "../types";
+import type { Prompt, Visibility, Permission } from "../types";
 
 /**
  * Props pour le composant PromptCardActions
@@ -26,8 +26,8 @@ export interface PromptCardActionsProps {
   /** Callback pour basculer la visibilité */
   onToggleVisibility: (
     id: string,
-    currentVisibility: "PRIVATE" | "SHARED",
-    permission?: "READ" | "WRITE"
+    currentVisibility: Visibility,
+    permission?: Permission
   ) => Promise<void>;
   
   /** Callback pour éditer le prompt */

@@ -1,9 +1,10 @@
 import { toast } from "sonner";
 import { useEdgeFunctionRepository } from "@/contexts/EdgeFunctionRepositoryContext";
+import type { VariableType } from "@/constants/domain-types";
 
 export interface SimpleVariable {
   name: string;
-  type: "STRING" | "NUMBER" | "BOOLEAN" | "DATE" | "ENUM" | "MULTISTRING";
+  type: VariableType;
   required: boolean;
   default_value?: string;
   help?: string;
