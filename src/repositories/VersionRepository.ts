@@ -16,6 +16,7 @@ export interface VersionRepository {
   fetchByIds(versionIds: string[]): Promise<Version[]>;
   updatePromptVersion(promptId: string, semver: string): Promise<void>;
   fetchLatestByPromptId(promptId: string): Promise<Version | null>;
+  existsBySemver(promptId: string, semver: string): Promise<boolean>;
 }
 
 export class SupabaseVersionRepository implements VersionRepository {
@@ -93,5 +94,24 @@ export class SupabaseVersionRepository implements VersionRepository {
     
     handleSupabaseError(result);
     return result.data;
+  }
+
+  async existsBySemver(promptId: string, semver: string): Promise<boolean> {
+    if (!promptId) throw new Error("ID prompt requis");
+    if (!semver) throw new Error("Version semver requise");
+    
+    const { data, error } = await supabase
+      .from("versions")
+      .select("id")
+      .eq("prompt_id", promptId)
+      .eq("semver", semver)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Erreur vérification version:", error);
+      return false;
+    }
+
+    return !!data;
   }
 }
