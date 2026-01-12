@@ -23,10 +23,16 @@ export interface PromptFormData {
   visibility: Visibility;
 }
 
+export interface MutationEvent {
+  type: "created" | "updated";
+  title: string;
+}
+
 export interface MutationOptions {
   onSuccess?: () => void;
-  onError?: (error: any) => void;
+  onError?: (error: unknown) => void;
   onCreateSuccess?: (promptId: string) => Promise<void>;
+  onNotify?: (event: MutationEvent) => void;
 }
 
 /**
@@ -39,6 +45,15 @@ export function usePromptMutations() {
   const { mutate: updatePrompt, isPending: updating } = useUpdatePrompt();
   const { mutate: saveVariables } = useBulkUpsertVariables();
   const { notifyPromptCreated, notifyPromptUpdated } = useToastNotifier();
+
+  // Default notifier using toast notifications
+  const defaultNotify = (event: MutationEvent) => {
+    if (event.type === "created") {
+      notifyPromptCreated(event.title);
+    } else {
+      notifyPromptUpdated(event.title);
+    }
+  };
 
   const saveVariablesForPrompt = (promptId: string, variables: SimpleVariable[]) => {
     if (variables.length === 0) return;
@@ -81,8 +96,9 @@ export function usePromptMutations() {
             await options.onCreateSuccess(newPrompt.id);
           }
 
-          // Notification
-          notifyPromptCreated(promptData.title);
+          // Notification (via callback ou défaut)
+          const notify = options?.onNotify ?? defaultNotify;
+          notify({ type: "created", title: promptData.title });
 
           // Callback utilisateur
           options?.onSuccess?.();
@@ -111,8 +127,9 @@ export function usePromptMutations() {
           // Sauvegarder les variables
           saveVariablesForPrompt(promptId, variables);
 
-          // Notification
-          notifyPromptUpdated(promptData.title);
+          // Notification (via callback ou défaut)
+          const notify = options?.onNotify ?? defaultNotify;
+          notify({ type: "updated", title: promptData.title });
 
           // Callback utilisateur
           options?.onSuccess?.();
