@@ -263,6 +263,60 @@ describe("usePromptMutations", () => {
     });
   });
 
+  describe("onNotify callback", () => {
+    it("should call custom onNotify instead of default notification on create", async () => {
+      const customNotify = vi.fn();
+      const { result } = renderHook(() => usePromptMutations());
+
+      result.current.create(validPromptData, [], { onNotify: customNotify });
+
+      await waitFor(() => {
+        expect(customNotify).toHaveBeenCalledWith({
+          type: "created",
+          title: "Test Prompt",
+        });
+        expect(mockNotifyPromptCreated).not.toHaveBeenCalled();
+      });
+    });
+
+    it("should call custom onNotify instead of default notification on update", async () => {
+      const customNotify = vi.fn();
+      const { result } = renderHook(() => usePromptMutations());
+
+      result.current.update("prompt-123", validPromptData, [], { onNotify: customNotify });
+
+      await waitFor(() => {
+        expect(customNotify).toHaveBeenCalledWith({
+          type: "updated",
+          title: "Test Prompt",
+        });
+        expect(mockNotifyPromptUpdated).not.toHaveBeenCalled();
+      });
+    });
+
+    it("should use default notification when onNotify is not provided", async () => {
+      const { result } = renderHook(() => usePromptMutations());
+
+      result.current.create(validPromptData, []);
+
+      await waitFor(() => {
+        expect(mockNotifyPromptCreated).toHaveBeenCalledWith("Test Prompt");
+      });
+    });
+
+    it("should allow disabling notifications by providing silent onNotify", async () => {
+      const silentNotify = vi.fn();
+      const { result } = renderHook(() => usePromptMutations());
+
+      result.current.create(validPromptData, [], { onNotify: silentNotify });
+
+      await waitFor(() => {
+        expect(silentNotify).toHaveBeenCalled();
+        expect(mockNotifyPromptCreated).not.toHaveBeenCalled();
+      });
+    });
+  });
+
   describe("isSaving state", () => {
     it("should reflect creating state", () => {
       vi.mocked(mockCreatePrompt);
