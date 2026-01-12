@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useVersionRepository } from "@/contexts/VersionRepositoryContext";
 
 /**
  * Hook pour gérer le verrouillage optimiste des prompts
@@ -6,6 +7,8 @@ import { useCallback } from "react";
  * avant de permettre une mise à jour ou une création de version
  */
 export function useOptimisticLocking() {
+  const versionRepository = useVersionRepository();
+
   /**
    * Vérifie qu'une version avec le même numéro n'existe pas déjà
    * @param promptId - ID du prompt
@@ -16,22 +19,8 @@ export function useOptimisticLocking() {
     promptId: string,
     semver: string
   ): Promise<boolean> => {
-    const { supabase } = await import("@/integrations/supabase/client");
-    
-    const { data, error } = await supabase
-      .from("versions")
-      .select("id")
-      .eq("prompt_id", promptId)
-      .eq("semver", semver)
-      .maybeSingle();
-
-    if (error) {
-      console.error("Erreur vérification version:", error);
-      return false;
-    }
-
-    return !!data;
-  }, []);
+    return versionRepository.existsBySemver(promptId, semver);
+  }, [versionRepository]);
 
   /**
    * Vérifie si le prompt a été modifié sur le serveur
