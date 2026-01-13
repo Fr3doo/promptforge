@@ -6,6 +6,9 @@ export interface ConflictCheckResult {
   conflictMessage?: string;
 }
 
+const CONFLICT_MESSAGE =
+  "Ce prompt a été modifié par un autre utilisateur. Veuillez recharger la page pour voir les dernières modifications.";
+
 /**
  * Hook pour gérer les conflits de concurrence (optimistic locking)
  * Utilise checkForServerUpdates pour une vraie vérification serveur
@@ -14,7 +17,6 @@ export function useConflictHandler(promptId?: string, clientUpdatedAt?: string) 
   const { checkForServerUpdates } = useOptimisticLocking();
 
   const checkConflict = async (): Promise<ConflictCheckResult> => {
-    // Pas de conflit possible en mode création ou sans timestamp client
     if (!promptId || !clientUpdatedAt) {
       return { hasConflict: false };
     }
@@ -22,21 +24,15 @@ export function useConflictHandler(promptId?: string, clientUpdatedAt?: string) 
     const result = await checkForServerUpdates(promptId, clientUpdatedAt);
 
     if (result.hasConflict) {
-      const message =
-        "Ce prompt a été modifié par un autre utilisateur. Veuillez recharger la page pour voir les dernières modifications.";
-
       toast.error("Conflit détecté", {
-        description: message,
+        description: CONFLICT_MESSAGE,
         action: {
           label: "Recharger",
           onClick: () => window.location.reload(),
         },
       });
 
-      return {
-        hasConflict: true,
-        conflictMessage: message,
-      };
+      return { hasConflict: true, conflictMessage: CONFLICT_MESSAGE };
     }
 
     return { hasConflict: false };
