@@ -96,7 +96,7 @@ describe("usePromptSaveErrorHandler", () => {
     });
   });
 
-  describe("handleError() - Network errors", () => {
+  describe("handleError() - Retryable errors (via isRetryableError)", () => {
     it("calls showNetworkError for error containing 'network'", () => {
       const { result } = renderHook(() => usePromptSaveErrorHandler());
       const retry = vi.fn();
@@ -114,6 +114,40 @@ describe("usePromptSaveErrorHandler", () => {
       result.current.handleError({ message: "fetch failed" }, "UPDATE", retry);
 
       expect(mockShowNetworkError).toHaveBeenCalledWith("mettre à jour le prompt", retry);
+    });
+
+    it("calls showNetworkError for timeout errors", () => {
+      const { result } = renderHook(() => usePromptSaveErrorHandler());
+      const retry = vi.fn();
+
+      result.current.handleError({ message: "request timeout" }, "UPDATE", retry);
+
+      expect(mockShowNetworkError).toHaveBeenCalledWith("mettre à jour le prompt", retry);
+    });
+
+    it("calls showNetworkError for 5xx server errors", () => {
+      const { result } = renderHook(() => usePromptSaveErrorHandler());
+      const retry = vi.fn();
+
+      result.current.handleError({ status: 503 }, "CREATE", retry);
+
+      expect(mockShowNetworkError).toHaveBeenCalledWith("créer le prompt", retry);
+    });
+
+    it("calls showNetworkError for connection refused errors", () => {
+      const { result } = renderHook(() => usePromptSaveErrorHandler());
+
+      result.current.handleError({ message: "ECONNREFUSED" }, "UPDATE");
+
+      expect(mockShowNetworkError).toHaveBeenCalledWith("mettre à jour le prompt", undefined);
+    });
+
+    it("calls showNetworkError for ENOTFOUND errors", () => {
+      const { result } = renderHook(() => usePromptSaveErrorHandler());
+
+      result.current.handleError({ message: "getaddrinfo ENOTFOUND" }, "CREATE");
+
+      expect(mockShowNetworkError).toHaveBeenCalledWith("créer le prompt", undefined);
     });
 
     it("uses correct action message for CREATE context", () => {

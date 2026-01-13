@@ -1,6 +1,7 @@
 import { ZodError } from "zod";
 import { usePromptMessages } from "@/features/prompts/hooks/usePromptMessages";
 import { extractZodError } from "@/lib/zodErrorUtils";
+import { isRetryableError } from "@/lib/network";
 
 export type SaveErrorType = 
   | "VALIDATION"
@@ -41,11 +42,8 @@ export function usePromptSaveErrorHandler() {
       return;
     }
 
-    // 2. Erreurs réseau
-    if (
-      error?.message?.includes("network") ||
-      error?.message?.includes("fetch")
-    ) {
+    // 2. Erreurs transitoires (réseau, timeout, 5xx) → proposer retry
+    if (isRetryableError(error)) {
       const action = context === "CREATE" ? "créer le prompt" : "mettre à jour le prompt";
       promptMessages.showNetworkError(action, retry);
       return;
