@@ -38,21 +38,15 @@ export function useOptimisticLocking() {
     try {
       const serverPrompt = await repository.fetchById(promptId);
       
-      if (!serverPrompt || !clientUpdatedAt) {
+      if (!serverPrompt) {
         return { hasConflict: false };
       }
 
-      const clientDate = new Date(clientUpdatedAt);
-      const serverDate = new Date(serverPrompt.updated_at);
+      const serverIsNewer = new Date(serverPrompt.updated_at) > new Date(clientUpdatedAt);
 
-      if (serverDate > clientDate) {
-        return { 
-          hasConflict: true, 
-          serverUpdatedAt: serverPrompt.updated_at 
-        };
-      }
-
-      return { hasConflict: false };
+      return serverIsNewer
+        ? { hasConflict: true, serverUpdatedAt: serverPrompt.updated_at }
+        : { hasConflict: false };
     } catch (error) {
       console.error("Erreur lors de la vérification des mises à jour:", error);
       return { hasConflict: false };
