@@ -4,7 +4,17 @@ import { extractZodError } from "@/lib/zodErrorUtils";
 import { isRetryableError } from "@/lib/network";
 
 /**
- * Types d'erreurs strictement typés pour la sauvegarde de prompts
+ * Types d'erreurs strictement typés pour la sauvegarde de prompts.
+ *
+ * Chaque type correspond à une catégorie d'erreur avec un traitement spécifique :
+ * - `VALIDATION` : Erreurs de validation Zod (données invalides, schéma non respecté)
+ * - `PERMISSION` : Accès refusé (RLS PostgreSQL, droits insuffisants)
+ * - `NETWORK` : Erreurs transitoires rejouables (réseau, timeout, erreurs 5xx)
+ * - `DUPLICATE` : Contrainte unique violée (titre de prompt déjà existant)
+ * - `SERVER` : Erreur serveur générique (fallback pour erreurs non classifiées)
+ *
+ * @see classifyError pour la logique de classification
+ * @see docs/ERROR_HANDLING_ARCHITECTURE.md pour l'architecture complète
  */
 export type SaveErrorType =
   | "VALIDATION"
@@ -14,8 +24,35 @@ export type SaveErrorType =
   | "SERVER";
 
 /**
- * Classifie une erreur en SaveErrorType pour un traitement exhaustif
- * Fonction pure exportée pour tests isolés
+ * Classifie une erreur brute en `SaveErrorType` pour un traitement exhaustif.
+ *
+ * Fonction **pure** exportée séparément pour permettre des tests unitaires isolés
+ * sans dépendance au hook React.
+ *
+ * ## Priorité de classification (ordre d'évaluation)
+ *
+ * | Priorité | Type | Condition |
+ * |----------|------|-----------|
+ * | 1 | `VALIDATION` | `ZodError` ou `extractZodError()` retourne un résultat |
+ * | 2 | `PERMISSION` | Code `PGRST116` ou message contenant "permission" |
+ * | 3 | `DUPLICATE` | Code PostgreSQL `23505` (contrainte unique) |
+ * | 4 | `NETWORK` | `isRetryableError()` retourne `true` |
+ * | 5 | `SERVER` | Fallback pour toutes les autres erreurs |
+ *
+ * @param error - L'erreur brute à classifier (type `unknown` pour typage strict)
+ * @returns Le type d'erreur correspondant (`SaveErrorType`)
+ *
+ * @example
+ * ```typescript
+ * import { classifyError } from "@/hooks/prompt-save/usePromptSaveErrorHandler";
+ *
+ * try {
+ *   await savePrompt(data);
+ * } catch (error) {
+ *   const errorType = classifyError(error);
+ *   // errorType: "VALIDATION" | "PERMISSION" | "DUPLICATE" | "NETWORK" | "SERVER"
+ * }
+ * ```
  */
 export function classifyError(error: unknown): SaveErrorType {
   // 1. Erreurs de validation Zod (priorité haute)
@@ -44,15 +81,40 @@ export function classifyError(error: unknown): SaveErrorType {
 }
 
 /**
- * Helper pour garantir l'exhaustivité du switch au compile-time
+ * Helper TypeScript pour garantir l'exhaustivité du switch au compile-time.
+ *
+ * Si un nouveau type est ajouté à `SaveErrorType` sans mise à jour du switch,
+ * TypeScript génère une erreur de compilation :
+ * `Argument of type '"NEW_TYPE"' is not assignable to parameter of type 'never'.`
+ *
+ * @param x - Valeur qui ne devrait jamais exister (type `never`)
+ * @throws Error si appelé à runtime (indique un bug dans le switch)
  */
 function assertNever(x: never): never {
   throw new Error(`Unhandled error type: ${x}`);
 }
 
 /**
- * Hook pour gérer TOUTES les erreurs de sauvegarde de manière centralisée
- * Utilise un switch exhaustif garanti par TypeScript
+ * Hook pour gérer **toutes** les erreurs de sauvegarde de prompts de manière centralisée.
+ *
+ * Utilise un switch exhaustif garanti par TypeScript via `assertNever`,
+ * assurant qu'aucun type d'erreur ne peut être oublié.
+ *
+ * @returns Un objet contenant la fonction `handleError`
+ *
+ * @example
+ * ```typescript
+ * const { handleError } = usePromptSaveErrorHandler();
+ *
+ * try {
+ *   await mutation.mutateAsync(data);
+ * } catch (error) {
+ *   handleError(error, "UPDATE", () => mutation.mutateAsync(data));
+ * }
+ * ```
+ *
+ * @see classifyError pour la logique de classification
+ * @see docs/ERROR_HANDLING_ARCHITECTURE.md pour l'architecture complète
  */
 export function usePromptSaveErrorHandler() {
   const promptMessages = usePromptMessages();
