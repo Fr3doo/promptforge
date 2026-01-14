@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { ZodError, ZodIssue } from "zod";
-import { usePromptSaveErrorHandler } from "../usePromptSaveErrorHandler";
+import { usePromptSaveErrorHandler, classifyError } from "../usePromptSaveErrorHandler";
 
 // Mock usePromptMessages
 const mockShowValidationError = vi.fn();
@@ -19,6 +19,95 @@ vi.mock("@/features/prompts/hooks/usePromptMessages", () => ({
     showServerError: mockShowServerError,
   }),
 }));
+
+describe("classifyError", () => {
+  const createZodError = (issues: ZodIssue[]): ZodError => {
+    return new ZodError(issues);
+  };
+
+  describe("returns VALIDATION", () => {
+    it("for ZodError instances", () => {
+      const zodError = createZodError([
+        { code: "custom", message: "Test error", path: ["field"] },
+      ]);
+      expect(classifyError(zodError)).toBe("VALIDATION");
+    });
+
+    it("for ZodError with empty issues", () => {
+      const zodError = createZodError([]);
+      expect(classifyError(zodError)).toBe("VALIDATION");
+    });
+  });
+
+  describe("returns PERMISSION", () => {
+    it("for PGRST116 error code", () => {
+      expect(classifyError({ code: "PGRST116" })).toBe("PERMISSION");
+    });
+
+    it("for error message containing 'permission'", () => {
+      expect(classifyError({ message: "permission denied" })).toBe("PERMISSION");
+    });
+  });
+
+  describe("returns DUPLICATE", () => {
+    it("for 23505 error code (unique constraint)", () => {
+      expect(classifyError({ code: "23505" })).toBe("DUPLICATE");
+    });
+  });
+
+  describe("returns NETWORK", () => {
+    it("for network errors", () => {
+      expect(classifyError({ message: "network error" })).toBe("NETWORK");
+    });
+
+    it("for fetch errors", () => {
+      expect(classifyError({ message: "fetch failed" })).toBe("NETWORK");
+    });
+
+    it("for timeout errors", () => {
+      expect(classifyError({ message: "request timeout" })).toBe("NETWORK");
+    });
+
+    it("for 5xx status codes", () => {
+      expect(classifyError({ status: 503 })).toBe("NETWORK");
+    });
+
+    it("for ECONNREFUSED errors", () => {
+      expect(classifyError({ message: "ECONNREFUSED" })).toBe("NETWORK");
+    });
+
+    it("for ENOTFOUND errors", () => {
+      expect(classifyError({ message: "getaddrinfo ENOTFOUND" })).toBe("NETWORK");
+    });
+  });
+
+  describe("returns SERVER", () => {
+    it("for unknown errors", () => {
+      expect(classifyError({ message: "something went wrong" })).toBe("SERVER");
+    });
+
+    it("for null", () => {
+      expect(classifyError(null)).toBe("SERVER");
+    });
+
+    it("for undefined", () => {
+      expect(classifyError(undefined)).toBe("SERVER");
+    });
+
+    it("for empty object", () => {
+      expect(classifyError({})).toBe("SERVER");
+    });
+  });
+
+  describe("priority order", () => {
+    it("VALIDATION takes priority over NETWORK keywords", () => {
+      const zodError = createZodError([
+        { code: "custom", message: "network validation failed", path: ["field"] },
+      ]);
+      expect(classifyError(zodError)).toBe("VALIDATION");
+    });
+  });
+});
 
 describe("usePromptSaveErrorHandler", () => {
   beforeEach(() => {
