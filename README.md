@@ -289,6 +289,7 @@ Husky exécute lint + tests pré-commit, Commitlint garantit des messages confor
 - [docs/DEVELOPER_QUICK_START_MESSAGES.md](./docs/DEVELOPER_QUICK_START_MESSAGES.md) - Guide rapide hooks de messages
 - [docs/SHARING_GUIDE.md](./docs/SHARING_GUIDE.md)
 - [docs/ERROR_BOUNDARY.md](./docs/ERROR_BOUNDARY.md)
+- [docs/ERROR_HANDLING_ARCHITECTURE.md](./docs/ERROR_HANDLING_ARCHITECTURE.md) - Architecture unifiée de gestion des erreurs (classifyError, SaveErrorType)
 - [docs/CIRCULAR_DEPENDENCIES.md](./docs/CIRCULAR_DEPENDENCIES.md)
 - [docs/CODECOV_SETUP.md](./docs/CODECOV_SETUP.md)
 - [docs/REPOSITORY_GUIDE.md](./docs/REPOSITORY_GUIDE.md)
