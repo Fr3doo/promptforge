@@ -1,16 +1,11 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useOptimisticLocking } from "../useOptimisticLocking";
 import { VersionRepositoryProvider } from "@/contexts/VersionRepositoryContext";
+import { PromptQueryRepositoryProvider } from "@/contexts/PromptQueryRepositoryContext";
 import type { VersionRepository } from "@/repositories/VersionRepository";
+import type { PromptQueryRepository } from "@/repositories/PromptRepository.interfaces";
 import type { ReactNode } from "react";
-
-// Mock du PromptQueryRepository pour checkForServerUpdates
-vi.mock("@/repositories/PromptQueryRepository", () => ({
-  SupabasePromptQueryRepository: vi.fn().mockImplementation(() => ({
-    fetchById: vi.fn(),
-  })),
-}));
 
 const createMockVersionRepository = (): VersionRepository => ({
   fetchByPromptId: vi.fn(),
@@ -22,20 +17,38 @@ const createMockVersionRepository = (): VersionRepository => ({
   existsBySemver: vi.fn(),
 });
 
+const createMockPromptQueryRepository = (): PromptQueryRepository => ({
+  fetchAll: vi.fn(),
+  fetchOwned: vi.fn(),
+  fetchSharedWithMe: vi.fn(),
+  fetchById: vi.fn(),
+  fetchRecent: vi.fn(),
+  fetchFavorites: vi.fn(),
+  fetchPublicShared: vi.fn(),
+  countPublic: vi.fn(),
+});
+
 describe("useOptimisticLocking", () => {
   let mockVersionRepository: VersionRepository;
+  let mockPromptQueryRepository: PromptQueryRepository;
 
   beforeEach(() => {
     mockVersionRepository = createMockVersionRepository();
+    mockPromptQueryRepository = createMockPromptQueryRepository();
     vi.clearAllMocks();
   });
 
-  const createWrapper = (repository: VersionRepository) => {
+  const createWrapper = (
+    versionRepository: VersionRepository,
+    promptQueryRepository: PromptQueryRepository
+  ) => {
     return function Wrapper({ children }: { children: ReactNode }) {
       return (
-        <VersionRepositoryProvider repository={repository}>
-          {children}
-        </VersionRepositoryProvider>
+        <PromptQueryRepositoryProvider repository={promptQueryRepository}>
+          <VersionRepositoryProvider repository={versionRepository}>
+            {children}
+          </VersionRepositoryProvider>
+        </PromptQueryRepositoryProvider>
       );
     };
   };
@@ -45,7 +58,7 @@ describe("useOptimisticLocking", () => {
       vi.mocked(mockVersionRepository.existsBySemver).mockResolvedValue(true);
 
       const { result } = renderHook(() => useOptimisticLocking(), {
-        wrapper: createWrapper(mockVersionRepository),
+        wrapper: createWrapper(mockVersionRepository, mockPromptQueryRepository),
       });
 
       const exists = await result.current.checkVersionExists("prompt-1", "1.0.0");
@@ -61,7 +74,7 @@ describe("useOptimisticLocking", () => {
       vi.mocked(mockVersionRepository.existsBySemver).mockResolvedValue(false);
 
       const { result } = renderHook(() => useOptimisticLocking(), {
-        wrapper: createWrapper(mockVersionRepository),
+        wrapper: createWrapper(mockVersionRepository, mockPromptQueryRepository),
       });
 
       const exists = await result.current.checkVersionExists("prompt-1", "2.0.0");
@@ -75,7 +88,7 @@ describe("useOptimisticLocking", () => {
       );
 
       const { result } = renderHook(() => useOptimisticLocking(), {
-        wrapper: createWrapper(mockVersionRepository),
+        wrapper: createWrapper(mockVersionRepository, mockPromptQueryRepository),
       });
 
       await expect(
@@ -85,31 +98,25 @@ describe("useOptimisticLocking", () => {
   });
 
   describe("checkForServerUpdates", () => {
-    const createMockQueryRepository = (fetchByIdResult: unknown) => ({
-      fetchById: vi.fn().mockResolvedValue(fetchByIdResult),
-      fetchAll: vi.fn(),
-      fetchByOwnerId: vi.fn(),
-      fetchSharedWithMe: vi.fn(),
-      fetchPublic: vi.fn(),
-      fetchFavorites: vi.fn(),
-      countByOwnerId: vi.fn(),
-      countSharedWithMe: vi.fn(),
-      fetchOwned: vi.fn(),
-      fetchRecent: vi.fn(),
-      fetchPublicShared: vi.fn(),
-      countPublic: vi.fn(),
-    });
-
     it("should return hasConflict false when no conflict exists", async () => {
-      const { SupabasePromptQueryRepository } = await import(
-        "@/repositories/PromptQueryRepository"
-      );
-      vi.mocked(SupabasePromptQueryRepository).mockImplementation(() =>
-        createMockQueryRepository({ updated_at: "2024-01-01T10:00:00Z" })
-      );
+      vi.mocked(mockPromptQueryRepository.fetchById).mockResolvedValue({
+        id: "prompt-1",
+        title: "Test Prompt",
+        content: "Content",
+        owner_id: "user-1",
+        updated_at: "2024-01-01T10:00:00Z",
+        created_at: "2024-01-01T00:00:00Z",
+        description: null,
+        tags: null,
+        visibility: "PRIVATE",
+        status: "DRAFT",
+        is_favorite: false,
+        version: "1.0.0",
+        public_permission: "READ",
+      });
 
       const { result } = renderHook(() => useOptimisticLocking(), {
-        wrapper: createWrapper(mockVersionRepository),
+        wrapper: createWrapper(mockVersionRepository, mockPromptQueryRepository),
       });
 
       const response = await result.current.checkForServerUpdates(
@@ -117,19 +124,29 @@ describe("useOptimisticLocking", () => {
         "2024-01-01T12:00:00Z" // Client is newer
       );
 
+      expect(mockPromptQueryRepository.fetchById).toHaveBeenCalledWith("prompt-1");
       expect(response.hasConflict).toBe(false);
     });
 
     it("should return hasConflict true when server is newer", async () => {
-      const { SupabasePromptQueryRepository } = await import(
-        "@/repositories/PromptQueryRepository"
-      );
-      vi.mocked(SupabasePromptQueryRepository).mockImplementation(() =>
-        createMockQueryRepository({ updated_at: "2024-01-01T14:00:00Z" })
-      );
+      vi.mocked(mockPromptQueryRepository.fetchById).mockResolvedValue({
+        id: "prompt-1",
+        title: "Test Prompt",
+        content: "Content",
+        owner_id: "user-1",
+        updated_at: "2024-01-01T14:00:00Z",
+        created_at: "2024-01-01T00:00:00Z",
+        description: null,
+        tags: null,
+        visibility: "PRIVATE",
+        status: "DRAFT",
+        is_favorite: false,
+        version: "1.0.0",
+        public_permission: "READ",
+      });
 
       const { result } = renderHook(() => useOptimisticLocking(), {
-        wrapper: createWrapper(mockVersionRepository),
+        wrapper: createWrapper(mockVersionRepository, mockPromptQueryRepository),
       });
 
       const response = await result.current.checkForServerUpdates(
@@ -141,17 +158,29 @@ describe("useOptimisticLocking", () => {
       expect(response.serverUpdatedAt).toBe("2024-01-01T14:00:00Z");
     });
 
-    it("should return hasConflict false on error", async () => {
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      const { SupabasePromptQueryRepository } = await import(
-        "@/repositories/PromptQueryRepository"
-      );
-      const mockRepo = createMockQueryRepository(null);
-      mockRepo.fetchById = vi.fn().mockRejectedValue(new Error("Network error"));
-      vi.mocked(SupabasePromptQueryRepository).mockImplementation(() => mockRepo);
+    it("should return hasConflict false when prompt not found", async () => {
+      vi.mocked(mockPromptQueryRepository.fetchById).mockResolvedValue(null as never);
 
       const { result } = renderHook(() => useOptimisticLocking(), {
-        wrapper: createWrapper(mockVersionRepository),
+        wrapper: createWrapper(mockVersionRepository, mockPromptQueryRepository),
+      });
+
+      const response = await result.current.checkForServerUpdates(
+        "prompt-1",
+        "2024-01-01T12:00:00Z"
+      );
+
+      expect(response.hasConflict).toBe(false);
+    });
+
+    it("should return hasConflict false on error", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.mocked(mockPromptQueryRepository.fetchById).mockRejectedValue(
+        new Error("Network error")
+      );
+
+      const { result } = renderHook(() => useOptimisticLocking(), {
+        wrapper: createWrapper(mockVersionRepository, mockPromptQueryRepository),
       });
 
       const response = await result.current.checkForServerUpdates(

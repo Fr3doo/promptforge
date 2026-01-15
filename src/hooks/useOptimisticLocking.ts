@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useVersionRepository } from "@/contexts/VersionRepositoryContext";
+import { usePromptQueryRepository } from "@/contexts/PromptQueryRepositoryContext";
 
 /**
  * Hook pour gérer le verrouillage optimiste des prompts
@@ -8,6 +9,7 @@ import { useVersionRepository } from "@/contexts/VersionRepositoryContext";
  */
 export function useOptimisticLocking() {
   const versionRepository = useVersionRepository();
+  const promptQueryRepository = usePromptQueryRepository();
 
   /**
    * Vérifie qu'une version avec le même numéro n'existe pas déjà
@@ -32,11 +34,8 @@ export function useOptimisticLocking() {
     promptId: string,
     clientUpdatedAt: string
   ): Promise<{ hasConflict: boolean; serverUpdatedAt?: string }> => {
-    const { SupabasePromptQueryRepository } = await import("@/repositories/PromptQueryRepository");
-    const repository = new SupabasePromptQueryRepository();
-    
     try {
-      const serverPrompt = await repository.fetchById(promptId);
+      const serverPrompt = await promptQueryRepository.fetchById(promptId);
       
       if (!serverPrompt) {
         return { hasConflict: false };
@@ -51,7 +50,7 @@ export function useOptimisticLocking() {
       console.error("Erreur lors de la vérification des mises à jour:", error);
       return { hasConflict: false };
     }
-  }, []);
+  }, [promptQueryRepository]);
 
   return {
     checkVersionExists,
