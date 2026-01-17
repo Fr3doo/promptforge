@@ -5,20 +5,37 @@ import { handleSupabaseError } from "@/lib/errorHandler";
 /**
  * Interface du repository d'authentification
  * Abstrait tous les appels Supabase directs pour respecter le DIP
+ * 
+ * @remarks
+ * Les méthodes d'authentification peuvent échouer pour diverses raisons :
+ * credentials invalides, compte non confirmé, limitations de rate, etc.
+ * Les implémentations doivent respecter les postconditions documentées.
  */
 export interface AuthRepository {
   /**
    * Récupère la session actuelle de l'utilisateur
+   * @returns La session active ou null si non authentifié
+   * @throws {Error} Si la requête vers le service auth échoue
    */
   getCurrentSession(): Promise<Session | null>;
 
   /**
    * Récupère l'utilisateur actuellement connecté
+   * @returns L'utilisateur connecté ou null si non authentifié
+   * @throws {Error} Si la requête vers le service auth échoue
    */
   getCurrentUser(): Promise<User | null>;
 
   /**
    * Connecte un utilisateur avec email et mot de passe
+   * @param email - Adresse email de l'utilisateur (requis, format email valide)
+   * @param password - Mot de passe (requis, non vide)
+   * @returns L'utilisateur et la session créée
+   * @throws {Error} Si email ou password est vide
+   * @throws {Error} Si les credentials sont invalides
+   * @throws {Error} Si le compte n'est pas confirmé (email non vérifié)
+   * @throws {Error} Si rate limit atteint
+   * @throws {Error} Si la requête échoue
    */
   signIn(
     email: string,
@@ -27,6 +44,14 @@ export interface AuthRepository {
 
   /**
    * Crée un nouveau compte utilisateur
+   * @param email - Adresse email (requis, format valide, unique)
+   * @param password - Mot de passe (requis, respecte les règles de complexité)
+   * @param metadata - Données additionnelles optionnelles (pseudo, redirectUrl)
+   * @returns L'utilisateur créé et la session
+   * @throws {Error} Si email est invalide ou déjà utilisé
+   * @throws {Error} Si password ne respecte pas les règles de complexité
+   * @throws {Error} Si rate limit atteint
+   * @throws {Error} Si la requête échoue
    */
   signUp(
     email: string,
@@ -36,11 +61,16 @@ export interface AuthRepository {
 
   /**
    * Déconnecte l'utilisateur actuel
+   * @throws {Error} Si aucun utilisateur n'est connecté
+   * @throws {Error} Si la requête échoue
    */
   signOut(): Promise<void>;
 
   /**
    * Écoute les changements d'état d'authentification
+   * @param callback - Fonction appelée à chaque changement d'état
+   * @returns Objet avec méthode unsubscribe pour arrêter l'écoute
+   * @remarks Cette méthode ne lève pas d'erreur - les erreurs sont passées au callback
    */
   onAuthStateChange(
     callback: (event: AuthChangeEvent, session: Session | null) => void

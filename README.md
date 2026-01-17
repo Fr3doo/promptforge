@@ -293,6 +293,7 @@ Husky exécute lint + tests pré-commit, Commitlint garantit des messages confor
 - [docs/CIRCULAR_DEPENDENCIES.md](./docs/CIRCULAR_DEPENDENCIES.md)
 - [docs/CODECOV_SETUP.md](./docs/CODECOV_SETUP.md)
 - [docs/REPOSITORY_GUIDE.md](./docs/REPOSITORY_GUIDE.md)
+- [docs/SOLID_COMPLIANCE.md](./docs/SOLID_COMPLIANCE.md) - État de conformité SOLID du projet (SRP, OCP, LSP, ISP, DIP)
 
 ## 🚀 Publication d’une release
 1. Mettre à jour [CHANGELOG.md](./CHANGELOG.md) avec la nouvelle version
