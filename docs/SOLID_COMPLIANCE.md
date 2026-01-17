@@ -168,7 +168,21 @@ Le projet utilise des **interfaces TypeScript** plutôt que des classes abstrait
 
 #### Documentation des préconditions
 
-Les interfaces documentent les préconditions via `@throws` :
+Toutes les interfaces de la couche données documentent leurs contrats via `@throws` :
+
+| Interface | Méthodes documentées | Couverture |
+|-----------|---------------------|------------|
+| `PromptQueryRepository` | 8 méthodes | ✅ 100% |
+| `PromptCommandRepository` | 3 méthodes | ✅ 100% |
+| `PromptMutationRepository` | 1 méthode | ✅ 100% |
+| `VersionRepository` | 7 méthodes | ✅ 100% |
+| `AuthRepository` | 6 méthodes | ✅ 100% |
+| `ProfileRepository` | 2 méthodes | ✅ 100% |
+| `VariableRepository` | 5 méthodes | ✅ 100% |
+
+**Total : 32 méthodes documentées avec préconditions, postconditions et exceptions.**
+
+Exemple de contrat documenté :
 
 ```typescript
 interface PromptQueryRepository {
@@ -330,11 +344,14 @@ const serverPrompt = await promptQueryRepository.fetchById(promptId);
 
 ### Court terme
 
-| Amélioration | Principe | Priorité |
-|--------------|----------|----------|
+| Amélioration | Principe | Statut |
+|--------------|----------|--------|
+| Annotations `@throws` sur PromptRepository | LSP | ✅ Fait |
 | Annotations `@throws` sur VersionRepository | LSP | ✅ Fait |
-| Annotations `@throws` sur AuthRepository | LSP | Moyenne |
-| Documentation des invariants de domaine | LSP | Basse |
+| Annotations `@throws` sur AuthRepository | LSP | ✅ Fait |
+| Annotations `@throws` sur ProfileRepository | LSP | ✅ Fait |
+| Annotations `@throws` sur VariableRepository | LSP | ✅ Fait |
+| Documentation des invariants de domaine | LSP | Basse priorité |
 
 ### Moyen terme
 
@@ -360,4 +377,5 @@ const serverPrompt = await promptQueryRepository.fetchById(promptId);
 | 2025-01 | Phase 12 SRP | Refactoring usePromptSave en 6 hooks |
 | 2025-01 | Phase 10 DIP | Migration vers Query/Command repositories |
 | 2025-01 | Correction DIP | useOptimisticLocking via contexte |
-| 2025-01 | LSP | Ajout annotations @throws interfaces |
+| 2025-01 | LSP | Ajout annotations @throws interfaces Prompt/Version |
+| 2025-01 | LSP 100% | Annotations @throws sur toutes les interfaces (32 méthodes) |
