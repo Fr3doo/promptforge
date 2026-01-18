@@ -4,6 +4,7 @@ import { useConflictHandler } from "./prompt-save/useConflictHandler";
 import { usePromptMutations } from "./prompt-save/usePromptMutations";
 import { useInitialVersionCreator } from "./prompt-save/useInitialVersionCreator";
 import { usePromptSaveErrorHandler } from "./prompt-save/usePromptSaveErrorHandler";
+import { useRetryCounter } from "./useRetryCounter";
 import type { Variable } from "@/features/prompts/types";
 
 interface UsePromptSaveOptions {
@@ -24,10 +25,14 @@ interface PromptSaveData {
 
 /**
  * Hook orchestrateur pour sauvegarder un prompt
- * COMPOSITION de 6 hooks spécialisés (SRP + KISS)
+ * COMPOSITION de 7 hooks spécialisés (SRP + KISS + Murphy)
  * 
  * Avant : 251 lignes, complexité cyclomatique >15
- * Après : ~80 lignes, complexité cyclomatique <5
+ * Après : ~90 lignes, complexité cyclomatique <5
+ * 
+ * @remarks
+ * Intègre useRetryCounter pour limiter les tentatives de retry manuels
+ * à MAX_ATTEMPTS (3 par défaut), conformément à la Loi de Murphy.
  */
 export function usePromptSave({
   isEditMode,
@@ -42,8 +47,14 @@ export function usePromptSave({
   const { create, update, isSaving } = usePromptMutations();
   const { createInitialVersion } = useInitialVersionCreator();
   const { handleError } = usePromptSaveErrorHandler();
+  
+  // Compteur de retry pour limiter les tentatives (Loi de Murphy)
+  const { canRetry, incrementAndRetry, reset } = useRetryCounter();
 
   const savePrompt = async (data: PromptSaveData, promptId?: string) => {
+    // Reset du compteur de retry au début d'une nouvelle tentative utilisateur
+    reset();
+
     // Étape 1 : Validation des données
     const validationResult = validate(data);
     if (!validationResult.isValid) {
@@ -75,7 +86,10 @@ export function usePromptSave({
       update(promptId, promptData, variables, {
         onSuccess,
         onError: (error) => {
-          handleError(error, "UPDATE", () => savePrompt(data, promptId));
+          handleError(error, "UPDATE", {
+            retry: () => incrementAndRetry(() => savePrompt(data, promptId)),
+            canRetry: canRetry(),
+          });
         },
       });
     } else {
@@ -91,7 +105,10 @@ export function usePromptSave({
         },
         onSuccess,
         onError: (error) => {
-          handleError(error, "CREATE", () => savePrompt(data));
+          handleError(error, "CREATE", {
+            retry: () => incrementAndRetry(() => savePrompt(data)),
+            canRetry: canRetry(),
+          });
         },
       });
     }

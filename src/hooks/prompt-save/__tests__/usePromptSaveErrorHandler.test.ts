@@ -190,7 +190,7 @@ describe("usePromptSaveErrorHandler", () => {
       const { result } = renderHook(() => usePromptSaveErrorHandler());
       const retry = vi.fn();
 
-      result.current.handleError({ message: "network error occurred" }, "CREATE", retry);
+      result.current.handleError({ message: "network error occurred" }, "CREATE", { retry, canRetry: true });
 
       expect(mockShowNetworkError).toHaveBeenCalledWith("créer le prompt", retry);
       expect(mockShowServerError).not.toHaveBeenCalled();
@@ -200,7 +200,7 @@ describe("usePromptSaveErrorHandler", () => {
       const { result } = renderHook(() => usePromptSaveErrorHandler());
       const retry = vi.fn();
 
-      result.current.handleError({ message: "fetch failed" }, "UPDATE", retry);
+      result.current.handleError({ message: "fetch failed" }, "UPDATE", { retry, canRetry: true });
 
       expect(mockShowNetworkError).toHaveBeenCalledWith("mettre à jour le prompt", retry);
     });
@@ -209,7 +209,7 @@ describe("usePromptSaveErrorHandler", () => {
       const { result } = renderHook(() => usePromptSaveErrorHandler());
       const retry = vi.fn();
 
-      result.current.handleError({ message: "request timeout" }, "UPDATE", retry);
+      result.current.handleError({ message: "request timeout" }, "UPDATE", { retry, canRetry: true });
 
       expect(mockShowNetworkError).toHaveBeenCalledWith("mettre à jour le prompt", retry);
     });
@@ -218,7 +218,7 @@ describe("usePromptSaveErrorHandler", () => {
       const { result } = renderHook(() => usePromptSaveErrorHandler());
       const retry = vi.fn();
 
-      result.current.handleError({ status: 503 }, "CREATE", retry);
+      result.current.handleError({ status: 503 }, "CREATE", { retry, canRetry: true });
 
       expect(mockShowNetworkError).toHaveBeenCalledWith("créer le prompt", retry);
     });
@@ -253,6 +253,34 @@ describe("usePromptSaveErrorHandler", () => {
       result.current.handleError({ message: "network timeout" }, "UPDATE");
 
       expect(mockShowNetworkError).toHaveBeenCalledWith("mettre à jour le prompt", undefined);
+    });
+
+    it("does NOT pass retry when canRetry is false", () => {
+      const { result } = renderHook(() => usePromptSaveErrorHandler());
+      const retry = vi.fn();
+
+      result.current.handleError({ message: "network error" }, "CREATE", { retry, canRetry: false });
+
+      expect(mockShowNetworkError).toHaveBeenCalledWith("créer le prompt", undefined);
+    });
+
+    it("passes retry when canRetry is true", () => {
+      const { result } = renderHook(() => usePromptSaveErrorHandler());
+      const retry = vi.fn();
+
+      result.current.handleError({ message: "network error" }, "UPDATE", { retry, canRetry: true });
+
+      expect(mockShowNetworkError).toHaveBeenCalledWith("mettre à jour le prompt", retry);
+    });
+
+    it("supports legacy function signature for backward compatibility", () => {
+      const { result } = renderHook(() => usePromptSaveErrorHandler());
+      const retry = vi.fn();
+
+      // Old signature: handleError(error, context, retryFn)
+      result.current.handleError({ message: "network error" }, "CREATE", retry);
+
+      expect(mockShowNetworkError).toHaveBeenCalledWith("créer le prompt", retry);
     });
   });
 
@@ -291,7 +319,7 @@ describe("usePromptSaveErrorHandler", () => {
       const { result } = renderHook(() => usePromptSaveErrorHandler());
       const retry = vi.fn();
 
-      result.current.handleError({ message: "something went wrong" }, "CREATE", retry);
+      result.current.handleError({ message: "something went wrong" }, "CREATE", { retry, canRetry: true });
 
       expect(mockShowServerError).toHaveBeenCalledWith("création du prompt", retry);
     });
@@ -300,7 +328,7 @@ describe("usePromptSaveErrorHandler", () => {
       const { result } = renderHook(() => usePromptSaveErrorHandler());
       const retry = vi.fn();
 
-      result.current.handleError({ message: "something went wrong" }, "UPDATE", retry);
+      result.current.handleError({ message: "something went wrong" }, "UPDATE", { retry, canRetry: true });
 
       expect(mockShowServerError).toHaveBeenCalledWith("mise à jour du prompt", retry);
     });
@@ -327,6 +355,15 @@ describe("usePromptSaveErrorHandler", () => {
       result.current.handleError(undefined, "UPDATE");
 
       expect(mockShowServerError).toHaveBeenCalledWith("mise à jour du prompt", undefined);
+    });
+
+    it("does NOT pass retry to showServerError when canRetry is false", () => {
+      const { result } = renderHook(() => usePromptSaveErrorHandler());
+      const retry = vi.fn();
+
+      result.current.handleError({ message: "something went wrong" }, "CREATE", { retry, canRetry: false });
+
+      expect(mockShowServerError).toHaveBeenCalledWith("création du prompt", undefined);
     });
   });
 

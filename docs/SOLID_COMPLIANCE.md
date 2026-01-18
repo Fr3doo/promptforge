@@ -24,7 +24,7 @@
 
 #### Refactoring usePromptSave
 
-Le hook `usePromptSave` a été décomposé en 6 hooks spécialisés :
+Le hook `usePromptSave` a été décomposé en 7 hooks spécialisés :
 
 | Hook | Responsabilité unique |
 |------|----------------------|
@@ -34,10 +34,11 @@ Le hook `usePromptSave` a été décomposé en 6 hooks spécialisés :
 | `usePromptMutations` | Opérations CRUD avec notifications |
 | `useInitialVersionCreator` | Création de la version initiale 1.0.0 |
 | `usePromptSaveErrorHandler` | Classification et affichage des erreurs |
+| `useRetryCounter` | Limitation des tentatives de retry (Loi de Murphy) |
 
 **Métriques d'amélioration :**
 - Avant : ~251 lignes, complexité cyclomatique >15
-- Après : ~80 lignes, composition de hooks ciblés
+- Après : ~90 lignes, composition de hooks ciblés
 
 #### Séparation Query/Command/Mutation
 
@@ -423,3 +424,55 @@ const serverPrompt = await promptQueryRepository.fetchById(promptId);
 | 2025-01 | LSP | Ajout annotations @throws interfaces Prompt/Version |
 | 2025-01 | LSP 100% | Annotations @throws sur toutes les interfaces (32 méthodes) |
 | 2025-01 | LSP complet | Couverture étendue à 46 méthodes (13 interfaces) + script validation |
+| 2025-01 | Murphy | Ajout useRetryCounter pour limiter les tentatives de retry (MAX_ATTEMPTS=3) |
+
+---
+
+## Patterns de résilience
+
+### Loi de Murphy - Limitation des retries
+
+Le hook `useRetryCounter` implémente une protection contre les boucles de retry infinies :
+
+```typescript
+// Pattern d'utilisation dans usePromptSave
+const { canRetry, incrementAndRetry, reset } = useRetryCounter();
+
+const savePrompt = async (data) => {
+  reset(); // Nouvelle tentative utilisateur
+  
+  // ... validation et sauvegarde
+  
+  if (error) {
+    handleError(error, "UPDATE", {
+      retry: () => incrementAndRetry(() => savePrompt(data)),
+      canRetry: canRetry(), // false après MAX_ATTEMPTS (3)
+    });
+  }
+};
+```
+
+**Configuration :** `RETRY_CONFIG.MAX_ATTEMPTS = 3` dans `src/lib/network.ts`
+
+### Clarification LSP - Préconditions vs RLS
+
+Les préconditions documentées dans les interfaces (`@throws` si userId est vide) vérifient les **formats** des paramètres, pas l'**existence en base**. La validation d'existence est déléguée à la RLS PostgreSQL :
+
+```typescript
+// Interface (LSP) - Vérifie le format
+interface PromptQueryRepository {
+  /** @throws {Error} Si userId est vide ou undefined */
+  fetchOwned(userId: string): Promise<Prompt[]>;
+}
+
+// Implémentation - RLS vérifie l'existence/permissions
+class SupabasePromptQueryRepository {
+  async fetchOwned(userId: string) {
+    if (!userId) throw new Error("userId is required");
+    // RLS: owner_id = auth.uid() vérifie automatiquement
+    return supabase.from("prompts").select("*").eq("owner_id", userId);
+  }
+}
+```
+
+Cette séparation des responsabilités respecte le SRP tout en garantissant la substituabilité (LSP).
