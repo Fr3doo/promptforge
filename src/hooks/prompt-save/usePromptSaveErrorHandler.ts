@@ -116,18 +116,49 @@ function assertNever(x: never): never {
  * @see classifyError pour la logique de classification
  * @see docs/ERROR_HANDLING_ARCHITECTURE.md pour l'architecture complète
  */
+/**
+ * Options pour le gestionnaire d'erreurs
+ */
+export interface HandleErrorOptions {
+  /** Fonction de retry à appeler en cas d'erreur rejouable */
+  retry?: () => void;
+  /** Indique si le retry est autorisé (limite de tentatives non atteinte) */
+  canRetry?: boolean;
+}
+
 export function usePromptSaveErrorHandler() {
   const promptMessages = usePromptMessages();
 
+  /**
+   * Gère une erreur de sauvegarde avec affichage de feedback utilisateur.
+   * 
+   * @param error - Erreur brute à traiter
+   * @param context - Contexte de l'erreur ("CREATE" ou "UPDATE")
+   * @param options - Options incluant retry et canRetry
+   * 
+   * @remarks
+   * Le retry n'est proposé que si `options.canRetry` est true (ou undefined pour rétrocompatibilité).
+   * Cela permet de limiter les tentatives de retry manuels (Loi de Murphy).
+   */
   const handleError = (
     error: unknown,
     context: "CREATE" | "UPDATE",
-    retry?: () => void
+    options?: HandleErrorOptions | (() => void) // Rétrocompatibilité avec l'ancienne signature
   ) => {
+    // Rétrocompatibilité : si options est une fonction, c'est l'ancien paramètre retry
+    const normalizedOptions: HandleErrorOptions = typeof options === "function"
+      ? { retry: options, canRetry: true }
+      : options ?? {};
+
+    const { retry, canRetry = true } = normalizedOptions;
+
     const errorType = classifyError(error);
     const createAction = "créer le prompt";
     const updateAction = "mettre à jour le prompt";
     const action = context === "CREATE" ? createAction : updateAction;
+
+    // Ne proposer le retry que si autorisé (limite non atteinte)
+    const safeRetry = canRetry ? retry : undefined;
 
     switch (errorType) {
       case "VALIDATION": {
@@ -141,7 +172,7 @@ export function usePromptSaveErrorHandler() {
       }
 
       case "NETWORK": {
-        promptMessages.showNetworkError(action, retry);
+        promptMessages.showNetworkError(action, safeRetry);
         return;
       }
 
@@ -157,7 +188,7 @@ export function usePromptSaveErrorHandler() {
 
       case "SERVER": {
         const serverAction = context === "CREATE" ? "création du prompt" : "mise à jour du prompt";
-        promptMessages.showServerError(serverAction, retry);
+        promptMessages.showServerError(serverAction, safeRetry);
         return;
       }
 
