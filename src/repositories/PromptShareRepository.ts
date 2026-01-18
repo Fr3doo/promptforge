@@ -13,13 +13,81 @@ export interface PromptShareWithProfile extends PromptShare {
   };
 }
 
+/**
+ * Repository pour gérer le partage de prompts entre utilisateurs
+ * 
+ * @remarks
+ * Toutes les méthodes nécessitent un utilisateur authentifié.
+ * Les opérations sont sécurisées par RLS et vérifications de propriété.
+ */
 export interface PromptShareRepository {
+  /**
+   * Récupère tous les partages d'un prompt avec les profils des destinataires
+   * @param promptId - ID du prompt (requis, non vide)
+   * @returns Liste des partages avec profils (pseudo, name, image)
+   * @throws {Error} Si la requête échoue (erreur réseau/base de données)
+   */
   getShares(promptId: string): Promise<PromptShareWithProfile[]>;
+  
+  /**
+   * Ajoute un partage pour un prompt
+   * @param promptId - ID du prompt à partager (requis, non vide)
+   * @param sharedWithUserId - ID du destinataire (requis, non vide)
+   * @param permission - Niveau d'accès ("READ" | "WRITE")
+   * @param currentUserId - ID de l'utilisateur courant (requis)
+   * @throws {Error} "SESSION_EXPIRED" si currentUserId est vide
+   * @throws {Error} "SELF_SHARE" si tentative de partage avec soi-même
+   * @throws {Error} "NOT_PROMPT_OWNER" si l'utilisateur n'est pas propriétaire
+   * @throws {Error} Si violation RLS ou requête échoue
+   */
   addShare(promptId: string, sharedWithUserId: string, permission: "READ" | "WRITE", currentUserId: string): Promise<void>;
+  
+  /**
+   * Met à jour la permission d'un partage existant
+   * @param shareId - ID du partage (requis, non vide)
+   * @param permission - Nouveau niveau d'accès
+   * @param currentUserId - ID de l'utilisateur courant (requis)
+   * @throws {Error} "SESSION_EXPIRED" si currentUserId est vide
+   * @throws {Error} "SHARE_NOT_FOUND" si le partage n'existe pas
+   * @throws {Error} "UNAUTHORIZED_UPDATE" si non autorisé
+   * @throws {Error} Si la requête échoue
+   */
   updateSharePermission(shareId: string, permission: "READ" | "WRITE", currentUserId: string): Promise<void>;
+  
+  /**
+   * Supprime un partage
+   * @param shareId - ID du partage (requis, non vide)
+   * @param currentUserId - ID de l'utilisateur courant (requis)
+   * @throws {Error} "SESSION_EXPIRED" si currentUserId est vide
+   * @throws {Error} "SHARE_NOT_FOUND" si le partage n'existe pas
+   * @throws {Error} "UNAUTHORIZED_DELETE" si non autorisé
+   * @throws {Error} Si la requête échoue
+   */
   deleteShare(shareId: string, currentUserId: string): Promise<void>;
+  
+  /**
+   * Récupère l'ID d'un utilisateur par son email
+   * @param email - Email de l'utilisateur (requis, format valide)
+   * @returns ID de l'utilisateur ou null si non trouvé
+   * @throws {Error} Si la fonction RPC échoue
+   */
   getUserByEmail(email: string): Promise<{ id: string } | null>;
+  
+  /**
+   * Vérifie si un utilisateur est propriétaire d'un prompt
+   * @param promptId - ID du prompt (requis, non vide)
+   * @param userId - ID de l'utilisateur (requis, non vide)
+   * @returns true si propriétaire, false sinon
+   * @throws {Error} Si la requête échoue (hors PGRST116)
+   */
   isPromptOwner(promptId: string, userId: string): Promise<boolean>;
+  
+  /**
+   * Récupère un partage par son ID
+   * @param shareId - ID du partage (requis, non vide)
+   * @returns Le partage ou null si non trouvé
+   * @throws {Error} Si la requête échoue
+   */
   getShareById(shareId: string): Promise<PromptShare | null>;
 }
 
