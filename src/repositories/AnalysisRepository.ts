@@ -65,13 +65,24 @@ export interface AnalysisResult {
  * Repository interface for prompt analysis operations
  * Follows SOLID principles by abstracting the data source
  */
+/**
+ * Repository interface for prompt analysis operations
+ * Follows SOLID principles by abstracting the data source
+ * 
+ * @remarks
+ * Cette interface abstrait l'appel à l'edge function analyze-prompt.
+ * Les implémentations doivent gérer les timeouts et le rate limiting.
+ */
 export interface AnalysisRepository {
   /**
    * Analyzes a prompt and returns structured data
-   * @param content - The prompt content to analyze
+   * @param content - The prompt content to analyze (requis, non vide)
    * @returns Promise resolving to the analysis result
-   * @throws AnalysisTimeoutError if analysis exceeds timeout
-   * @throws Error if analysis fails
+   * @throws {Error} Si content est vide ou undefined
+   * @throws {AnalysisTimeoutError} Si l'analyse dépasse le délai maximum (60s client)
+   * @throws {RateLimitError} Si les limites de requêtes sont atteintes (10/min ou 50/jour)
+   * @throws {Error} Si l'edge function retourne une erreur
+   * @throws {Error} Si la requête réseau échoue
    */
   analyzePrompt(content: string): Promise<AnalysisResult>;
 }

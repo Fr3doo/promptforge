@@ -6,12 +6,27 @@ import { supabase } from "@/integrations/supabase/client";
  * Abstraction permettant l'injection de dépendances pour les tests
  * et le respect du principe DIP (SOLID)
  */
+/**
+ * Interface pour la vérification des mots de passe compromis et la validation de force
+ * 
+ * Abstraction permettant l'injection de dépendances pour les tests
+ * et le respect du principe DIP (SOLID)
+ * 
+ * @remarks
+ * Ces méthodes appellent des edge functions qui communiquent avec des APIs externes.
+ * Les implémentations doivent gérer les erreurs réseau et les timeouts.
+ */
 export interface PasswordCheckRepository {
   /**
    * Vérifie si un mot de passe est présent dans une fuite de données
    * 
-   * @param password - Le mot de passe à vérifier
+   * Utilise l'API HaveIBeenPwned avec k-anonymity (SHA-1, 5 premiers caractères)
+   * 
+   * @param password - Le mot de passe à vérifier (requis, non vide)
    * @returns Promesse avec isBreached et optionnellement le nombre de fuites
+   * @throws {Error} Si password est vide ou undefined
+   * @throws {Error} Si l'edge function échoue (erreur réseau/timeout)
+   * @throws {Error} Si l'API HaveIBeenPwned est indisponible
    */
   checkBreach(password: string): Promise<{
     isBreached: boolean;
@@ -21,8 +36,13 @@ export interface PasswordCheckRepository {
   /**
    * Valide la force du mot de passe côté serveur
    * 
-   * @param password - Le mot de passe à valider
-   * @returns Promesse avec isValid, score, et feedback
+   * Scoring basé sur : longueur, majuscules, minuscules, chiffres,
+   * caractères spéciaux, et détection de patterns courants
+   * 
+   * @param password - Le mot de passe à valider (requis, non vide)
+   * @returns Promesse avec isValid (score >= 4), score, maxScore, et feedback
+   * @throws {Error} Si password est vide ou undefined
+   * @throws {Error} Si l'edge function échoue (erreur réseau/timeout)
    */
   validateStrength(password: string): Promise<{
     isValid: boolean;

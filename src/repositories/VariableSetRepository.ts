@@ -8,8 +8,19 @@ export type VariableSetInsert = TablesInsert<"variable_sets">;
 /**
  * Repository pour gérer les ensembles de variables
  * Isole les accès directs à Supabase pour la table variable_sets
+ * 
+ * @remarks
+ * Les variable sets sont liés aux versions de prompts.
+ * L'accès est contrôlé par RLS via le prompt parent.
  */
 export interface VariableSetRepository {
+  /**
+   * Insère plusieurs ensembles de variables en une seule opération
+   * @param sets - Tableau des ensembles à insérer (peut être vide)
+   * @throws {Error} Si violation RLS (permissions insuffisantes sur le prompt parent)
+   * @throws {Error} Si la requête échoue (erreur réseau/base de données)
+   * @remarks Retourne immédiatement si sets est vide (no-op)
+   */
   bulkInsert(sets: VariableSetInsert[]): Promise<void>;
 }
 

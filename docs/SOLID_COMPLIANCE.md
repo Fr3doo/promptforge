@@ -179,8 +179,44 @@ Toutes les interfaces de la couche données documentent leurs contrats via `@thr
 | `AuthRepository` | 6 méthodes | ✅ 100% |
 | `ProfileRepository` | 2 méthodes | ✅ 100% |
 | `VariableRepository` | 5 méthodes | ✅ 100% |
+| `AnalysisRepository` | 1 méthode | ✅ 100% |
+| `PasswordCheckRepository` | 2 méthodes | ✅ 100% |
+| `EdgeFunctionRepository` | 2 méthodes | ✅ 100% |
+| `PromptShareRepository` | 7 méthodes | ✅ 100% |
+| `PromptUsageRepository` | 1 méthode | ✅ 100% |
+| `VariableSetRepository` | 1 méthode | ✅ 100% |
 
-**Total : 32 méthodes documentées avec préconditions, postconditions et exceptions.**
+**Total : 46 méthodes documentées avec préconditions, postconditions et exceptions.**
+
+#### Script de validation automatique
+
+Un script `scripts/validate-lsp-annotations.ts` vérifie automatiquement que toutes les interfaces de repository ont des annotations `@throws` documentées :
+
+```bash
+npx ts-node scripts/validate-lsp-annotations.ts
+```
+
+Sortie attendue :
+```
+🔍 Validation des annotations @throws LSP
+
+📋 Couverture par interface:
+
+   Interface                          | Méthodes | Couverture
+   -----------------------------------|----------|------------
+   ✅ PromptQueryRepository            |        8 |     100.0%
+   ✅ PromptCommandRepository          |        3 |     100.0%
+   ...
+
+📊 Résumé de la couverture LSP:
+
+   Total méthodes: 46
+   Documentées:    46
+   Manquantes:     0
+   Couverture:     100.0%
+
+✅ Toutes les interfaces sont correctement documentées!
+```
 
 Exemple de contrat documenté :
 
@@ -351,6 +387,13 @@ const serverPrompt = await promptQueryRepository.fetchById(promptId);
 | Annotations `@throws` sur AuthRepository | LSP | ✅ Fait |
 | Annotations `@throws` sur ProfileRepository | LSP | ✅ Fait |
 | Annotations `@throws` sur VariableRepository | LSP | ✅ Fait |
+| Annotations `@throws` sur AnalysisRepository | LSP | ✅ Fait |
+| Annotations `@throws` sur PasswordCheckRepository | LSP | ✅ Fait |
+| Annotations `@throws` sur EdgeFunctionRepository | LSP | ✅ Fait |
+| Annotations `@throws` sur PromptShareRepository | LSP | ✅ Fait |
+| Annotations `@throws` sur PromptUsageRepository | LSP | ✅ Fait |
+| Annotations `@throws` sur VariableSetRepository | LSP | ✅ Fait |
+| Script de validation LSP automatique | LSP | ✅ Fait |
 | Documentation des invariants de domaine | LSP | Basse priorité |
 
 ### Moyen terme
@@ -379,3 +422,4 @@ const serverPrompt = await promptQueryRepository.fetchById(promptId);
 | 2025-01 | Correction DIP | useOptimisticLocking via contexte |
 | 2025-01 | LSP | Ajout annotations @throws interfaces Prompt/Version |
 | 2025-01 | LSP 100% | Annotations @throws sur toutes les interfaces (32 méthodes) |
+| 2025-01 | LSP complet | Couverture étendue à 46 méthodes (13 interfaces) + script validation |
