@@ -476,3 +476,97 @@ class SupabasePromptQueryRepository {
 ```
 
 Cette séparation des responsabilités respecte le SRP tout en garantissant la substituabilité (LSP).
+
+---
+
+## Loi de Déméter - QueryBuilder injectable
+
+### Problème identifié
+
+Les repositories contenaient des chaînes d'appels répétitives vers l'API Supabase :
+
+```typescript
+// ❌ Avant : Chaîne de 6 appels, couplage fort
+const result = await supabase
+  .from("prompts")
+  .select("*")
+  .eq("owner_id", userId)
+  .order("updated_at", { ascending: false })
+  .limit(10);
+handleSupabaseError(result);
+return result.data;
+```
+
+### Solution : QueryBuilder injectable
+
+Un QueryBuilder centralisé dans `src/lib/supabaseQueryBuilder.ts` encapsule les patterns Supabase :
+
+```typescript
+// ✅ Après : API déclarative, 1 appel
+import { qb } from "@/lib/supabaseQueryBuilder";
+
+return qb.selectMany<Prompt>("prompts", {
+  filters: { eq: { owner_id: userId } },
+  order: { column: "updated_at", ascending: false },
+  limit: 10,
+});
+```
+
+### Méthodes exposées
+
+| Méthode | Pattern Supabase | Usage |
+|---------|------------------|-------|
+| `selectMany<T>` | `.select().eq().order().limit()` | Listes filtrées |
+| `selectOne<T>` | `.select().eq().maybeSingle()` | Enregistrement optionnel |
+| `selectOneRequired<T>` | `.select().eq().single()` | Enregistrement obligatoire |
+| `countRows` | `.select("*", { count: "exact", head: true })` | Comptage |
+| `insertOne<T>` | `.insert().select().single()` | Création avec retour |
+| `insertMany` | `.insert()` | Batch insert |
+| `updateById<T>` | `.update().eq("id").select().single()` | Mise à jour |
+| `deleteById` | `.delete().eq("id")` | Suppression unitaire |
+| `deleteByIds` | `.delete().in("id")` | Suppression par liste |
+| `upsertMany<T>` | `.upsert().select().order()` | Upsert atomique |
+
+### Injectabilité pour tests
+
+```typescript
+// Production : client global par défaut
+import { qb } from "@/lib/supabaseQueryBuilder";
+
+// Tests : client fake injecté
+const fakeClient = createMockClient({ data: mockData, error: null });
+const testQb = createSupabaseQueryBuilder(fakeClient);
+```
+
+### Gestion des cas limites
+
+| Cas | Comportement |
+|-----|--------------|
+| `eq: { col: undefined }` | Ignoré (pas d'appel `.eq()`) |
+| `in: { col: [] }` | Ignoré (pas de requête vide) |
+| `isNull: ["col"]` | Applique `.is(col, null)` |
+| `insertMany([])` | No-op (pas d'appel réseau) |
+| `deleteByIds([])` | No-op (pas d'appel réseau) |
+
+### Migration progressive
+
+La migration des repositories vers le QueryBuilder est **opt-in** et progressive :
+
+| Priorité | Repository | Complexité |
+|----------|------------|------------|
+| Haute | `PromptCommandRepository` | Simple (3 méthodes) |
+| Haute | `ProfileRepository` | Simple (2 méthodes) |
+| Moyenne | `VersionRepository` | Modérée (7 méthodes) |
+| Moyenne | `VariableRepository` | Modérée (5 méthodes) |
+| Basse | `PromptQueryRepository` | Complexe (jointures) |
+| Basse | `PromptShareRepository` | Complexe (RPC) |
+
+### Bénéfices
+
+| Aspect | Avant | Après |
+|--------|-------|-------|
+| Loi de Déméter | Chaînes 4-6 appels | Appel unique |
+| Couplage Supabase | Fort (dans chaque repo) | Centralisé |
+| Testabilité | Mock global | Injection client fake |
+| Gestion erreurs | `handleSupabaseError` répété | Centralisé dans QB |
+| Migration future | Réécrire tous les repos | Modifier le QueryBuilder |
