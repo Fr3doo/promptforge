@@ -1,0 +1,378 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createSupabaseQueryBuilder } from "../supabaseQueryBuilder";
+
+// ============================================
+// Chainable mock factory
+// ============================================
+
+interface MockResult {
+  data: unknown;
+  error: null | { message: string; code?: string };
+  count?: number;
+}
+
+function createChainableMock(result: MockResult) {
+  const chain = {
+    select: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    delete: vi.fn().mockReturnThis(),
+    upsert: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    neq: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockReturnThis(),
+    lte: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    is: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue(result),
+    maybeSingle: vi.fn().mockResolvedValue(result),
+    // Thenable: await query resolves to result
+    then: (resolve: (value: MockResult) => void) => Promise.resolve(result).then(resolve),
+  };
+  return chain;
+}
+
+function createMockClient(result: MockResult) {
+  const chainable = createChainableMock(result);
+  return {
+    from: vi.fn().mockReturnValue(chainable),
+    _chainable: chainable,
+  };
+}
+
+describe("supabaseQueryBuilder", () => {
+  describe("selectMany", () => {
+    it("should return array of results", async () => {
+      const mockData = [{ id: "1", name: "Test" }];
+      const client = createMockClient({ data: mockData, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.selectMany("prompts");
+
+      expect(client.from).toHaveBeenCalledWith("prompts");
+      expect(client._chainable.select).toHaveBeenCalledWith("*");
+      expect(result).toEqual(mockData);
+    });
+
+    it("should apply eq filters and skip undefined", async () => {
+      const client = createMockClient({ data: [], error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.selectMany("prompts", {
+        filters: {
+          eq: { owner_id: "user-1", status: undefined },
+        },
+      });
+
+      expect(client._chainable.eq).toHaveBeenCalledWith("owner_id", "user-1");
+      expect(client._chainable.eq).toHaveBeenCalledTimes(1);
+    });
+
+    it("should apply neq filters", async () => {
+      const client = createMockClient({ data: [], error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.selectMany("prompts", {
+        filters: { neq: { visibility: "PRIVATE" } },
+      });
+
+      expect(client._chainable.neq).toHaveBeenCalledWith("visibility", "PRIVATE");
+    });
+
+    it("should apply gte filters", async () => {
+      const client = createMockClient({ data: [], error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.selectMany("prompts", {
+        filters: { gte: { updated_at: "2024-01-01" } },
+      });
+
+      expect(client._chainable.gte).toHaveBeenCalledWith("updated_at", "2024-01-01");
+    });
+
+    it("should skip empty in arrays", async () => {
+      const client = createMockClient({ data: [], error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.selectMany("prompts", {
+        filters: { in: { id: [] } },
+      });
+
+      expect(client._chainable.in).not.toHaveBeenCalled();
+    });
+
+    it("should apply in filters with values", async () => {
+      const client = createMockClient({ data: [], error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.selectMany("prompts", {
+        filters: { in: { id: ["1", "2", "3"] } },
+      });
+
+      expect(client._chainable.in).toHaveBeenCalledWith("id", ["1", "2", "3"]);
+    });
+
+    it("should apply isNull filters", async () => {
+      const client = createMockClient({ data: [], error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.selectMany("prompts", {
+        filters: { isNull: ["deleted_at"] },
+      });
+
+      expect(client._chainable.is).toHaveBeenCalledWith("deleted_at", null);
+    });
+
+    it("should apply order and limit", async () => {
+      const client = createMockClient({ data: [], error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.selectMany("prompts", {
+        order: { column: "updated_at", ascending: false },
+        limit: 10,
+      });
+
+      expect(client._chainable.order).toHaveBeenCalledWith("updated_at", { ascending: false });
+      expect(client._chainable.limit).toHaveBeenCalledWith(10);
+    });
+
+    it("should return empty array when data is null", async () => {
+      const client = createMockClient({ data: null, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.selectMany("prompts");
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe("selectOne", () => {
+    it("should return single record when found", async () => {
+      const mockData = { id: "1", name: "Test" };
+      const client = createMockClient({ data: mockData, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.selectOne("profiles", "id", "1");
+
+      expect(client._chainable.eq).toHaveBeenCalledWith("id", "1");
+      expect(client._chainable.maybeSingle).toHaveBeenCalled();
+      expect(result).toEqual(mockData);
+    });
+
+    it("should return null when not found", async () => {
+      const client = createMockClient({ data: null, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.selectOne("profiles", "id", "nonexistent");
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("selectOneRequired", () => {
+    it("should return record when found", async () => {
+      const mockData = { id: "1", name: "Test" };
+      const client = createMockClient({ data: mockData, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.selectOneRequired("profiles", "id", "1");
+
+      expect(client._chainable.single).toHaveBeenCalled();
+      expect(result).toEqual(mockData);
+    });
+
+    it("should throw when not found (PGRST116)", async () => {
+      const client = createMockClient({
+        data: null,
+        error: { message: "Row not found", code: "PGRST116" },
+      });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await expect(qb.selectOneRequired("profiles", "id", "nonexistent")).rejects.toThrow();
+    });
+  });
+
+  describe("countRows", () => {
+    it("should return count", async () => {
+      const client = createMockClient({ data: null, error: null, count: 42 });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.countRows("prompts");
+
+      expect(client._chainable.select).toHaveBeenCalledWith("*", { count: "exact", head: true });
+      expect(result).toBe(42);
+    });
+
+    it("should apply filters to count", async () => {
+      const client = createMockClient({ data: null, error: null, count: 5 });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.countRows("prompts", { eq: { status: "PUBLISHED" } });
+
+      expect(client._chainable.eq).toHaveBeenCalledWith("status", "PUBLISHED");
+    });
+
+    it("should return 0 when count is null", async () => {
+      const client = createMockClient({ data: null, error: null, count: undefined });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.countRows("prompts");
+
+      expect(result).toBe(0);
+    });
+  });
+
+  describe("insertOne", () => {
+    it("should insert and return created record", async () => {
+      const mockData = { id: "new-id", title: "New Prompt" };
+      const client = createMockClient({ data: mockData, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.insertOne("prompts", { title: "New Prompt" });
+
+      expect(client._chainable.insert).toHaveBeenCalledWith({ title: "New Prompt" });
+      expect(client._chainable.select).toHaveBeenCalled();
+      expect(client._chainable.single).toHaveBeenCalled();
+      expect(result).toEqual(mockData);
+    });
+  });
+
+  describe("insertMany", () => {
+    it("should insert multiple records", async () => {
+      const client = createMockClient({ data: null, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.insertMany("prompts", [{ title: "A" }, { title: "B" }]);
+
+      expect(client._chainable.insert).toHaveBeenCalledWith([{ title: "A" }, { title: "B" }]);
+    });
+
+    it("should no-op when array is empty", async () => {
+      const client = createMockClient({ data: null, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.insertMany("prompts", []);
+
+      expect(client.from).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("updateById", () => {
+    it("should update and return updated record", async () => {
+      const mockData = { id: "1", title: "Updated" };
+      const client = createMockClient({ data: mockData, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.updateById("prompts", "1", { title: "Updated" });
+
+      expect(client._chainable.update).toHaveBeenCalledWith({ title: "Updated" });
+      expect(client._chainable.eq).toHaveBeenCalledWith("id", "1");
+      expect(result).toEqual(mockData);
+    });
+
+    it("should use custom id column", async () => {
+      const client = createMockClient({ data: { id: "1" }, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.updateById("users", "uuid-123", { name: "Test" }, "user_id");
+
+      expect(client._chainable.eq).toHaveBeenCalledWith("user_id", "uuid-123");
+    });
+  });
+
+  describe("deleteById", () => {
+    it("should delete by id", async () => {
+      const client = createMockClient({ data: null, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.deleteById("prompts", "1");
+
+      expect(client._chainable.delete).toHaveBeenCalled();
+      expect(client._chainable.eq).toHaveBeenCalledWith("id", "1");
+    });
+  });
+
+  describe("deleteByIds", () => {
+    it("should delete by list of ids", async () => {
+      const client = createMockClient({ data: null, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.deleteByIds("prompts", ["1", "2", "3"]);
+
+      expect(client._chainable.delete).toHaveBeenCalled();
+      expect(client._chainable.in).toHaveBeenCalledWith("id", ["1", "2", "3"]);
+    });
+
+    it("should no-op when array is empty", async () => {
+      const client = createMockClient({ data: null, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.deleteByIds("prompts", []);
+
+      expect(client.from).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("upsertMany", () => {
+    it("should upsert and return records", async () => {
+      const mockData = [{ id: "1", title: "A" }];
+      const client = createMockClient({ data: mockData, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.upsertMany("prompts", [{ id: "1", title: "A" }]);
+
+      expect(client._chainable.upsert).toHaveBeenCalledWith(
+        [{ id: "1", title: "A" }],
+        { onConflict: "id", ignoreDuplicates: false }
+      );
+      expect(result).toEqual(mockData);
+    });
+
+    it("should use custom onConflict", async () => {
+      const client = createMockClient({ data: [], error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.upsertMany("variables", [{ name: "x" }], { onConflict: "prompt_id,name" });
+
+      expect(client._chainable.upsert).toHaveBeenCalledWith(
+        [{ name: "x" }],
+        { onConflict: "prompt_id,name", ignoreDuplicates: false }
+      );
+    });
+
+    it("should apply order option", async () => {
+      const client = createMockClient({ data: [], error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.upsertMany("variables", [{ name: "x" }], {
+        order: { column: "order_index", ascending: true },
+      });
+
+      expect(client._chainable.order).toHaveBeenCalledWith("order_index", { ascending: true });
+    });
+
+    it("should return empty array when input is empty", async () => {
+      const client = createMockClient({ data: null, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.upsertMany("prompts", []);
+
+      expect(result).toEqual([]);
+      expect(client.from).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("error handling", () => {
+    it("should throw on Supabase error", async () => {
+      const client = createMockClient({
+        data: null,
+        error: { message: "Database error" },
+      });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await expect(qb.selectMany("prompts")).rejects.toThrow();
+    });
+  });
+});
