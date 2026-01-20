@@ -312,6 +312,78 @@ export function createSupabaseQueryBuilder(
       handleSupabaseError(res);
       return res.data as T[];
     },
+
+    /**
+     * Sélectionne plusieurs enregistrements par liste d'IDs.
+     * No-op retournant [] si le tableau est vide.
+     * @throws {Error} Si la requête échoue
+     */
+    async selectManyByIds<T>(
+      table: TableName,
+      ids: readonly (string | number)[],
+      idColumn: ColumnName = "id"
+    ): Promise<T[]> {
+      if (ids.length === 0) return [];
+      const res = await client
+        .from(table)
+        .select("*")
+        .in(idColumn, ids as (string | number)[]);
+      handleSupabaseError(res);
+      return (res.data ?? []) as T[];
+    },
+
+    /**
+     * Met à jour des enregistrements correspondant à un filtre (sans retour).
+     * @throws {Error} Si la mise à jour échoue
+     */
+    async updateWhere(
+      table: TableName,
+      column: ColumnName,
+      value: Scalar,
+      updates: Record<string, unknown>
+    ): Promise<void> {
+      const res = await client.from(table).update(updates).eq(column, value);
+      handleSupabaseError(res);
+    },
+
+    /**
+     * Sélectionne le premier enregistrement avec filtres et tri.
+     * @returns L'enregistrement ou null si non trouvé
+     * @throws {Error} Si la requête échoue (hors PGRST116)
+     */
+    async selectFirst<T>(
+      table: TableName,
+      options: QueryOptions = {},
+      columns = "*"
+    ): Promise<T | null> {
+      let q = client.from(table).select(columns);
+      q = applyFilters(q, options.filters);
+      q = applyOrderLimit(q, { ...options, limit: 1 });
+      const res = await q.maybeSingle();
+
+      // PGRST116 = 0 résultat avec maybeSingle, retourne null
+      if (res.error?.code === "PGRST116") {
+        return null;
+      }
+      handleSupabaseError(res);
+      return (res.data ?? null) as T | null;
+    },
+
+    /**
+     * Vérifie si un enregistrement existe pour les filtres donnés.
+     * @returns true si existe, false sinon (ou en cas d'erreur)
+     */
+    async exists(table: TableName, filters: FilterOptions): Promise<boolean> {
+      let q = client.from(table).select("id");
+      q = applyFilters(q, filters);
+      const res = await q.maybeSingle();
+
+      if (res.error) {
+        console.error("Erreur vérification existence:", res.error);
+        return false;
+      }
+      return !!res.data;
+    },
   };
 }
 

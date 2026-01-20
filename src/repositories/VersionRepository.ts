@@ -1,6 +1,5 @@
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
-import { supabase } from "@/integrations/supabase/client";
-import { handleSupabaseError } from "@/lib/errorHandler";
+import { qb } from "@/lib/supabaseQueryBuilder";
 
 export type Version = Tables<"versions">;
 export type VersionInsert = TablesInsert<"versions">;
@@ -89,96 +88,43 @@ export interface VersionRepository {
 export class SupabaseVersionRepository implements VersionRepository {
   async fetchByPromptId(promptId: string): Promise<Version[]> {
     if (!promptId) throw new Error("ID prompt requis");
-    
-    const result = await supabase
-      .from("versions")
-      .select("*")
-      .eq("prompt_id", promptId)
-      .order("created_at", { ascending: false });
-    
-    handleSupabaseError(result);
-    return result.data;
+    return qb.selectMany<Version>("versions", {
+      filters: { eq: { prompt_id: promptId } },
+      order: { column: "created_at", ascending: false },
+    });
   }
 
   async create(version: VersionInsert): Promise<Version> {
-    const result = await supabase
-      .from("versions")
-      .insert(version)
-      .select()
-      .single();
-    
-    handleSupabaseError(result);
-    return result.data;
+    return qb.insertOne<Version, VersionInsert>("versions", version);
   }
 
   async delete(versionIds: string[]): Promise<void> {
     if (!versionIds.length) throw new Error("IDs version requis");
-    
-    const result = await supabase
-      .from("versions")
-      .delete()
-      .in("id", versionIds);
-    
-    handleSupabaseError(result);
+    return qb.deleteByIds("versions", versionIds);
   }
 
   async fetchByIds(versionIds: string[]): Promise<Version[]> {
     if (!versionIds.length) throw new Error("IDs version requis");
-    
-    const result = await supabase
-      .from("versions")
-      .select("*")
-      .in("id", versionIds);
-    
-    handleSupabaseError(result);
-    return result.data;
+    return qb.selectManyByIds<Version>("versions", versionIds);
   }
 
   async updatePromptVersion(promptId: string, semver: string): Promise<void> {
-    const result = await supabase
-      .from("prompts")
-      .update({ version: semver })
-      .eq("id", promptId);
-    
-    handleSupabaseError(result);
+    return qb.updateWhere("prompts", "id", promptId, { version: semver });
   }
 
   async fetchLatestByPromptId(promptId: string): Promise<Version | null> {
     if (!promptId) throw new Error("ID prompt requis");
-    
-    const result = await supabase
-      .from("versions")
-      .select("*")
-      .eq("prompt_id", promptId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
-    
-    // Si aucune version trouvée, retourner null au lieu de throw
-    if (result.error?.code === 'PGRST116') {
-      return null;
-    }
-    
-    handleSupabaseError(result);
-    return result.data;
+    return qb.selectFirst<Version>("versions", {
+      filters: { eq: { prompt_id: promptId } },
+      order: { column: "created_at", ascending: false },
+    });
   }
 
   async existsBySemver(promptId: string, semver: string): Promise<boolean> {
     if (!promptId) throw new Error("ID prompt requis");
     if (!semver) throw new Error("Version semver requise");
-    
-    const { data, error } = await supabase
-      .from("versions")
-      .select("id")
-      .eq("prompt_id", promptId)
-      .eq("semver", semver)
-      .maybeSingle();
-
-    if (error) {
-      console.error("Erreur vérification version:", error);
-      return false;
-    }
-
-    return !!data;
+    return qb.exists("versions", {
+      eq: { prompt_id: promptId, semver },
+    });
   }
 }

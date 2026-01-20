@@ -364,6 +364,133 @@ describe("supabaseQueryBuilder", () => {
     });
   });
 
+  describe("selectManyByIds", () => {
+    it("should return empty array for empty ids", async () => {
+      const client = createMockClient({ data: null, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.selectManyByIds("versions", []);
+
+      expect(result).toEqual([]);
+      expect(client.from).not.toHaveBeenCalled();
+    });
+
+    it("should fetch records by ids", async () => {
+      const mockData = [{ id: "1" }, { id: "2" }];
+      const client = createMockClient({ data: mockData, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.selectManyByIds("versions", ["1", "2"]);
+
+      expect(client._chainable.in).toHaveBeenCalledWith("id", ["1", "2"]);
+      expect(result).toEqual(mockData);
+    });
+
+    it("should use custom id column", async () => {
+      const client = createMockClient({ data: [], error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.selectManyByIds("versions", ["a"], "prompt_id");
+
+      expect(client._chainable.in).toHaveBeenCalledWith("prompt_id", ["a"]);
+    });
+  });
+
+  describe("updateWhere", () => {
+    it("should update records matching filter", async () => {
+      const client = createMockClient({ data: null, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.updateWhere("prompts", "id", "prompt-1", { version: "2.0.0" });
+
+      expect(client._chainable.update).toHaveBeenCalledWith({ version: "2.0.0" });
+      expect(client._chainable.eq).toHaveBeenCalledWith("id", "prompt-1");
+    });
+  });
+
+  describe("selectFirst", () => {
+    it("should return first record with filters and order", async () => {
+      const mockData = { id: "1", created_at: "2024-01-01" };
+      const client = createMockClient({ data: mockData, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.selectFirst("versions", {
+        filters: { eq: { prompt_id: "p1" } },
+        order: { column: "created_at", ascending: false },
+      });
+
+      expect(client._chainable.eq).toHaveBeenCalledWith("prompt_id", "p1");
+      expect(client._chainable.order).toHaveBeenCalledWith("created_at", { ascending: false });
+      expect(client._chainable.limit).toHaveBeenCalledWith(1);
+      expect(client._chainable.maybeSingle).toHaveBeenCalled();
+      expect(result).toEqual(mockData);
+    });
+
+    it("should return null when no results", async () => {
+      const client = createMockClient({ data: null, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.selectFirst("versions");
+
+      expect(result).toBeNull();
+    });
+
+    it("should handle PGRST116 gracefully", async () => {
+      const client = createMockClient({
+        data: null,
+        error: { message: "Row not found", code: "PGRST116" },
+      });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.selectFirst("versions");
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("exists", () => {
+    it("should return true when record exists", async () => {
+      const client = createMockClient({ data: { id: "1" }, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.exists("versions", {
+        eq: { prompt_id: "p1", semver: "1.0.0" },
+      });
+
+      expect(client._chainable.select).toHaveBeenCalledWith("id");
+      expect(client._chainable.eq).toHaveBeenCalledWith("prompt_id", "p1");
+      expect(client._chainable.eq).toHaveBeenCalledWith("semver", "1.0.0");
+      expect(result).toBe(true);
+    });
+
+    it("should return false when record does not exist", async () => {
+      const client = createMockClient({ data: null, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.exists("versions", { eq: { id: "nonexistent" } });
+
+      expect(result).toBe(false);
+    });
+
+    it("should return false and log on error", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const client = createMockClient({
+        data: null,
+        error: { message: "Database error" },
+      });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.exists("versions", { eq: { id: "x" } });
+
+      expect(result).toBe(false);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Erreur vérification existence:",
+        expect.any(Object)
+      );
+      consoleErrorSpy.mockRestore();
+    });
+  });
+
   describe("error handling", () => {
     it("should throw on Supabase error", async () => {
       const client = createMockClient({
