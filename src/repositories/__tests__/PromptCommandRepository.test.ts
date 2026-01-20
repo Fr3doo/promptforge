@@ -1,15 +1,13 @@
-import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SupabasePromptCommandRepository } from "../PromptCommandRepository";
-import { supabase } from "@/integrations/supabase/client";
+import { qb } from "@/lib/supabaseQueryBuilder";
 
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: {
-    from: vi.fn(),
+vi.mock("@/lib/supabaseQueryBuilder", () => ({
+  qb: {
+    insertOne: vi.fn(),
+    updateById: vi.fn(),
+    deleteById: vi.fn(),
   },
-}));
-
-vi.mock("@/lib/logger", () => ({
-  logError: vi.fn(),
 }));
 
 describe("SupabasePromptCommandRepository", () => {
@@ -43,25 +41,15 @@ describe("SupabasePromptCommandRepository", () => {
   });
 
   describe("create", () => {
-    const createInsertChain = (finalResult: { data: unknown; error: unknown }) => ({
-      insert: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue(finalResult),
-    });
-
     it("should create a prompt with correct data", async () => {
-      const chain = createInsertChain({ data: mockCreatedPrompt, error: null });
-      (supabase.from as Mock).mockReturnValue(chain);
+      vi.mocked(qb.insertOne).mockResolvedValue(mockCreatedPrompt);
 
       const result = await repository.create(mockUserId, mockPromptData);
 
-      expect(supabase.from).toHaveBeenCalledWith("prompts");
-      expect(chain.insert).toHaveBeenCalledWith({
+      expect(qb.insertOne).toHaveBeenCalledWith("prompts", {
         ...mockPromptData,
         owner_id: mockUserId,
       });
-      expect(chain.select).toHaveBeenCalled();
-      expect(chain.single).toHaveBeenCalled();
       expect(result).toEqual(mockCreatedPrompt);
     });
 
@@ -69,49 +57,35 @@ describe("SupabasePromptCommandRepository", () => {
       await expect(repository.create("", mockPromptData)).rejects.toThrow(
         "ID utilisateur requis"
       );
+      expect(qb.insertOne).not.toHaveBeenCalled();
     });
 
     it("should throw error if userId is undefined", async () => {
       await expect(
         repository.create(undefined as unknown as string, mockPromptData)
       ).rejects.toThrow("ID utilisateur requis");
+      expect(qb.insertOne).not.toHaveBeenCalled();
     });
 
-    it("should throw on Supabase error", async () => {
-      const chain = createInsertChain({
-        data: null,
-        error: { message: "Insert failed" },
-      });
-      (supabase.from as Mock).mockReturnValue(chain);
+    it("should throw on QueryBuilder error", async () => {
+      vi.mocked(qb.insertOne).mockRejectedValue(new Error("Insert failed"));
 
       await expect(
         repository.create(mockUserId, mockPromptData)
-      ).rejects.toThrow();
+      ).rejects.toThrow("Insert failed");
     });
   });
 
   describe("update", () => {
-    const createUpdateChain = (finalResult: { data: unknown; error: unknown }) => ({
-      update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue(finalResult),
-    });
-
     const mockUpdates = { title: "Updated Title", is_favorite: true };
     const mockUpdatedPrompt = { ...mockCreatedPrompt, ...mockUpdates };
 
     it("should update a prompt with correct data", async () => {
-      const chain = createUpdateChain({ data: mockUpdatedPrompt, error: null });
-      (supabase.from as Mock).mockReturnValue(chain);
+      vi.mocked(qb.updateById).mockResolvedValue(mockUpdatedPrompt);
 
       const result = await repository.update(mockPromptId, mockUpdates);
 
-      expect(supabase.from).toHaveBeenCalledWith("prompts");
-      expect(chain.update).toHaveBeenCalledWith(mockUpdates);
-      expect(chain.eq).toHaveBeenCalledWith("id", mockPromptId);
-      expect(chain.select).toHaveBeenCalled();
-      expect(chain.single).toHaveBeenCalled();
+      expect(qb.updateById).toHaveBeenCalledWith("prompts", mockPromptId, mockUpdates);
       expect(result).toEqual(mockUpdatedPrompt);
     });
 
@@ -119,56 +93,43 @@ describe("SupabasePromptCommandRepository", () => {
       await expect(repository.update("", mockUpdates)).rejects.toThrow(
         "ID requis"
       );
+      expect(qb.updateById).not.toHaveBeenCalled();
     });
 
     it("should throw error if id is undefined", async () => {
       await expect(
         repository.update(undefined as unknown as string, mockUpdates)
       ).rejects.toThrow("ID requis");
+      expect(qb.updateById).not.toHaveBeenCalled();
     });
 
-    it("should throw on Supabase error", async () => {
-      const chain = createUpdateChain({
-        data: null,
-        error: { message: "Update failed" },
-      });
-      (supabase.from as Mock).mockReturnValue(chain);
+    it("should throw on QueryBuilder error", async () => {
+      vi.mocked(qb.updateById).mockRejectedValue(new Error("Update failed"));
 
       await expect(
         repository.update(mockPromptId, mockUpdates)
-      ).rejects.toThrow();
+      ).rejects.toThrow("Update failed");
     });
   });
 
   describe("delete", () => {
-    const createDeleteChain = (finalResult: { data: unknown; error: unknown }) => ({
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockResolvedValue(finalResult),
-    });
-
     it("should delete a prompt by id", async () => {
-      const chain = createDeleteChain({ data: null, error: null });
-      (supabase.from as Mock).mockReturnValue(chain);
+      vi.mocked(qb.deleteById).mockResolvedValue(undefined);
 
       await repository.delete(mockPromptId);
 
-      expect(supabase.from).toHaveBeenCalledWith("prompts");
-      expect(chain.delete).toHaveBeenCalled();
-      expect(chain.eq).toHaveBeenCalledWith("id", mockPromptId);
+      expect(qb.deleteById).toHaveBeenCalledWith("prompts", mockPromptId);
     });
 
     it("should throw error if id is empty", async () => {
       await expect(repository.delete("")).rejects.toThrow("ID requis");
+      expect(qb.deleteById).not.toHaveBeenCalled();
     });
 
-    it("should throw on Supabase error", async () => {
-      const chain = createDeleteChain({
-        data: null,
-        error: { message: "Delete failed" },
-      });
-      (supabase.from as Mock).mockReturnValue(chain);
+    it("should throw on QueryBuilder error", async () => {
+      vi.mocked(qb.deleteById).mockRejectedValue(new Error("Delete failed"));
 
-      await expect(repository.delete(mockPromptId)).rejects.toThrow();
+      await expect(repository.delete(mockPromptId)).rejects.toThrow("Delete failed");
     });
   });
 });

@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SupabaseProfileRepository } from "../ProfileRepository";
-import { supabase } from "@/integrations/supabase/client";
+import { qb } from "@/lib/supabaseQueryBuilder";
 
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: {
-    from: vi.fn(),
+vi.mock("@/lib/supabaseQueryBuilder", () => ({
+  qb: {
+    selectOne: vi.fn(),
+    updateById: vi.fn(),
   },
 }));
 
@@ -28,41 +29,16 @@ describe("SupabaseProfileRepository", () => {
 
   describe("fetchByUserId", () => {
     it("should fetch profile by user ID", async () => {
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockEq = vi.fn().mockReturnThis();
-      const mockMaybeSingle = vi.fn().mockResolvedValue({
-        data: mockProfile,
-        error: null,
-      });
-
-      vi.mocked(supabase.from).mockReturnValue({
-        select: mockSelect,
-        eq: mockEq,
-        maybeSingle: mockMaybeSingle,
-      } as any);
+      vi.mocked(qb.selectOne).mockResolvedValue(mockProfile);
 
       const result = await repository.fetchByUserId(mockUserId);
 
-      expect(supabase.from).toHaveBeenCalledWith("profiles");
-      expect(mockSelect).toHaveBeenCalledWith("*");
-      expect(mockEq).toHaveBeenCalledWith("id", mockUserId);
-      expect(mockMaybeSingle).toHaveBeenCalled();
+      expect(qb.selectOne).toHaveBeenCalledWith("profiles", "id", mockUserId);
       expect(result).toEqual(mockProfile);
     });
 
     it("should return null when profile is not found", async () => {
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockEq = vi.fn().mockReturnThis();
-      const mockMaybeSingle = vi.fn().mockResolvedValue({
-        data: null,
-        error: null,
-      });
-
-      vi.mocked(supabase.from).mockReturnValue({
-        select: mockSelect,
-        eq: mockEq,
-        maybeSingle: mockMaybeSingle,
-      } as any);
+      vi.mocked(qb.selectOne).mockResolvedValue(null);
 
       const result = await repository.fetchByUserId(mockUserId);
 
@@ -73,22 +49,11 @@ describe("SupabaseProfileRepository", () => {
       await expect(repository.fetchByUserId("")).rejects.toThrow(
         "ID utilisateur requis"
       );
+      expect(qb.selectOne).not.toHaveBeenCalled();
     });
 
     it("should handle database errors", async () => {
-      const mockError = new Error("Database error");
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockEq = vi.fn().mockReturnThis();
-      const mockMaybeSingle = vi.fn().mockResolvedValue({
-        data: null,
-        error: mockError,
-      });
-
-      vi.mocked(supabase.from).mockReturnValue({
-        select: mockSelect,
-        eq: mockEq,
-        maybeSingle: mockMaybeSingle,
-      } as any);
+      vi.mocked(qb.selectOne).mockRejectedValue(new Error("Database error"));
 
       await expect(repository.fetchByUserId(mockUserId)).rejects.toThrow(
         "Database error"
@@ -101,28 +66,11 @@ describe("SupabaseProfileRepository", () => {
       const updates = { pseudo: "newpseudo" };
       const updatedProfile = { ...mockProfile, ...updates };
 
-      const mockUpdate = vi.fn().mockReturnThis();
-      const mockEq = vi.fn().mockReturnThis();
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockSingle = vi.fn().mockResolvedValue({
-        data: updatedProfile,
-        error: null,
-      });
-
-      vi.mocked(supabase.from).mockReturnValue({
-        update: mockUpdate,
-        eq: mockEq,
-        select: mockSelect,
-        single: mockSingle,
-      } as any);
+      vi.mocked(qb.updateById).mockResolvedValue(updatedProfile);
 
       const result = await repository.update(mockUserId, updates);
 
-      expect(supabase.from).toHaveBeenCalledWith("profiles");
-      expect(mockUpdate).toHaveBeenCalledWith(updates);
-      expect(mockEq).toHaveBeenCalledWith("id", mockUserId);
-      expect(mockSelect).toHaveBeenCalled();
-      expect(mockSingle).toHaveBeenCalled();
+      expect(qb.updateById).toHaveBeenCalledWith("profiles", mockUserId, updates);
       expect(result).toEqual(updatedProfile);
     });
 
@@ -130,24 +78,11 @@ describe("SupabaseProfileRepository", () => {
       await expect(repository.update("", { pseudo: "test" })).rejects.toThrow(
         "ID utilisateur requis"
       );
+      expect(qb.updateById).not.toHaveBeenCalled();
     });
 
     it("should handle update errors", async () => {
-      const mockError = new Error("Update failed");
-      const mockUpdate = vi.fn().mockReturnThis();
-      const mockEq = vi.fn().mockReturnThis();
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockSingle = vi.fn().mockResolvedValue({
-        data: null,
-        error: mockError,
-      });
-
-      vi.mocked(supabase.from).mockReturnValue({
-        update: mockUpdate,
-        eq: mockEq,
-        select: mockSelect,
-        single: mockSingle,
-      } as any);
+      vi.mocked(qb.updateById).mockRejectedValue(new Error("Update failed"));
 
       await expect(
         repository.update(mockUserId, { pseudo: "test" })
@@ -162,24 +97,11 @@ describe("SupabaseProfileRepository", () => {
       };
       const updatedProfile = { ...mockProfile, ...updates };
 
-      const mockUpdate = vi.fn().mockReturnThis();
-      const mockEq = vi.fn().mockReturnThis();
-      const mockSelect = vi.fn().mockReturnThis();
-      const mockSingle = vi.fn().mockResolvedValue({
-        data: updatedProfile,
-        error: null,
-      });
-
-      vi.mocked(supabase.from).mockReturnValue({
-        update: mockUpdate,
-        eq: mockEq,
-        select: mockSelect,
-        single: mockSingle,
-      } as any);
+      vi.mocked(qb.updateById).mockResolvedValue(updatedProfile);
 
       const result = await repository.update(mockUserId, updates);
 
-      expect(mockUpdate).toHaveBeenCalledWith(updates);
+      expect(qb.updateById).toHaveBeenCalledWith("profiles", mockUserId, updates);
       expect(result).toEqual(updatedProfile);
     });
   });
