@@ -23,8 +23,7 @@ import type {
   PromptMutationRepository,
   Prompt 
 } from "./PromptRepository.interfaces";
-import { supabase } from "@/integrations/supabase/client";
-import { handleSupabaseError } from "@/lib/errorHandler";
+import { qb } from "@/lib/supabaseQueryBuilder";
 
 export class SupabasePromptCommandRepository 
   implements PromptCommandRepository, PromptMutationRepository {
@@ -34,42 +33,19 @@ export class SupabasePromptCommandRepository
     promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">
   ): Promise<Prompt> {
     if (!userId) throw new Error("ID utilisateur requis");
-
-    const result = await supabase
-      .from("prompts")
-      .insert({
-        ...promptData,
-        owner_id: userId,
-      })
-      .select()
-      .single();
-    
-    handleSupabaseError(result);
-    return result.data;
+    return qb.insertOne<Prompt, typeof promptData & { owner_id: string }>(
+      "prompts", 
+      { ...promptData, owner_id: userId }
+    );
   }
 
   async update(id: string, updates: Partial<Prompt>): Promise<Prompt> {
     if (!id) throw new Error("ID requis");
-    
-    const result = await supabase
-      .from("prompts")
-      .update(updates)
-      .eq("id", id)
-      .select()
-      .single();
-    
-    handleSupabaseError(result);
-    return result.data;
+    return qb.updateById<Prompt>("prompts", id, updates);
   }
 
   async delete(id: string): Promise<void> {
     if (!id) throw new Error("ID requis");
-    
-    const result = await supabase
-      .from("prompts")
-      .delete()
-      .eq("id", id);
-    
-    handleSupabaseError(result);
+    return qb.deleteById("prompts", id);
   }
 }

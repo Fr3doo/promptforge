@@ -1,6 +1,5 @@
 import type { Tables, TablesUpdate } from "@/integrations/supabase/types";
-import { supabase } from "@/integrations/supabase/client";
-import { handleSupabaseError } from "@/lib/errorHandler";
+import { qb } from "@/lib/supabaseQueryBuilder";
 
 export type Profile = Tables<"profiles">;
 export type ProfileUpdate = TablesUpdate<"profiles">;
@@ -43,28 +42,11 @@ export interface ProfileRepository {
 export class SupabaseProfileRepository implements ProfileRepository {
   async fetchByUserId(userId: string): Promise<Profile | null> {
     if (!userId) throw new Error("ID utilisateur requis");
-
-    const result = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
-
-    handleSupabaseError(result);
-    return result.data;
+    return qb.selectOne<Profile>("profiles", "id", userId);
   }
 
   async update(userId: string, updates: Partial<ProfileUpdate>): Promise<Profile> {
     if (!userId) throw new Error("ID utilisateur requis");
-
-    const result = await supabase
-      .from("profiles")
-      .update(updates)
-      .eq("id", userId)
-      .select()
-      .single();
-
-    handleSupabaseError(result);
-    return result.data;
+    return qb.updateById<Profile>("profiles", userId, updates);
   }
 }
