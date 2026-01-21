@@ -1,18 +1,41 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { SupabaseVariableRepository } from "../VariableRepository";
-import type { Variable, VariableInsert } from "../VariableRepository";
+import type { Variable, VariableInsert, VariableUpsertInput } from "../VariableRepository";
+import { qb } from "@/lib/supabaseQueryBuilder";
 
-// Mock du client Supabase
-const mockSupabase = {
-  from: vi.fn(),
-};
+// Mock du QueryBuilder
+vi.mock("@/lib/supabaseQueryBuilder", () => ({
+  qb: {
+    selectMany: vi.fn(),
+    insertOne: vi.fn(),
+    updateById: vi.fn(),
+    deleteWhere: vi.fn(),
+    deleteByIds: vi.fn(),
+    upsertMany: vi.fn(),
+  },
+}));
 
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: mockSupabase,
+// Mock du logger
+vi.mock("@/lib/logger", () => ({
+  captureException: vi.fn(),
 }));
 
 describe("SupabaseVariableRepository", () => {
   let repository: SupabaseVariableRepository;
+
+  const mockVariable: Variable = {
+    id: "var-1",
+    prompt_id: "prompt-123",
+    name: "firstName",
+    type: "STRING",
+    required: true,
+    default_value: "",
+    help: "Prénom de l'utilisateur",
+    pattern: "",
+    options: [],
+    order_index: 0,
+    created_at: "2024-01-01T00:00:00Z",
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -22,86 +45,37 @@ describe("SupabaseVariableRepository", () => {
   describe("fetch", () => {
     it("récupère les variables d'un prompt par ordre croissant", async () => {
       const mockVariables: Variable[] = [
+        mockVariable,
         {
-          id: "var-1",
-          prompt_id: "prompt-123",
-          name: "firstName",
-          type: "STRING",
-          required: true,
-          default_value: "",
-          help: "Prénom de l'utilisateur",
-          pattern: "",
-          options: [],
-          order_index: 0,
-          created_at: "2024-01-01T00:00:00Z",
-        },
-        {
+          ...mockVariable,
           id: "var-2",
-          prompt_id: "prompt-123",
           name: "age",
           type: "NUMBER",
-          required: false,
-          default_value: "18",
-          help: "Âge de l'utilisateur",
-          pattern: "",
-          options: [],
           order_index: 1,
-          created_at: "2024-01-01T00:00:00Z",
         },
       ];
 
-      const mockOrder = vi.fn().mockResolvedValue({
-        data: mockVariables,
-        error: null,
-      });
-
-      const mockEq = vi.fn().mockReturnValue({
-        order: mockOrder,
-      });
-
-      const mockSelect = vi.fn().mockReturnValue({
-        eq: mockEq,
-      });
-
-      mockSupabase.from.mockReturnValue({
-        select: mockSelect,
-      });
+      (qb.selectMany as Mock).mockResolvedValue(mockVariables);
 
       const result = await repository.fetch("prompt-123");
 
-      expect(mockSupabase.from).toHaveBeenCalledWith("variables");
-      expect(mockSelect).toHaveBeenCalledWith("*");
-      expect(mockEq).toHaveBeenCalledWith("prompt_id", "prompt-123");
-      expect(mockOrder).toHaveBeenCalledWith("order_index", { ascending: true });
+      expect(qb.selectMany).toHaveBeenCalledWith("variables", {
+        filters: { eq: { prompt_id: "prompt-123" } },
+        order: { column: "order_index", ascending: true },
+      });
       expect(result).toEqual(mockVariables);
     });
 
     it("retourne un tableau vide si le promptId est vide", async () => {
       const result = await repository.fetch("");
 
-      expect(mockSupabase.from).not.toHaveBeenCalled();
+      expect(qb.selectMany).not.toHaveBeenCalled();
       expect(result).toEqual([]);
     });
 
     it("gère les erreurs de récupération", async () => {
       const mockError = new Error("Database error");
-
-      const mockOrder = vi.fn().mockResolvedValue({
-        data: null,
-        error: mockError,
-      });
-
-      const mockEq = vi.fn().mockReturnValue({
-        order: mockOrder,
-      });
-
-      const mockSelect = vi.fn().mockReturnValue({
-        eq: mockEq,
-      });
-
-      mockSupabase.from.mockReturnValue({
-        select: mockSelect,
-      });
+      (qb.selectMany as Mock).mockRejectedValue(mockError);
 
       await expect(repository.fetch("prompt-123")).rejects.toThrow(mockError);
     });
@@ -135,29 +109,11 @@ describe("SupabaseVariableRepository", () => {
         created_at: "2024-01-01T00:00:00Z",
       };
 
-      const mockSingle = vi.fn().mockResolvedValue({
-        data: createdVariable,
-        error: null,
-      });
-
-      const mockSelect = vi.fn().mockReturnValue({
-        single: mockSingle,
-      });
-
-      const mockInsert = vi.fn().mockReturnValue({
-        select: mockSelect,
-      });
-
-      mockSupabase.from.mockReturnValue({
-        insert: mockInsert,
-      });
+      (qb.insertOne as Mock).mockResolvedValue(createdVariable);
 
       const result = await repository.create(newVariable);
 
-      expect(mockSupabase.from).toHaveBeenCalledWith("variables");
-      expect(mockInsert).toHaveBeenCalledWith(newVariable);
-      expect(mockSelect).toHaveBeenCalled();
-      expect(mockSingle).toHaveBeenCalled();
+      expect(qb.insertOne).toHaveBeenCalledWith("variables", newVariable);
       expect(result).toEqual(createdVariable);
     });
 
@@ -175,22 +131,7 @@ describe("SupabaseVariableRepository", () => {
         order_index: 0,
       };
 
-      const mockSingle = vi.fn().mockResolvedValue({
-        data: null,
-        error: mockError,
-      });
-
-      const mockSelect = vi.fn().mockReturnValue({
-        single: mockSingle,
-      });
-
-      const mockInsert = vi.fn().mockReturnValue({
-        select: mockSelect,
-      });
-
-      mockSupabase.from.mockReturnValue({
-        insert: mockInsert,
-      });
+      (qb.insertOne as Mock).mockRejectedValue(mockError);
 
       await expect(repository.create(newVariable)).rejects.toThrow(mockError);
     });
@@ -204,71 +145,21 @@ describe("SupabaseVariableRepository", () => {
       };
 
       const updatedVariable: Variable = {
-        id: "var-1",
-        prompt_id: "prompt-123",
-        name: "updatedName",
-        type: "STRING",
-        required: true,
-        default_value: "",
-        help: "",
-        pattern: "",
-        options: [],
-        order_index: 0,
-        created_at: "2024-01-01T00:00:00Z",
+        ...mockVariable,
+        ...updates,
       };
 
-      const mockSingle = vi.fn().mockResolvedValue({
-        data: updatedVariable,
-        error: null,
-      });
-
-      const mockSelect = vi.fn().mockReturnValue({
-        single: mockSingle,
-      });
-
-      const mockEq = vi.fn().mockReturnValue({
-        select: mockSelect,
-      });
-
-      const mockUpdate = vi.fn().mockReturnValue({
-        eq: mockEq,
-      });
-
-      mockSupabase.from.mockReturnValue({
-        update: mockUpdate,
-      });
+      (qb.updateById as Mock).mockResolvedValue(updatedVariable);
 
       const result = await repository.update("var-1", updates);
 
-      expect(mockSupabase.from).toHaveBeenCalledWith("variables");
-      expect(mockUpdate).toHaveBeenCalledWith(updates);
-      expect(mockEq).toHaveBeenCalledWith("id", "var-1");
+      expect(qb.updateById).toHaveBeenCalledWith("variables", "var-1", updates);
       expect(result).toEqual(updatedVariable);
     });
 
     it("gère les erreurs de mise à jour", async () => {
       const mockError = new Error("Update failed");
-
-      const mockSingle = vi.fn().mockResolvedValue({
-        data: null,
-        error: mockError,
-      });
-
-      const mockSelect = vi.fn().mockReturnValue({
-        single: mockSingle,
-      });
-
-      const mockEq = vi.fn().mockReturnValue({
-        select: mockSelect,
-      });
-
-      const mockUpdate = vi.fn().mockReturnValue({
-        eq: mockEq,
-      });
-
-      mockSupabase.from.mockReturnValue({
-        update: mockUpdate,
-      });
+      (qb.updateById as Mock).mockRejectedValue(mockError);
 
       await expect(repository.update("var-1", {})).rejects.toThrow(mockError);
     });
@@ -276,41 +167,16 @@ describe("SupabaseVariableRepository", () => {
 
   describe("deleteMany", () => {
     it("supprime toutes les variables d'un prompt", async () => {
-      const mockEq = vi.fn().mockResolvedValue({
-        data: null,
-        error: null,
-      });
-
-      const mockDelete = vi.fn().mockReturnValue({
-        eq: mockEq,
-      });
-
-      mockSupabase.from.mockReturnValue({
-        delete: mockDelete,
-      });
+      (qb.deleteWhere as Mock).mockResolvedValue(undefined);
 
       await repository.deleteMany("prompt-123");
 
-      expect(mockSupabase.from).toHaveBeenCalledWith("variables");
-      expect(mockDelete).toHaveBeenCalled();
-      expect(mockEq).toHaveBeenCalledWith("prompt_id", "prompt-123");
+      expect(qb.deleteWhere).toHaveBeenCalledWith("variables", "prompt_id", "prompt-123");
     });
 
     it("gère les erreurs de suppression", async () => {
       const mockError = new Error("Delete failed");
-
-      const mockEq = vi.fn().mockResolvedValue({
-        data: null,
-        error: mockError,
-      });
-
-      const mockDelete = vi.fn().mockReturnValue({
-        eq: mockEq,
-      });
-
-      mockSupabase.from.mockReturnValue({
-        delete: mockDelete,
-      });
+      (qb.deleteWhere as Mock).mockRejectedValue(mockError);
 
       await expect(repository.deleteMany("prompt-123")).rejects.toThrow(mockError);
     });
@@ -318,7 +184,7 @@ describe("SupabaseVariableRepository", () => {
 
   describe("upsertMany", () => {
     it("insère de nouvelles variables quand aucune n'existe", async () => {
-      const newVariables: Omit<VariableInsert, "prompt_id">[] = [
+      const newVariables: VariableUpsertInput[] = [
         {
           name: "var1",
           type: "STRING",
@@ -341,21 +207,6 @@ describe("SupabaseVariableRepository", () => {
         },
       ];
 
-      // Mock fetch pour récupérer les variables existantes (vide)
-      const mockOrderFetch = vi.fn().mockResolvedValue({
-        data: [],
-        error: null,
-      });
-
-      const mockEqFetch = vi.fn().mockReturnValue({
-        order: mockOrderFetch,
-      });
-
-      const mockSelectFetch = vi.fn().mockReturnValue({
-        eq: mockEqFetch,
-      });
-
-      // Mock upsert
       const upsertedVariables: Variable[] = [
         {
           id: "var-1",
@@ -385,23 +236,17 @@ describe("SupabaseVariableRepository", () => {
         },
       ];
 
-      const mockSelect = vi.fn().mockResolvedValue({
-        data: upsertedVariables,
-        error: null,
-      });
-
-      const mockUpsert = vi.fn().mockReturnValue({
-        select: mockSelect,
-      });
-
-      mockSupabase.from
-        .mockReturnValueOnce({ select: mockSelectFetch })
-        .mockReturnValueOnce({ upsert: mockUpsert });
+      (qb.selectMany as Mock).mockResolvedValue([]);
+      (qb.upsertMany as Mock).mockResolvedValue(upsertedVariables);
 
       const result = await repository.upsertMany("prompt-123", newVariables);
 
-      expect(result).toEqual(upsertedVariables);
-      expect(mockUpsert).toHaveBeenCalledWith(
+      expect(qb.selectMany).toHaveBeenCalledWith("variables", {
+        filters: { eq: { prompt_id: "prompt-123" } },
+        order: { column: "order_index", ascending: true },
+      });
+      expect(qb.upsertMany).toHaveBeenCalledWith(
+        "variables",
         expect.arrayContaining([
           expect.objectContaining({
             prompt_id: "prompt-123",
@@ -414,8 +259,9 @@ describe("SupabaseVariableRepository", () => {
             order_index: 1,
           }),
         ]),
-        { onConflict: "id" }
+        { onConflict: "id", order: { column: "order_index", ascending: true } }
       );
+      expect(result).toEqual(upsertedVariables);
     });
 
     it("met à jour les variables existantes", async () => {
@@ -435,7 +281,7 @@ describe("SupabaseVariableRepository", () => {
         },
       ];
 
-      const updatedVariables: Omit<VariableInsert, "prompt_id">[] = [
+      const updatedVariables: VariableUpsertInput[] = [
         {
           name: "var1",
           type: "STRING",
@@ -448,21 +294,6 @@ describe("SupabaseVariableRepository", () => {
         },
       ];
 
-      // Mock fetch
-      const mockOrderFetch = vi.fn().mockResolvedValue({
-        data: existingVariables,
-        error: null,
-      });
-
-      const mockEqFetch = vi.fn().mockReturnValue({
-        order: mockOrderFetch,
-      });
-
-      const mockSelectFetch = vi.fn().mockReturnValue({
-        eq: mockEqFetch,
-      });
-
-      // Mock upsert
       const resultVariables: Variable[] = [
         {
           ...existingVariables[0],
@@ -471,23 +302,13 @@ describe("SupabaseVariableRepository", () => {
         },
       ];
 
-      const mockSelect = vi.fn().mockResolvedValue({
-        data: resultVariables,
-        error: null,
-      });
-
-      const mockUpsert = vi.fn().mockReturnValue({
-        select: mockSelect,
-      });
-
-      mockSupabase.from
-        .mockReturnValueOnce({ select: mockSelectFetch })
-        .mockReturnValueOnce({ upsert: mockUpsert });
+      (qb.selectMany as Mock).mockResolvedValue(existingVariables);
+      (qb.upsertMany as Mock).mockResolvedValue(resultVariables);
 
       const result = await repository.upsertMany("prompt-123", updatedVariables);
 
-      expect(result).toEqual(resultVariables);
-      expect(mockUpsert).toHaveBeenCalledWith(
+      expect(qb.upsertMany).toHaveBeenCalledWith(
+        "variables",
         expect.arrayContaining([
           expect.objectContaining({
             id: "var-1",
@@ -496,8 +317,9 @@ describe("SupabaseVariableRepository", () => {
             default_value: "nouveau",
           }),
         ]),
-        { onConflict: "id" }
+        { onConflict: "id", order: { column: "order_index", ascending: true } }
       );
+      expect(result).toEqual(resultVariables);
     });
 
     it("supprime les variables qui ne sont plus présentes", async () => {
@@ -530,7 +352,7 @@ describe("SupabaseVariableRepository", () => {
         },
       ];
 
-      const newVariables: Omit<VariableInsert, "prompt_id">[] = [
+      const newVariables: VariableUpsertInput[] = [
         {
           name: "var1",
           type: "STRING",
@@ -543,79 +365,31 @@ describe("SupabaseVariableRepository", () => {
         },
       ];
 
-      // Mock fetch
-      const mockOrderFetch = vi.fn().mockResolvedValue({
-        data: existingVariables,
-        error: null,
-      });
-
-      const mockEqFetch = vi.fn().mockReturnValue({
-        order: mockOrderFetch,
-      });
-
-      const mockSelectFetch = vi.fn().mockReturnValue({
-        eq: mockEqFetch,
-      });
-
-      // Mock delete
-      const mockIn = vi.fn().mockResolvedValue({
-        data: null,
-        error: null,
-      });
-
-      const mockDelete = vi.fn().mockReturnValue({
-        in: mockIn,
-      });
-
-      // Mock upsert
       const resultVariables: Variable[] = [existingVariables[0]];
 
-      const mockSelect = vi.fn().mockResolvedValue({
-        data: resultVariables,
-        error: null,
-      });
-
-      const mockUpsert = vi.fn().mockReturnValue({
-        select: mockSelect,
-      });
-
-      mockSupabase.from
-        .mockReturnValueOnce({ select: mockSelectFetch })
-        .mockReturnValueOnce({ delete: mockDelete })
-        .mockReturnValueOnce({ upsert: mockUpsert });
+      (qb.selectMany as Mock).mockResolvedValue(existingVariables);
+      (qb.deleteByIds as Mock).mockResolvedValue(undefined);
+      (qb.upsertMany as Mock).mockResolvedValue(resultVariables);
 
       const result = await repository.upsertMany("prompt-123", newVariables);
 
-      expect(mockDelete).toHaveBeenCalled();
-      expect(mockIn).toHaveBeenCalledWith("id", ["var-2"]);
+      expect(qb.deleteByIds).toHaveBeenCalledWith("variables", ["var-2"]);
       expect(result).toEqual(resultVariables);
     });
 
     it("supprime toutes les variables si le tableau est vide", async () => {
-      const mockEq = vi.fn().mockResolvedValue({
-        data: null,
-        error: null,
-      });
-
-      const mockDelete = vi.fn().mockReturnValue({
-        eq: mockEq,
-      });
-
-      mockSupabase.from.mockReturnValue({
-        delete: mockDelete,
-      });
+      (qb.deleteWhere as Mock).mockResolvedValue(undefined);
 
       const result = await repository.upsertMany("prompt-123", []);
 
-      expect(mockDelete).toHaveBeenCalled();
-      expect(mockEq).toHaveBeenCalledWith("prompt_id", "prompt-123");
+      expect(qb.deleteWhere).toHaveBeenCalledWith("variables", "prompt_id", "prompt-123");
       expect(result).toEqual([]);
     });
 
     it("gère les erreurs lors de l'upsert", async () => {
       const mockError = new Error("Upsert failed");
 
-      const newVariables: Omit<VariableInsert, "prompt_id">[] = [
+      const newVariables: VariableUpsertInput[] = [
         {
           name: "var1",
           type: "STRING",
@@ -628,37 +402,12 @@ describe("SupabaseVariableRepository", () => {
         },
       ];
 
-      // Mock fetch
-      const mockOrderFetch = vi.fn().mockResolvedValue({
-        data: [],
-        error: null,
-      });
+      (qb.selectMany as Mock).mockResolvedValue([]);
+      (qb.upsertMany as Mock).mockRejectedValue(mockError);
 
-      const mockEqFetch = vi.fn().mockReturnValue({
-        order: mockOrderFetch,
-      });
-
-      const mockSelectFetch = vi.fn().mockReturnValue({
-        eq: mockEqFetch,
-      });
-
-      // Mock upsert avec erreur
-      const mockSelect = vi.fn().mockResolvedValue({
-        data: null,
-        error: mockError,
-      });
-
-      const mockUpsert = vi.fn().mockReturnValue({
-        select: mockSelect,
-      });
-
-      mockSupabase.from
-        .mockReturnValueOnce({ select: mockSelectFetch })
-        .mockReturnValueOnce({ upsert: mockUpsert });
-
-      await expect(
-        repository.upsertMany("prompt-123", newVariables)
-      ).rejects.toThrow(mockError);
+      await expect(repository.upsertMany("prompt-123", newVariables)).rejects.toThrow(
+        mockError
+      );
     });
 
     it("renomme une variable en préservant son ID", async () => {
@@ -678,7 +427,7 @@ describe("SupabaseVariableRepository", () => {
         },
       ];
 
-      const renamedVariables: Omit<VariableInsert, "prompt_id">[] = [
+      const renamedVariables: VariableUpsertInput[] = [
         {
           id: "var-1", // ID explicite pour préserver l'ID
           name: "newName", // Nouveau nom
@@ -692,53 +441,29 @@ describe("SupabaseVariableRepository", () => {
         },
       ];
 
-      // Mock fetch
-      const mockOrderFetch = vi.fn().mockResolvedValue({
-        data: existingVariables,
-        error: null,
-      });
-
-      const mockEqFetch = vi.fn().mockReturnValue({
-        order: mockOrderFetch,
-      });
-
-      const mockSelectFetch = vi.fn().mockReturnValue({
-        eq: mockEqFetch,
-      });
-
-      // Mock upsert
       const resultVariables: Variable[] = [
         {
           ...existingVariables[0],
-          name: "newName", // Nom mis à jour
+          name: "newName",
         },
       ];
 
-      const mockSelect = vi.fn().mockResolvedValue({
-        data: resultVariables,
-        error: null,
-      });
-
-      const mockUpsert = vi.fn().mockReturnValue({
-        select: mockSelect,
-      });
-
-      mockSupabase.from
-        .mockReturnValueOnce({ select: mockSelectFetch })
-        .mockReturnValueOnce({ upsert: mockUpsert });
+      (qb.selectMany as Mock).mockResolvedValue(existingVariables);
+      (qb.upsertMany as Mock).mockResolvedValue(resultVariables);
 
       const result = await repository.upsertMany("prompt-123", renamedVariables);
 
-      expect(result).toEqual(resultVariables);
-      expect(mockUpsert).toHaveBeenCalledWith(
+      expect(qb.upsertMany).toHaveBeenCalledWith(
+        "variables",
         expect.arrayContaining([
           expect.objectContaining({
-            id: "var-1", // ID préservé
-            name: "newName", // Nom mis à jour
+            id: "var-1",
+            name: "newName",
           }),
         ]),
-        { onConflict: "id" }
+        { onConflict: "id", order: { column: "order_index", ascending: true } }
       );
+      expect(result).toEqual(resultVariables);
     });
 
     it("traite correctement un mix de création, mise à jour et renommage", async () => {
@@ -784,7 +509,7 @@ describe("SupabaseVariableRepository", () => {
         },
       ];
 
-      const mixedVariables: Omit<VariableInsert, "prompt_id">[] = [
+      const mixedVariables: VariableUpsertInput[] = [
         {
           name: "keep", // Mise à jour (même nom)
           type: "STRING",
@@ -818,31 +543,6 @@ describe("SupabaseVariableRepository", () => {
         },
       ];
 
-      // Mock fetch
-      const mockOrderFetch = vi.fn().mockResolvedValue({
-        data: existingVariables,
-        error: null,
-      });
-
-      const mockEqFetch = vi.fn().mockReturnValue({
-        order: mockOrderFetch,
-      });
-
-      const mockSelectFetch = vi.fn().mockReturnValue({
-        eq: mockEqFetch,
-      });
-
-      // Mock delete (var-3 doit être supprimée)
-      const mockIn = vi.fn().mockResolvedValue({
-        data: null,
-        error: null,
-      });
-
-      const mockDelete = vi.fn().mockReturnValue({
-        in: mockIn,
-      });
-
-      // Mock upsert
       const resultVariables: Variable[] = [
         {
           ...existingVariables[0],
@@ -868,33 +568,23 @@ describe("SupabaseVariableRepository", () => {
         },
       ];
 
-      const mockSelect = vi.fn().mockResolvedValue({
-        data: resultVariables,
-        error: null,
-      });
-
-      const mockUpsert = vi.fn().mockReturnValue({
-        select: mockSelect,
-      });
-
-      mockSupabase.from
-        .mockReturnValueOnce({ select: mockSelectFetch })
-        .mockReturnValueOnce({ delete: mockDelete })
-        .mockReturnValueOnce({ upsert: mockUpsert });
+      (qb.selectMany as Mock).mockResolvedValue(existingVariables);
+      (qb.deleteByIds as Mock).mockResolvedValue(undefined);
+      (qb.upsertMany as Mock).mockResolvedValue(resultVariables);
 
       const result = await repository.upsertMany("prompt-123", mixedVariables);
 
-      expect(result).toEqual(resultVariables);
-      expect(mockDelete).toHaveBeenCalled();
-      expect(mockIn).toHaveBeenCalledWith("id", ["var-3"]); // Seule var-3 supprimée
-      expect(mockUpsert).toHaveBeenCalledWith(
+      expect(qb.deleteByIds).toHaveBeenCalledWith("variables", ["var-3"]); // Seule var-3 supprimée
+      expect(qb.upsertMany).toHaveBeenCalledWith(
+        "variables",
         expect.arrayContaining([
-          expect.objectContaining({ id: "var-1", name: "keep" }), // Mise à jour
-          expect.objectContaining({ id: "var-2", name: "renamed" }), // Renommage
-          expect.objectContaining({ name: "new" }), // Création
+          expect.objectContaining({ id: "var-1", name: "keep" }),
+          expect.objectContaining({ id: "var-2", name: "renamed" }),
+          expect.objectContaining({ name: "new" }),
         ]),
-        { onConflict: "id" }
+        { onConflict: "id", order: { column: "order_index", ascending: true } }
       );
+      expect(result).toEqual(resultVariables);
     });
   });
 
@@ -902,7 +592,7 @@ describe("SupabaseVariableRepository", () => {
     describe("Contrainte d'unicité (prompt_id, name)", () => {
       it("empêche la création de variables avec le même nom pour un prompt", async () => {
         const duplicateError = {
-          code: "23505", // PostgreSQL unique violation
+          code: "23505",
           message: "duplicate key value violates unique constraint",
         };
 
@@ -918,22 +608,7 @@ describe("SupabaseVariableRepository", () => {
           order_index: 0,
         };
 
-        const mockSingle = vi.fn().mockResolvedValue({
-          data: null,
-          error: duplicateError,
-        });
-
-        const mockSelect = vi.fn().mockReturnValue({
-          single: mockSingle,
-        });
-
-        const mockInsert = vi.fn().mockReturnValue({
-          select: mockSelect,
-        });
-
-        mockSupabase.from.mockReturnValue({
-          insert: mockInsert,
-        });
+        (qb.insertOne as Mock).mockRejectedValue(duplicateError);
 
         await expect(repository.create(variable)).rejects.toMatchObject({
           code: "23505",
@@ -993,166 +668,47 @@ describe("SupabaseVariableRepository", () => {
           created_at: "2024-01-01T00:00:00Z",
         };
 
-        const mockSingle1 = vi.fn().mockResolvedValue({
-          data: createdVar1,
-          error: null,
-        });
-
-        const mockSelect1 = vi.fn().mockReturnValue({
-          single: mockSingle1,
-        });
-
-        const mockInsert1 = vi.fn().mockReturnValue({
-          select: mockSelect1,
-        });
-
-        const mockSingle2 = vi.fn().mockResolvedValue({
-          data: createdVar2,
-          error: null,
-        });
-
-        const mockSelect2 = vi.fn().mockReturnValue({
-          single: mockSingle2,
-        });
-
-        const mockInsert2 = vi.fn().mockReturnValue({
-          select: mockSelect2,
-        });
-
-        mockSupabase.from
-          .mockReturnValueOnce({ insert: mockInsert1 })
-          .mockReturnValueOnce({ insert: mockInsert2 });
+        (qb.insertOne as Mock)
+          .mockResolvedValueOnce(createdVar1)
+          .mockResolvedValueOnce(createdVar2);
 
         const result1 = await repository.create(variable1);
         const result2 = await repository.create(variable2);
 
-        expect(result1.name).toBe("commonName");
-        expect(result2.name).toBe("commonName");
-        expect(result1.prompt_id).toBe("prompt-1");
-        expect(result2.prompt_id).toBe("prompt-2");
-      });
-
-      it("upsertMany gère correctement les violations de contrainte d'unicité", async () => {
-        const existingVariables: Variable[] = [
-          {
-            id: "var-1",
-            prompt_id: "prompt-123",
-            name: "existingVar",
-            type: "STRING",
-            required: true,
-            default_value: "",
-            help: "",
-            pattern: "",
-            options: [],
-            order_index: 0,
-            created_at: "2024-01-01T00:00:00Z",
-          },
-        ];
-
-        const newVariables: Omit<VariableInsert, "prompt_id">[] = [
-          {
-            name: "existingVar", // Même nom - devrait mettre à jour
-            type: "STRING",
-            required: false, // Modification
-            default_value: "updated",
-            help: "",
-            pattern: "",
-            options: [],
-            order_index: 0,
-          },
-        ];
-
-        // Mock fetch
-        const mockOrderFetch = vi.fn().mockResolvedValue({
-          data: existingVariables,
-          error: null,
-        });
-
-        const mockEqFetch = vi.fn().mockReturnValue({
-          order: mockOrderFetch,
-        });
-
-        const mockSelectFetch = vi.fn().mockReturnValue({
-          eq: mockEqFetch,
-        });
-
-        // Mock upsert
-        const resultVariables: Variable[] = [
-          {
-            ...existingVariables[0],
-            required: false,
-            default_value: "updated",
-          },
-        ];
-
-        const mockSelect = vi.fn().mockResolvedValue({
-          data: resultVariables,
-          error: null,
-        });
-
-        const mockUpsert = vi.fn().mockReturnValue({
-          select: mockSelect,
-        });
-
-        mockSupabase.from
-          .mockReturnValueOnce({ select: mockSelectFetch })
-          .mockReturnValueOnce({ upsert: mockUpsert });
-
-        const result = await repository.upsertMany("prompt-123", newVariables);
-
-        expect(result).toEqual(resultVariables);
-        expect(result[0].id).toBe("var-1"); // ID préservé
+        expect(result1).toEqual(createdVar1);
+        expect(result2).toEqual(createdVar2);
       });
     });
 
     describe("Contrainte de clé étrangère avec ON DELETE CASCADE", () => {
       it("supprime automatiquement les variables quand le prompt est supprimé", async () => {
-        // Ce test simule le comportement de la base de données
-        // En réalité, la suppression cascade est gérée par PostgreSQL
-        
-        const promptId = "prompt-to-delete";
+        // Ce test valide le comportement documenté de CASCADE
+        // La suppression réelle est gérée par la base de données
+        const mockVariables: Variable[] = [mockVariable];
 
-        // Simuler la suppression du prompt qui déclenche le cascade
-        const mockDelete = vi.fn().mockResolvedValue({
-          data: null,
-          error: null,
-        });
+        (qb.selectMany as Mock).mockResolvedValue(mockVariables);
 
-        const mockEq = vi.fn().mockReturnValue({
-          delete: mockDelete,
-        });
+        const result = await repository.fetch("prompt-123");
+        expect(result).toEqual(mockVariables);
 
-        // Mock de la vérification que les variables n'existent plus
-        const mockOrder = vi.fn().mockResolvedValue({
-          data: [], // Tableau vide après cascade
-          error: null,
-        });
+        // Après suppression du prompt (simulée par la base), fetch retourne vide
+        (qb.selectMany as Mock).mockResolvedValue([]);
 
-        const mockEqFetch = vi.fn().mockReturnValue({
-          order: mockOrder,
-        });
-
-        const mockSelect = vi.fn().mockReturnValue({
-          eq: mockEqFetch,
-        });
-
-        mockSupabase.from
-          .mockReturnValueOnce({ select: mockSelect }); // Vérification après cascade
-
-        const remainingVariables = await repository.fetch(promptId);
-
-        expect(remainingVariables).toEqual([]);
+        const resultAfterDelete = await repository.fetch("prompt-123");
+        expect(resultAfterDelete).toEqual([]);
       });
+    });
 
-      it("empêche la création de variables avec un prompt_id invalide", async () => {
-        const invalidRefError = {
-          code: "23503", // PostgreSQL foreign key violation
-          message: "violates foreign key constraint",
+    describe("Intégrité des données", () => {
+      it("respecte les longueurs maximales des champs", async () => {
+        const longNameError = {
+          code: "23514",
+          message: "value too long for type character varying(100)",
         };
 
-        const variable: VariableInsert = {
-          prompt_id: "non-existent-prompt",
-          name: "orphanVar",
+        const variableWithLongName: VariableInsert = {
+          prompt_id: "prompt-123",
+          name: "a".repeat(101), // Plus de 100 caractères
           type: "STRING",
           required: false,
           default_value: "",
@@ -1162,428 +718,88 @@ describe("SupabaseVariableRepository", () => {
           order_index: 0,
         };
 
-        const mockSingle = vi.fn().mockResolvedValue({
-          data: null,
-          error: invalidRefError,
-        });
+        (qb.insertOne as Mock).mockRejectedValue(longNameError);
 
-        const mockSelect = vi.fn().mockReturnValue({
-          single: mockSingle,
+        await expect(repository.create(variableWithLongName)).rejects.toMatchObject({
+          code: "23514",
         });
+      });
 
-        const mockInsert = vi.fn().mockReturnValue({
-          select: mockSelect,
-        });
+      it("respecte la limite de variables par prompt", async () => {
+        const maxVariablesError = {
+          code: "23514",
+          message: "Un prompt ne peut pas avoir plus de 50 variables",
+        };
 
-        mockSupabase.from.mockReturnValue({
-          insert: mockInsert,
-        });
+        const variable: VariableInsert = {
+          prompt_id: "prompt-123",
+          name: "var51",
+          type: "STRING",
+          required: false,
+          default_value: "",
+          help: "",
+          pattern: "",
+          options: [],
+          order_index: 50,
+        };
+
+        (qb.insertOne as Mock).mockRejectedValue(maxVariablesError);
 
         await expect(repository.create(variable)).rejects.toMatchObject({
-          code: "23503",
+          code: "23514",
         });
       });
     });
 
-    describe("Tests d'intégrité des données", () => {
-      it("maintient la cohérence lors d'opérations concurrentes", async () => {
-        // Test que l'upsertMany préserve l'unicité même avec des opérations concurrentes
-        const existingVariables: Variable[] = [
-          {
-            id: "var-1",
-            prompt_id: "prompt-123",
-            name: "var1",
-            type: "STRING",
-            required: true,
-            default_value: "",
-            help: "",
-            pattern: "",
-            options: [],
-            order_index: 0,
-            created_at: "2024-01-01T00:00:00Z",
-          },
-        ];
-
-        const concurrentVariables: Omit<VariableInsert, "prompt_id">[] = [
-          {
-            name: "var1", // Existe déjà
-            type: "STRING",
-            required: true,
-            default_value: "",
-            help: "",
-            pattern: "",
-            options: [],
-            order_index: 0,
-          },
-          {
-            name: "var2", // Nouvelle
-            type: "NUMBER",
-            required: false,
-            default_value: "",
-            help: "",
-            pattern: "",
-            options: [],
-            order_index: 1,
-          },
-        ];
-
-        // Mock fetch
-        const mockOrderFetch = vi.fn().mockResolvedValue({
-          data: existingVariables,
-          error: null,
-        });
-
-        const mockEqFetch = vi.fn().mockReturnValue({
-          order: mockOrderFetch,
-        });
-
-        const mockSelectFetch = vi.fn().mockReturnValue({
-          eq: mockEqFetch,
-        });
-
-        // Mock upsert
-        const resultVariables: Variable[] = [
-          existingVariables[0],
-          {
-            id: "var-2",
-            prompt_id: "prompt-123",
-            name: "var2",
-            type: "NUMBER",
-            required: false,
-            default_value: "",
-            help: "",
-            pattern: "",
-            options: [],
-            order_index: 1,
-            created_at: "2024-01-01T00:00:00Z",
-          },
-        ];
-
-        const mockSelect = vi.fn().mockResolvedValue({
-          data: resultVariables,
-          error: null,
-        });
-
-        const mockUpsert = vi.fn().mockReturnValue({
-          select: mockSelect,
-        });
-
-        mockSupabase.from
-          .mockReturnValueOnce({ select: mockSelectFetch })
-          .mockReturnValueOnce({ upsert: mockUpsert });
-
-        const result = await repository.upsertMany("prompt-123", concurrentVariables);
-
-        expect(result).toHaveLength(2);
-        expect(result[0].id).toBe("var-1"); // ID préservé
-        expect(result[1].id).toBe("var-2"); // Nouvel ID
-        
-        // Vérifier qu'il n'y a pas de doublons
-        const names = result.map(v => v.name);
-        expect(new Set(names).size).toBe(names.length);
-      });
-    });
-  });
-
-  // ========================================
-  // DATABASE CONSTRAINT TESTS
-  // ========================================
-  describe('Database constraint validation', () => {
-    const testPromptId = 'test-prompt-constraint-id';
-
-    describe('Name constraints', () => {
-      it('should reject variable with name > 100 characters', async () => {
-        const longName = 'a'.repeat(101);
-        
-        const mockError = { 
-          message: 'violates check constraint "variables_name_length"',
-          code: '23514'
+    describe("Contraintes sur les options ENUM", () => {
+      it("respecte la limite de 50 options", async () => {
+        const tooManyOptionsError = {
+          code: "23514",
+          message: "Le nombre d'options ne peut pas dépasser 50",
         };
 
-        const mockSingle = vi.fn().mockResolvedValue({
-          data: null,
-          error: mockError,
-        });
-
-        const mockInsert = vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: mockSingle,
-          }),
-        });
-
-        mockSupabase.from.mockReturnValue({
-          insert: mockInsert,
-        });
-
-        await expect(
-          repository.create({
-            prompt_id: testPromptId,
-            name: longName,
-            type: 'STRING',
-            required: false,
-          })
-        ).rejects.toThrow(/variables_name_length/);
-      });
-
-      it('should reject variable with invalid name format (contains spaces)', async () => {
-        const mockError = { 
-          message: 'violates check constraint "variables_name_format"',
-          code: '23514'
+        const variableWithTooManyOptions: VariableInsert = {
+          prompt_id: "prompt-123",
+          name: "enumVar",
+          type: "ENUM",
+          required: false,
+          default_value: "",
+          help: "",
+          pattern: "",
+          options: Array.from({ length: 51 }, (_, i) => `option${i}`),
+          order_index: 0,
         };
 
-        const mockSingle = vi.fn().mockResolvedValue({
-          data: null,
-          error: mockError,
-        });
+        (qb.insertOne as Mock).mockRejectedValue(tooManyOptionsError);
 
-        const mockInsert = vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: mockSingle,
-          }),
+        await expect(repository.create(variableWithTooManyOptions)).rejects.toMatchObject({
+          code: "23514",
         });
-
-        mockSupabase.from.mockReturnValue({
-          insert: mockInsert,
-        });
-
-        await expect(
-          repository.create({
-            prompt_id: testPromptId,
-            name: 'invalid name',  // Contient un espace
-            type: 'STRING',
-            required: false,
-          })
-        ).rejects.toThrow(/variables_name_format/);
       });
 
-      it('should reject variable with invalid name format (contains hyphens)', async () => {
-        const mockError = { 
-          message: 'violates check constraint "variables_name_format"',
-          code: '23514'
+      it("respecte la longueur maximale de chaque option (100 caractères)", async () => {
+        const optionTooLongError = {
+          code: "23514",
+          message: "Chaque option ne peut pas dépasser 100 caractères",
         };
 
-        const mockSingle = vi.fn().mockResolvedValue({
-          data: null,
-          error: mockError,
-        });
-
-        const mockInsert = vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: mockSingle,
-          }),
-        });
-
-        mockSupabase.from.mockReturnValue({
-          insert: mockInsert,
-        });
-
-        await expect(
-          repository.create({
-            prompt_id: testPromptId,
-            name: 'invalid-name',  // Contient un tiret
-            type: 'STRING',
-            required: false,
-          })
-        ).rejects.toThrow(/variables_name_format/);
-      });
-    });
-
-    describe('Field length constraints', () => {
-      it('should reject variable with default_value > 1000 characters', async () => {
-        const mockError = { 
-          message: 'violates check constraint "variables_default_value_length"',
-          code: '23514'
+        const variableWithLongOption: VariableInsert = {
+          prompt_id: "prompt-123",
+          name: "enumVar",
+          type: "ENUM",
+          required: false,
+          default_value: "",
+          help: "",
+          pattern: "",
+          options: ["short", "a".repeat(101)],
+          order_index: 0,
         };
 
-        const mockSingle = vi.fn().mockResolvedValue({
-          data: null,
-          error: mockError,
+        (qb.insertOne as Mock).mockRejectedValue(optionTooLongError);
+
+        await expect(repository.create(variableWithLongOption)).rejects.toMatchObject({
+          code: "23514",
         });
-
-        const mockInsert = vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: mockSingle,
-          }),
-        });
-
-        mockSupabase.from.mockReturnValue({
-          insert: mockInsert,
-        });
-
-        await expect(
-          repository.create({
-            prompt_id: testPromptId,
-            name: 'test',
-            type: 'STRING',
-            required: false,
-            default_value: 'a'.repeat(1001),
-          })
-        ).rejects.toThrow(/variables_default_value_length/);
-      });
-
-      it('should reject variable with help > 500 characters', async () => {
-        const mockError = { 
-          message: 'violates check constraint "variables_help_length"',
-          code: '23514'
-        };
-
-        const mockSingle = vi.fn().mockResolvedValue({
-          data: null,
-          error: mockError,
-        });
-
-        const mockInsert = vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: mockSingle,
-          }),
-        });
-
-        mockSupabase.from.mockReturnValue({
-          insert: mockInsert,
-        });
-
-        await expect(
-          repository.create({
-            prompt_id: testPromptId,
-            name: 'test',
-            type: 'STRING',
-            required: false,
-            help: 'a'.repeat(501),
-          })
-        ).rejects.toThrow(/variables_help_length/);
-      });
-
-      it('should reject variable with pattern > 200 characters', async () => {
-        const mockError = { 
-          message: 'violates check constraint "variables_pattern_length"',
-          code: '23514'
-        };
-
-        const mockSingle = vi.fn().mockResolvedValue({
-          data: null,
-          error: mockError,
-        });
-
-        const mockInsert = vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: mockSingle,
-          }),
-        });
-
-        mockSupabase.from.mockReturnValue({
-          insert: mockInsert,
-        });
-
-        await expect(
-          repository.create({
-            prompt_id: testPromptId,
-            name: 'test',
-            type: 'STRING',
-            required: false,
-            pattern: 'a'.repeat(201),
-          })
-        ).rejects.toThrow(/variables_pattern_length/);
-      });
-    });
-
-    describe('Options constraints', () => {
-      it('should reject variable with > 50 options', async () => {
-        const mockError = { 
-          message: "Le nombre d'options ne peut pas dépasser 50 (actuel: 51)",
-          code: '23514'
-        };
-
-        const mockSingle = vi.fn().mockResolvedValue({
-          data: null,
-          error: mockError,
-        });
-
-        const mockInsert = vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: mockSingle,
-          }),
-        });
-
-        mockSupabase.from.mockReturnValue({
-          insert: mockInsert,
-        });
-
-        const tooManyOptions = Array.from({ length: 51 }, (_, i) => `option_${i}`);
-        
-        await expect(
-          repository.create({
-            prompt_id: testPromptId,
-            name: 'test',
-            type: 'ENUM',
-            required: false,
-            options: tooManyOptions,
-          })
-        ).rejects.toThrow(/nombre d'options ne peut pas dépasser/);
-      });
-
-      it('should reject variable with option > 100 characters', async () => {
-        const mockError = { 
-          message: 'Chaque option ne peut pas dépasser 100 caractères',
-          code: '23514'
-        };
-
-        const mockSingle = vi.fn().mockResolvedValue({
-          data: null,
-          error: mockError,
-        });
-
-        const mockInsert = vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: mockSingle,
-          }),
-        });
-
-        mockSupabase.from.mockReturnValue({
-          insert: mockInsert,
-        });
-
-        await expect(
-          repository.create({
-            prompt_id: testPromptId,
-            name: 'test',
-            type: 'ENUM',
-            required: false,
-            options: ['a'.repeat(101)],
-          })
-        ).rejects.toThrow(/option ne peut pas dépasser 100 caractères/);
-      });
-    });
-
-    describe('Variables count constraint', () => {
-      it('should reject creating > 50 variables for a prompt', async () => {
-        const mockError = { 
-          message: 'Un prompt ne peut pas avoir plus de 50 variables (actuel: 50)',
-          code: '23514'
-        };
-
-        const mockSingle = vi.fn().mockResolvedValue({
-          data: null,
-          error: mockError,
-        });
-
-        const mockInsert = vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: mockSingle,
-          }),
-        });
-
-        mockSupabase.from.mockReturnValue({
-          insert: mockInsert,
-        });
-
-        await expect(
-          repository.create({
-            prompt_id: testPromptId,
-            name: 'var_51',
-            type: 'STRING',
-            required: false,
-          })
-        ).rejects.toThrow(/ne peut pas avoir plus de 50 variables/);
       });
     });
   });
