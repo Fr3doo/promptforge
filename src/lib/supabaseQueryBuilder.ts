@@ -283,6 +283,19 @@ export function createSupabaseQueryBuilder(
     },
 
     /**
+     * Supprime des enregistrements correspondant à un filtre.
+     * @throws {Error} Si la suppression échoue
+     */
+    async deleteWhere(
+      table: TableName,
+      column: ColumnName,
+      value: Scalar
+    ): Promise<void> {
+      const res = await client.from(table).delete().eq(column, value);
+      handleSupabaseError(res);
+    },
+
+    /**
      * Upsert avec retour des enregistrements.
      * No-op si le tableau est vide.
      * @throws {Error} Si l'upsert échoue

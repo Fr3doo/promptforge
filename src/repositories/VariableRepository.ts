@@ -1,6 +1,5 @@
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
-import { supabase } from "@/integrations/supabase/client";
-import { handleSupabaseError } from "@/lib/errorHandler";
+import { qb } from "@/lib/supabaseQueryBuilder";
 import { captureException } from "@/lib/logger";
 
 export type Variable = Tables<"variables">;
@@ -78,7 +77,7 @@ export interface VariableRepository {
 }
 
 /**
- * Repository for managing prompt variables using Supabase
+ * Repository for managing prompt variables using Supabase via QueryBuilder
  * 
  * The upsertMany method uses an atomic transaction-like approach:
  * 1. Fetches existing variables to maintain their IDs
@@ -92,55 +91,22 @@ export interface VariableRepository {
 export class SupabaseVariableRepository implements VariableRepository {
   async fetch(promptId: string): Promise<Variable[]> {
     if (!promptId) return [];
-    
-    const result = await supabase
-      .from("variables")
-      .select("*")
-      .eq("prompt_id", promptId)
-      .order("order_index", { ascending: true });
-    
-    handleSupabaseError(result);
-    return result.data as Variable[];
+    return qb.selectMany<Variable>("variables", {
+      filters: { eq: { prompt_id: promptId } },
+      order: { column: "order_index", ascending: true },
+    });
   }
 
   async create(variable: VariableInsert): Promise<Variable> {
-    const result = await supabase
-      .from("variables")
-      .insert(variable)
-      .select()
-      .single();
-    
-    handleSupabaseError(result);
-    return result.data;
+    return qb.insertOne<Variable, VariableInsert>("variables", variable);
   }
 
   async update(id: string, updates: Partial<Variable>): Promise<Variable> {
-    const result = await supabase
-      .from("variables")
-      .update(updates)
-      .eq("id", id)
-      .select()
-      .single();
-    
-    handleSupabaseError(result);
-    return result.data;
+    return qb.updateById<Variable>("variables", id, updates);
   }
 
   async deleteMany(promptId: string): Promise<void> {
-    const result = await supabase
-      .from("variables")
-      .delete()
-      .eq("prompt_id", promptId);
-    
-    handleSupabaseError(result);
-  }
-
-  /**
-   * Fetches existing variables for a prompt
-   * @private
-   */
-  private async fetchExistingVariables(promptId: string): Promise<Variable[]> {
-    return await this.fetch(promptId);
+    return qb.deleteWhere("variables", "prompt_id", promptId);
   }
 
   /**
@@ -190,38 +156,13 @@ export class SupabaseVariableRepository implements VariableRepository {
     const newVariableIds = new Set(newVariables.filter(v => v.id).map(v => v.id));
     const newVariableNames = new Set(newVariables.map(v => v.name));
     
-    const variablesToDelete = existingVariables.filter(
-      ev => !newVariableIds.has(ev.id) && !newVariableNames.has(ev.name)
-    );
+    const idsToDelete = existingVariables
+      .filter(ev => !newVariableIds.has(ev.id) && !newVariableNames.has(ev.name))
+      .map(v => v.id);
 
-    if (variablesToDelete.length > 0) {
-      const deleteResult = await supabase
-        .from("variables")
-        .delete()
-        .in("id", variablesToDelete.map(v => v.id));
-
-      handleSupabaseError(deleteResult);
+    if (idsToDelete.length > 0) {
+      await qb.deleteByIds("variables", idsToDelete);
     }
-  }
-
-  /**
-   * Performs the actual upsert operation on variables
-   * @private
-   */
-  private async performVariableUpsert(
-    variablesWithIds: VariableInsert[]
-  ): Promise<Variable[]> {
-    const result = await supabase
-      .from("variables")
-      .upsert(variablesWithIds, {
-        onConflict: "id",
-        ignoreDuplicates: false,
-      })
-      .select()
-      .order("order_index", { ascending: true });
-
-    handleSupabaseError(result);
-    return result.data as Variable[];
   }
 
   /**
@@ -262,7 +203,7 @@ export class SupabaseVariableRepository implements VariableRepository {
 
     try {
       // Step 1: Fetch existing variables
-      const existingVariables = await this.fetchExistingVariables(promptId);
+      const existingVariables = await this.fetch(promptId);
 
       // Step 2: Prepare variables with preserved IDs
       const variablesWithIds = this.prepareVariablesForUpsert(
@@ -274,8 +215,11 @@ export class SupabaseVariableRepository implements VariableRepository {
       // Step 3: Delete obsolete variables
       await this.deleteObsoleteVariables(variables, existingVariables);
 
-      // Step 4: Perform atomic upsert
-      return await this.performVariableUpsert(variablesWithIds);
+      // Step 4: Perform atomic upsert via qb
+      return await qb.upsertMany<Variable, VariableInsert>("variables", variablesWithIds, {
+        onConflict: "id",
+        order: { column: "order_index", ascending: true },
+      });
     } catch (error) {
       captureException(error, "Transaction failed in upsertMany", { 
         promptId,

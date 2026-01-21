@@ -315,6 +315,20 @@ describe("supabaseQueryBuilder", () => {
     });
   });
 
+  describe("deleteWhere", () => {
+    it("should delete records matching filter", async () => {
+      const client = createMockClient({ data: null, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.deleteWhere("variables", "prompt_id", "prompt-123");
+
+      expect(client.from).toHaveBeenCalledWith("variables");
+      expect(client._chainable.delete).toHaveBeenCalled();
+      expect(client._chainable.eq).toHaveBeenCalledWith("prompt_id", "prompt-123");
+    });
+  });
+
+
   describe("upsertMany", () => {
     it("should upsert and return records", async () => {
       const mockData = [{ id: "1", title: "A" }];
