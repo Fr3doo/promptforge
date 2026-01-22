@@ -1,22 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SupabasePromptShareRepository } from "../PromptShareRepository";
 
-// Mock Supabase
+// Mock qb pour les tests LSP
+vi.mock("@/lib/supabaseQueryBuilder", () => ({
+  qb: {
+    selectMany: vi.fn(),
+    selectManyByIds: vi.fn(),
+    selectOne: vi.fn(),
+    selectFirst: vi.fn(),
+    insertWithoutReturn: vi.fn(),
+    updateWhere: vi.fn(),
+    deleteById: vi.fn(),
+  },
+}));
+
+// Mock Supabase pour RPC uniquement
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
-    functions: { invoke: vi.fn() },
-    from: vi.fn(() => ({
-      select: vi.fn().mockReturnThis(),
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      in: vi.fn().mockReturnThis(),
-      single: vi.fn(),
-      maybeSingle: vi.fn(),
-    })),
     rpc: vi.fn(),
   },
+}));
+
+vi.mock("@/lib/errorHandler", () => ({
+  handleSupabaseError: vi.fn((result) => {
+    if (result.error) throw new Error(result.error.message);
+  }),
 }));
 
 /**
