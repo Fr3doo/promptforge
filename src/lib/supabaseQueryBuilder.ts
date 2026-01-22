@@ -397,6 +397,26 @@ export function createSupabaseQueryBuilder(
       }
       return !!res.data;
     },
+
+    /**
+     * Sélectionne avec une jointure relationnelle Supabase.
+     * @param table - Table source (ex: "prompt_shares")
+     * @param columns - Colonnes avec relation (ex: "permission, prompts:prompt_id (*)")
+     * @param filters - Filtres à appliquer
+     * @returns Résultat brut de la jointure (à mapper côté appelant)
+     * @throws {Error} Si la requête échoue
+     */
+    async selectWithJoin<T>(
+      table: TableName,
+      columns: string,
+      filters?: FilterOptions
+    ): Promise<T[]> {
+      let q = client.from(table).select(columns);
+      q = applyFilters(q, filters);
+      const res = await q;
+      handleSupabaseError(res);
+      return (res.data ?? []) as T[];
+    },
   };
 }
 
