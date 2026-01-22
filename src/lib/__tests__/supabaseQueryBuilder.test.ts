@@ -505,6 +505,65 @@ describe("supabaseQueryBuilder", () => {
     });
   });
 
+  describe("selectWithJoin", () => {
+    it("should select with join columns", async () => {
+      const mockData = [
+        { permission: "READ", prompts: { id: "1", title: "Test" } },
+      ];
+      const client = createMockClient({ data: mockData, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.selectWithJoin(
+        "prompt_shares",
+        "permission, prompts:prompt_id (*)",
+        { eq: { shared_with_user_id: "user-123" } }
+      );
+
+      expect(client.from).toHaveBeenCalledWith("prompt_shares");
+      expect(client._chainable.select).toHaveBeenCalledWith(
+        "permission, prompts:prompt_id (*)"
+      );
+      expect(client._chainable.eq).toHaveBeenCalledWith(
+        "shared_with_user_id",
+        "user-123"
+      );
+      expect(result).toEqual(mockData);
+    });
+
+    it("should return empty array when no results", async () => {
+      const client = createMockClient({ data: [], error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.selectWithJoin(
+        "prompt_shares",
+        "permission, prompts:prompt_id (*)"
+      );
+
+      expect(result).toEqual([]);
+    });
+
+    it("should handle null data as empty array", async () => {
+      const client = createMockClient({ data: null, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      const result = await qb.selectWithJoin("prompt_shares", "*");
+
+      expect(result).toEqual([]);
+    });
+
+    it("should throw on error", async () => {
+      const client = createMockClient({
+        data: null,
+        error: { message: "DB error" },
+      });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await expect(
+        qb.selectWithJoin("prompt_shares", "*")
+      ).rejects.toThrow();
+    });
+  });
+
   describe("error handling", () => {
     it("should throw on Supabase error", async () => {
       const client = createMockClient({
