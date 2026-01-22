@@ -1,6 +1,7 @@
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { handleSupabaseError } from "@/lib/errorHandler";
+import { qb } from "@/lib/supabaseQueryBuilder";
 
 export type PromptShare = Tables<"prompt_shares">;
 
@@ -91,41 +92,44 @@ export interface PromptShareRepository {
   getShareById(shareId: string): Promise<PromptShare | null>;
 }
 
+// Type interne pour le profil
+type ProfileInfo = {
+  id: string;
+  name: string | null;
+  pseudo: string | null;
+  image: string | null;
+};
+
+// Type interne pour vérifier le propriétaire
+type OwnerRow = { owner_id: string };
+
 export class SupabasePromptShareRepository implements PromptShareRepository {
   async getShares(promptId: string): Promise<PromptShareWithProfile[]> {
-    // Fetch shares
-    const sharesResult = await supabase
-      .from("prompt_shares")
-      .select("*")
-      .eq("prompt_id", promptId);
-
-    handleSupabaseError(sharesResult);
-    const sharesData = sharesResult.data || [];
+    // Fetch shares via qb
+    const sharesData = await qb.selectMany<PromptShare>("prompt_shares", {
+      filters: { eq: { prompt_id: promptId } },
+    });
 
     if (sharesData.length === 0) {
       return [];
     }
 
-    // Fetch profiles via public_profiles view (SECURITY DEFINER, sans email)
+    // Fetch profiles via qb
     const userIds = sharesData.map(s => s.shared_with_user_id);
-    const { data: profilesData, error: profilesError } = await supabase
-      .from("public_profiles")
-      .select("id, name, pseudo, image")
-      .in("id", userIds);
+    const profiles = await qb.selectManyByIds<ProfileInfo>(
+      "public_profiles",
+      userIds,
+      "id"
+    );
 
-    if (profilesError) {
-      handleSupabaseError({ data: null, error: profilesError });
-    }
-
-    const profiles = profilesData || [];
-
-    // Merge profiles with shares
+    // Merge profiles with shares (logique métier préservée)
     return sharesData.map(share => ({
       ...share,
       shared_with_profile: profiles.find(p => p.id === share.shared_with_user_id)
     }));
   }
 
+  // RPC reste avec appel direct (hors scope QueryBuilder)
   async getUserByEmail(email: string): Promise<{ id: string } | null> {
     const result = await supabase.rpc("get_user_id_by_email", { user_email: email });
 
@@ -136,7 +140,12 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
     return result.data ? { id: result.data } : null;
   }
 
-  async addShare(promptId: string, sharedWithUserId: string, permission: "READ" | "WRITE", currentUserId: string): Promise<void> {
+  async addShare(
+    promptId: string,
+    sharedWithUserId: string,
+    permission: "READ" | "WRITE",
+    currentUserId: string
+  ): Promise<void> {
     if (!currentUserId) throw new Error("SESSION_EXPIRED");
 
     // Prevent sharing with oneself
@@ -150,19 +159,19 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
       throw new Error("NOT_PROMPT_OWNER");
     }
 
-    const result = await supabase
-      .from("prompt_shares")
-      .insert({
-        prompt_id: promptId,
-        shared_with_user_id: sharedWithUserId,
-        permission,
-        shared_by: currentUserId,
-      });
-
-    handleSupabaseError(result);
+    await qb.insertWithoutReturn("prompt_shares", {
+      prompt_id: promptId,
+      shared_with_user_id: sharedWithUserId,
+      permission,
+      shared_by: currentUserId,
+    });
   }
 
-  async updateSharePermission(shareId: string, permission: "READ" | "WRITE", currentUserId: string): Promise<void> {
+  async updateSharePermission(
+    shareId: string,
+    permission: "READ" | "WRITE",
+    currentUserId: string
+  ): Promise<void> {
     if (!currentUserId) throw new Error("SESSION_EXPIRED");
 
     // Get share details
@@ -179,12 +188,7 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
       throw new Error("UNAUTHORIZED_UPDATE");
     }
 
-    const result = await supabase
-      .from("prompt_shares")
-      .update({ permission })
-      .eq("id", shareId);
-
-    handleSupabaseError(result);
+    await qb.updateWhere("prompt_shares", "id", shareId, { permission });
   }
 
   async deleteShare(shareId: string, currentUserId: string): Promise<void> {
@@ -204,42 +208,18 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
       throw new Error("UNAUTHORIZED_DELETE");
     }
 
-    const result = await supabase
-      .from("prompt_shares")
-      .delete()
-      .eq("id", shareId);
-
-    handleSupabaseError(result);
+    await qb.deleteById("prompt_shares", shareId);
   }
 
   async isPromptOwner(promptId: string, userId: string): Promise<boolean> {
-    const result = await supabase
-      .from("prompts")
-      .select("owner_id")
-      .eq("id", promptId)
-      .single();
+    const result = await qb.selectFirst<OwnerRow>("prompts", {
+      filters: { eq: { id: promptId } },
+    }, "owner_id");
 
-    if (result.error) {
-      if (result.error.code === "PGRST116") {
-        return false;
-      }
-      handleSupabaseError(result);
-    }
-
-    return result.data?.owner_id === userId;
+    return result?.owner_id === userId;
   }
 
   async getShareById(shareId: string): Promise<PromptShare | null> {
-    const result = await supabase
-      .from("prompt_shares")
-      .select("*")
-      .eq("id", shareId)
-      .maybeSingle();
-
-    if (result.error) {
-      handleSupabaseError(result);
-    }
-
-    return result.data as PromptShare | null;
+    return qb.selectOne<PromptShare>("prompt_shares", "id", shareId);
   }
 }

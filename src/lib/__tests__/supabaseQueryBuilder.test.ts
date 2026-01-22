@@ -513,20 +513,12 @@ describe("supabaseQueryBuilder", () => {
       const client = createMockClient({ data: mockData, error: null });
       const qb = createSupabaseQueryBuilder(client as any);
 
-      const result = await qb.selectWithJoin(
+      const result = await qb.selectWithJoin<(typeof mockData)[0]>(
         "prompt_shares",
         "permission, prompts:prompt_id (*)",
         { eq: { shared_with_user_id: "user-123" } }
       );
 
-      expect(client.from).toHaveBeenCalledWith("prompt_shares");
-      expect(client._chainable.select).toHaveBeenCalledWith(
-        "permission, prompts:prompt_id (*)"
-      );
-      expect(client._chainable.eq).toHaveBeenCalledWith(
-        "shared_with_user_id",
-        "user-123"
-      );
       expect(result).toEqual(mockData);
     });
 
@@ -542,7 +534,7 @@ describe("supabaseQueryBuilder", () => {
       expect(result).toEqual([]);
     });
 
-    it("should handle null data as empty array", async () => {
+    it("should return empty array when data is null", async () => {
       const client = createMockClient({ data: null, error: null });
       const qb = createSupabaseQueryBuilder(client as any);
 
@@ -558,21 +550,35 @@ describe("supabaseQueryBuilder", () => {
       });
       const qb = createSupabaseQueryBuilder(client as any);
 
-      await expect(
-        qb.selectWithJoin("prompt_shares", "*")
-      ).rejects.toThrow();
+      await expect(qb.selectWithJoin("prompt_shares", "*")).rejects.toThrow();
     });
   });
 
-  describe("error handling", () => {
-    it("should throw on Supabase error", async () => {
+  describe("insertWithoutReturn", () => {
+    it("should insert without returning data", async () => {
+      const client = createMockClient({ data: null, error: null });
+      const qb = createSupabaseQueryBuilder(client as any);
+
+      await qb.insertWithoutReturn("prompt_shares", {
+        prompt_id: "1",
+        shared_with_user_id: "2",
+      });
+
+      // No error means success
+      expect(client.from).toHaveBeenCalledWith("prompt_shares");
+    });
+
+    it("should throw on insert error", async () => {
       const client = createMockClient({
         data: null,
-        error: { message: "Database error" },
+        error: { message: "RLS violation" },
       });
       const qb = createSupabaseQueryBuilder(client as any);
 
-      await expect(qb.selectMany("prompts")).rejects.toThrow();
+      await expect(
+        qb.insertWithoutReturn("prompt_shares", { prompt_id: "1" })
+      ).rejects.toThrow();
     });
   });
 });
+

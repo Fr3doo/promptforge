@@ -417,6 +417,21 @@ export function createSupabaseQueryBuilder(
       handleSupabaseError(res);
       return (res.data ?? []) as T[];
     },
+
+    /**
+     * Insère un enregistrement sans retourner le résultat.
+     * Utile quand l'ID n'est pas nécessaire après insertion.
+     * @param table - Nom de la table
+     * @param data - Données à insérer
+     * @throws {Error} Si l'insertion échoue
+     */
+    async insertWithoutReturn<D extends Record<string, unknown>>(
+      table: TableName,
+      data: D
+    ): Promise<void> {
+      const res = await client.from(table).insert(data);
+      handleSupabaseError(res);
+    },
   };
 }
 
