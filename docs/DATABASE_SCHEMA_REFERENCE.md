@@ -321,8 +321,10 @@ Variables détectées ou définies dans les prompts.
 | Policy | Command | Type | Expression |
 |--------|---------|------|------------|
 | Deny anonymous access to variables | ALL | RESTRICTIVE | `false` |
-| Variables inherit prompt permissions for select | SELECT | RESTRICTIVE | `EXISTS (SELECT 1 FROM prompts WHERE prompts.id = variables.prompt_id AND (prompts.owner_id = auth.uid() OR prompts.visibility = 'SHARED'))` |
+| Variables inherit prompt permissions for select | SELECT | RESTRICTIVE | `EXISTS (SELECT 1 FROM prompts WHERE prompts.id = variables.prompt_id AND (prompts.owner_id = auth.uid() OR (prompts.visibility = 'SHARED' AND prompts.status = 'PUBLISHED') OR EXISTS (SELECT 1 FROM prompt_shares WHERE prompt_shares.prompt_id = prompts.id AND prompt_shares.shared_with_user_id = auth.uid())))` |
 | Users can manage variables for owned or write-shared prompts | ALL | RESTRICTIVE | `EXISTS (SELECT 1 FROM prompts WHERE prompts.id = variables.prompt_id AND (prompts.owner_id = auth.uid() OR (prompts.visibility = 'SHARED' AND prompts.status = 'PUBLISHED' AND prompts.public_permission = 'WRITE') OR EXISTS (SELECT 1 FROM prompt_shares WHERE prompt_shares.prompt_id = prompts.id AND prompt_shares.shared_with_user_id = auth.uid() AND prompt_shares.permission = 'WRITE')))` |
+
+> **Note sécurité (Migration 43)** : La policy SELECT exige désormais `status = 'PUBLISHED'` en plus de `visibility = 'SHARED'`, alignant les variables sur le pattern sécurisé de la table `versions`. Cela empêche l'exposition des variables de brouillons partagés.
 
 ---
 
@@ -350,8 +352,10 @@ Ensembles de valeurs prédéfinies pour les variables d'un prompt.
 | Policy | Command | Type | Expression |
 |--------|---------|------|------------|
 | Deny anonymous access to variable_sets | ALL | RESTRICTIVE | `false` |
-| Variable sets inherit prompt permissions for select | SELECT | RESTRICTIVE | `EXISTS (SELECT 1 FROM prompts WHERE prompts.id = variable_sets.prompt_id AND (prompts.owner_id = auth.uid() OR prompts.visibility = 'SHARED'))` |
+| Variable sets inherit prompt permissions for select | SELECT | RESTRICTIVE | `EXISTS (SELECT 1 FROM prompts WHERE prompts.id = variable_sets.prompt_id AND (prompts.owner_id = auth.uid() OR (prompts.visibility = 'SHARED' AND prompts.status = 'PUBLISHED') OR EXISTS (SELECT 1 FROM prompt_shares WHERE prompt_shares.prompt_id = prompts.id AND prompt_shares.shared_with_user_id = auth.uid())))` |
 | Users can manage variable sets for their prompts | ALL | RESTRICTIVE | `EXISTS (SELECT 1 FROM prompts WHERE prompts.id = variable_sets.prompt_id AND prompts.owner_id = auth.uid())` |
+
+> **Note sécurité (Migration 43)** : La policy SELECT exige désormais `status = 'PUBLISHED'` en plus de `visibility = 'SHARED'`, et vérifie les partages explicites via `prompt_shares`. Cela empêche l'exposition des ensembles de variables de brouillons partagés.
 
 ---
 
