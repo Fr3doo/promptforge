@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Moon, Sun, Globe, Bell, Database, Shield, Info, Download, Trash2, LogOut } from "lucide-react";
+import { ArrowLeft, Moon, Sun, Globe, Bell, Database, Shield, Info, Download, Trash2, LogOut, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -20,6 +20,7 @@ import { SEO } from "@/components/SEO";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { messages } from "@/constants/messages";
 import { ProtectedRoute } from "@/components/auth";
+import { SettingsAnalysisTab } from "@/components/settings/SettingsAnalysisTab";
 
 function SettingsContent() {
   const authRepository = useAuthRepository();
@@ -183,7 +184,7 @@ function SettingsContent() {
           </div>
 
           <Tabs defaultValue="appearance" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 h-auto p-1">
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1 h-auto p-1">
               <TabsTrigger value="appearance" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
                 <Sun className="h-4 w-4 flex-shrink-0" />
                 <span className="hidden md:inline text-sm">{messages.settings.tabs.appearance}</span>
@@ -199,6 +200,10 @@ function SettingsContent() {
               <TabsTrigger value="data" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
                 <Database className="h-4 w-4 flex-shrink-0" />
                 <span className="hidden md:inline text-sm">{messages.settings.tabs.data}</span>
+              </TabsTrigger>
+              <TabsTrigger value="statistics" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
+                <BarChart3 className="h-4 w-4 flex-shrink-0" />
+                <span className="hidden md:inline text-sm">{messages.settings.tabs.statistics}</span>
               </TabsTrigger>
               <TabsTrigger value="security" className="flex items-center justify-center gap-1.5 px-2 py-2.5 md:gap-2">
                 <Shield className="h-4 w-4 flex-shrink-0" />
@@ -512,6 +517,11 @@ function SettingsContent() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Statistics Section */}
+            <TabsContent value="statistics">
+              <SettingsAnalysisTab />
             </TabsContent>
 
             {/* Security Section */}
