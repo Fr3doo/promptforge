@@ -55,10 +55,18 @@ serve(async (req) => {
   );
 
   // Valider le JWT et récupérer l'utilisateur (avec le token comme paramètre)
+  console.log(`[get-analysis-quota] JWT received: ${jwt.substring(0, 20)}...${jwt.slice(-10)} (length: ${jwt.length})`);
+  
   const { data: { user }, error: authError } = await supabaseClient.auth.getUser(jwt);
   
   if (authError || !user) {
-    console.warn("[get-analysis-quota] Invalid JWT:", authError?.message);
+    console.warn("[get-analysis-quota] Invalid JWT:", {
+      errorMessage: authError?.message,
+      errorCode: (authError as { code?: string })?.code,
+      hasUser: !!user,
+      jwtLength: jwt.length,
+      jwtPreview: `${jwt.substring(0, 10)}...`
+    });
     return new Response(
       JSON.stringify({ error: "Session invalide" }),
       {

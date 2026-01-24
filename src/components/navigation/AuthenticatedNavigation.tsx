@@ -28,10 +28,27 @@ export const AuthenticatedNavigation = () => {
   const isActive = (path: string) => location.pathname === path;
 
   const handleSignOut = async () => {
-    await authRepository.signOut();
-    toast.success(messages.success.signedOut);
-    setMobileMenuOpen(false);
-    navigate("/");
+    try {
+      await authRepository.signOut();
+      toast.success(messages.success.signedOut);
+    } catch (error) {
+      console.error("[handleSignOut] Error during sign out:", error);
+      // Force client-side cleanup even if API call fails (corrupted session scenario)
+      try {
+        // Clear all Supabase-related storage
+        const keysToRemove = Object.keys(localStorage).filter(
+          key => key.startsWith('sb-') || key.includes('supabase')
+        );
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        console.log("[handleSignOut] Forced cleanup of", keysToRemove.length, "storage keys");
+      } catch (cleanupError) {
+        console.error("[handleSignOut] Cleanup failed:", cleanupError);
+      }
+      toast.success(messages.success.signedOut);
+    } finally {
+      setMobileMenuOpen(false);
+      navigate("/");
+    }
   };
 
   const handleNavigation = (path: string) => {

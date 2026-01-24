@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { AnalysisQuota, AnalysisQuotaRepository } from "./AnalysisQuotaRepository.interfaces";
+import { dispatchAuthError } from "@/hooks/useSessionRecovery";
 
 /**
  * Implémentation Supabase du repository de quotas d'analyse
@@ -20,8 +21,14 @@ export class SupabaseAnalysisQuotaRepository implements AnalysisQuotaRepository 
     );
 
     if (error) {
-      // Si erreur d'authentification, la propager
-      if (error.message?.includes("401") || error.message?.includes("authentifié")) {
+      // Détecter les erreurs 401 et notifier le système de récupération
+      const is401 = error.message?.includes("401") || 
+                    error.message?.includes("authentifié") ||
+                    error.message?.includes("Session invalide");
+      
+      if (is401) {
+        // Dispatcher l'événement pour le système de récupération de session
+        dispatchAuthError(401);
         throw new Error("Utilisateur non authentifié");
       }
       

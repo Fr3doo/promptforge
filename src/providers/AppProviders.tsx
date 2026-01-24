@@ -2,6 +2,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthRepositoryProvider } from "@/contexts/AuthRepositoryContext";
 import { AuthContextProvider } from "@/contexts/AuthContext";
 import { UserBootstrapWrapper } from "./UserBootstrapWrapper";
+import { SessionRecoveryWrapper } from "./SessionRecoveryWrapper";
 import { ProfileRepositoryProvider } from "@/contexts/ProfileRepositoryContext";
 import { PromptMutationRepositoryProvider } from "@/contexts/PromptMutationRepositoryContext";
 import { PromptQueryRepositoryProvider } from "@/contexts/PromptQueryRepositoryContext";
@@ -61,42 +62,44 @@ export function AppProviders({
       <AuthRepositoryProvider repository={authRepository}>
         <PasswordCheckRepositoryProvider repository={passwordCheckRepository}>
           <AuthContextProvider>
-            <ProfileRepositoryProvider repository={profileRepository}>
-              <VariableRepositoryProvider repository={variableRepository}>
-                <PromptMutationRepositoryProvider repository={mutationRepository}>
-                  <PromptQueryRepositoryProvider repository={queryRepository}>
-                    <PromptCommandRepositoryProvider repository={commandRepository}>
-                      {/* UserBootstrapWrapper AFTER Query/Command providers for useNewUserBootstrap access */}
-                      <UserBootstrapWrapper>
-                        <VersionRepositoryProvider>
-                          <EdgeFunctionRepositoryProvider>
-                            <PromptUsageRepositoryProvider repository={usageRepository}>
-                              <AnalysisRepositoryProvider repository={analysisRepository}>
-                                <AnalysisQuotaRepositoryProvider>
-                                  <AnalysisHistoryRepositoryProvider>
-                                    <PromptShareRepositoryProvider repository={shareRepository}>
-                                      <PromptFavoriteServiceProvider service={favoriteService}>
-                                        <PromptVisibilityServiceProvider service={visibilityService}>
-                                          <PromptDuplicationServiceProvider service={duplicationService}>
-                                            <PromptImportServiceProvider>
-                                              {children}
-                                            </PromptImportServiceProvider>
-                                          </PromptDuplicationServiceProvider>
-                                        </PromptVisibilityServiceProvider>
-                                      </PromptFavoriteServiceProvider>
-                                    </PromptShareRepositoryProvider>
-                                  </AnalysisHistoryRepositoryProvider>
-                                </AnalysisQuotaRepositoryProvider>
-                              </AnalysisRepositoryProvider>
-                            </PromptUsageRepositoryProvider>
-                          </EdgeFunctionRepositoryProvider>
-                        </VersionRepositoryProvider>
-                      </UserBootstrapWrapper>
-                    </PromptCommandRepositoryProvider>
-                  </PromptQueryRepositoryProvider>
-                </PromptMutationRepositoryProvider>
-              </VariableRepositoryProvider>
-            </ProfileRepositoryProvider>
+            <SessionRecoveryWrapper>
+              <ProfileRepositoryProvider repository={profileRepository}>
+                <VariableRepositoryProvider repository={variableRepository}>
+                  <PromptMutationRepositoryProvider repository={mutationRepository}>
+                    <PromptQueryRepositoryProvider repository={queryRepository}>
+                      <PromptCommandRepositoryProvider repository={commandRepository}>
+                        {/* UserBootstrapWrapper AFTER Query/Command providers for useNewUserBootstrap access */}
+                        <UserBootstrapWrapper>
+                          <VersionRepositoryProvider>
+                            <EdgeFunctionRepositoryProvider>
+                              <PromptUsageRepositoryProvider repository={usageRepository}>
+                                <AnalysisRepositoryProvider repository={analysisRepository}>
+                                  <AnalysisQuotaRepositoryProvider>
+                                    <AnalysisHistoryRepositoryProvider>
+                                      <PromptShareRepositoryProvider repository={shareRepository}>
+                                        <PromptFavoriteServiceProvider service={favoriteService}>
+                                          <PromptVisibilityServiceProvider service={visibilityService}>
+                                            <PromptDuplicationServiceProvider service={duplicationService}>
+                                              <PromptImportServiceProvider>
+                                                {children}
+                                              </PromptImportServiceProvider>
+                                            </PromptDuplicationServiceProvider>
+                                          </PromptVisibilityServiceProvider>
+                                        </PromptFavoriteServiceProvider>
+                                      </PromptShareRepositoryProvider>
+                                    </AnalysisHistoryRepositoryProvider>
+                                  </AnalysisQuotaRepositoryProvider>
+                                </AnalysisRepositoryProvider>
+                              </PromptUsageRepositoryProvider>
+                            </EdgeFunctionRepositoryProvider>
+                          </VersionRepositoryProvider>
+                        </UserBootstrapWrapper>
+                      </PromptCommandRepositoryProvider>
+                    </PromptQueryRepositoryProvider>
+                  </PromptMutationRepositoryProvider>
+                </VariableRepositoryProvider>
+              </ProfileRepositoryProvider>
+            </SessionRecoveryWrapper>
           </AuthContextProvider>
         </PasswordCheckRepositoryProvider>
       </AuthRepositoryProvider>
