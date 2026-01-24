@@ -185,18 +185,22 @@ graph TD
 ### Exemple SQL
 
 ```sql
--- Les versions héritent des permissions du prompt parent
-CREATE POLICY "Users can view versions of accessible prompts"
-ON public.versions
+-- Les versions, variables et variable_sets héritent des permissions du prompt parent
+-- Pattern unifié après la migration 43 (sécurisation des variables)
+CREATE POLICY "Tables enfants inherit prompt permissions for select"
+ON public.[versions|variables|variable_sets]
 FOR SELECT
 TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.prompts p
-    WHERE p.id = versions.prompt_id
+    WHERE p.id = [table].prompt_id
     AND (
+      -- Propriétaire
       p.owner_id = auth.uid()
+      -- OU prompt publié ET partagé publiquement (CRITICAL: status = 'PUBLISHED' requis!)
       OR (p.visibility = 'SHARED' AND p.status = 'PUBLISHED')
+      -- OU partage explicite via prompt_shares
       OR EXISTS (
         SELECT 1 FROM public.prompt_shares ps
         WHERE ps.prompt_id = p.id
@@ -207,15 +211,19 @@ USING (
 );
 ```
 
+### ⚠️ Règle critique pour l'héritage
+
+> **Migration 43** : Les tables `variables` et `variable_sets` exigeaient auparavant uniquement `visibility = 'SHARED'` pour permettre la lecture. Cette condition était **trop permissive** car elle exposait les variables de brouillons. La correction aligne ces tables sur le pattern sécurisé de `versions` : **`visibility = 'SHARED' AND status = 'PUBLISHED'`** sont désormais tous deux requis pour l'accès public.
+
 ### Tables utilisant ce pattern
 
-| Table enfant | Table parent | Colonne de liaison |
-|--------------|--------------|-------------------|
-| `versions` | `prompts` | `prompt_id` |
-| `variables` | `prompts` | `prompt_id` |
-| `variable_sets` | `prompts` | `prompt_id` |
-| `prompt_shares` | `prompts` | `prompt_id` |
-| `prompt_usage` | `prompts` | `prompt_id` |
+| Table enfant | Table parent | Colonne de liaison | Vérifie `status = 'PUBLISHED'` |
+|--------------|--------------|-------------------|-------------------------------|
+| `versions` | `prompts` | `prompt_id` | ✅ Oui |
+| `variables` | `prompts` | `prompt_id` | ✅ Oui (migration 43) |
+| `variable_sets` | `prompts` | `prompt_id` | ✅ Oui (migration 43) |
+| `prompt_shares` | `prompts` | `prompt_id` | N/A (table de relations) |
+| `prompt_usage` | `prompts` | `prompt_id` | N/A (statistiques) |
 
 ---
 
