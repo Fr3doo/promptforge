@@ -1,33 +1,80 @@
-# Règle ESLint : Interdiction d'import direct de Supabase
+# Règles ESLint : Protection de la couche d'accès aux données
 
 ## Objectif
 
-Cette règle garantit le respect du **principe d'inversion de dépendance (DIP)** de SOLID en interdisant l'import direct du client Supabase en dehors des couches de services.
+Ces règles garantissent le respect du **principe d'inversion de dépendance (DIP)** de SOLID en interdisant l'import direct du client Supabase et du QueryBuilder en dehors des couches autorisées.
 
-## Règle ESLint
+## Hiérarchie d'accès
+
+```
+┌─────────────────────────────────────┐
+│     Composants / Hooks              │  ❌ Interdit : Supabase, QueryBuilder
+│  (utilisent les repositories)       │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│     Repository Contexts             │  ✅ Autorisé : Supabase (instanciation)
+│  (fournissent les repositories)     │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│     Repositories                    │  ✅ Autorisé : QueryBuilder (qb)
+│  (implémentent les interfaces)      │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│     QueryBuilder (qb)               │  ✅ Autorisé : Supabase Client
+│  (abstraction Law of Demeter)       │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│     Supabase Client                 │  (couche d'accès bas niveau)
+└─────────────────────────────────────┘
+```
+
+## Règles ESLint
+
+### Règle 1 : Supabase Client
 
 ```javascript
-"no-restricted-imports": [
-  "error",
-  {
-    patterns: [
-      {
-        group: ["**/integrations/supabase/client"],
-        message: "Import direct de Supabase interdit ! Utilisez les repositories."
-      }
-    ]
-  }
-]
+{
+  group: ["**/integrations/supabase/client"],
+  message: "Import direct de Supabase interdit ! Utilisez les repositories."
+}
+```
+
+### Règle 2 : QueryBuilder (qb)
+
+```javascript
+{
+  group: ["**/lib/supabaseQueryBuilder"],
+  message: "Import du QueryBuilder interdit hors de la couche repository !"
+}
 ```
 
 ## Fichiers autorisés
 
-Seuls ces fichiers peuvent importer directement `supabase` :
+### Pour Supabase Client ET QueryBuilder
 
-- `src/repositories/**/*.ts` - Repositories (PromptRepository, VariableRepository)
-- `src/contexts/**/*RepositoryContext.tsx` - Contextes de repositories
-- `supabase/functions/**/*.ts` - Edge functions Supabase
-- `src/hooks/useAuth.tsx` - Hook d'authentification
+| Fichier | Supabase | QueryBuilder | Raison |
+|---------|----------|--------------|--------|
+| `src/repositories/**/*.ts` | ✅ | ✅ | Implémentation des repositories |
+| `src/contexts/**/*RepositoryContext.tsx` | ✅ | ❌ | Instanciation des repositories |
+| `supabase/functions/**/*.ts` | ✅ | ❌ | Edge functions (backend) |
+| `src/hooks/useAuth.tsx` | ✅ | ❌ | Authentification |
+| `src/lib/supabaseQueryBuilder.ts` | ✅ | N/A | Source du QueryBuilder |
+
+### Pourquoi protéger le QueryBuilder ?
+
+Le QueryBuilder (`qb`) est une **abstraction interne** qui :
+- Encapsule les appels Supabase (Law of Demeter)
+- Centralise la gestion d'erreurs
+- Est réservé **exclusivement** aux repositories
+- Ne doit jamais être utilisé directement dans les composants ou hooks
 
 ## Utilisation correcte
 
