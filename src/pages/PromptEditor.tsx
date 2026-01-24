@@ -1,6 +1,4 @@
-import { useEffect } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useParams } from "react-router-dom";
 import { useAutoSave } from "@/features/prompts/hooks/useAutoSave";
 import { PromptEditorProvider, usePromptEditorContext } from "@/features/prompts/contexts/PromptEditorContext";
 import { PromptEditorHeader } from "@/features/prompts/components/editor/PromptEditorHeader";
@@ -13,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { ProtectedRoute } from "@/components/auth";
 
 /**
  * Internal component that uses the context
@@ -63,38 +62,12 @@ function PromptEditorMainContent() {
 }
 
 /**
- * Orchestrator component for prompt editor page
- * Handles authentication and wraps children in context provider
- */
-const PromptEditorPage = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user, loading: authLoading } = useAuth();
-  
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!authLoading && !user) {
-      const currentPath = location.pathname + location.search;
-      navigate(`/auth?redirectTo=${encodeURIComponent(currentPath)}`);
-    }
-  }, [user, authLoading, navigate, location]);
-  
-  return (
-    <PromptEditorProvider promptId={id}>
-      <PromptEditorLoadingWrapper />
-    </PromptEditorProvider>
-  );
-};
-
-/**
  * Loading wrapper that consumes context for loading states
  */
 function PromptEditorLoadingWrapper() {
-  const { loading: authLoading } = useAuth();
   const { isLoadingPrompt, isLoadingVariables } = usePromptEditorContext();
   
-  if (isLoadingPrompt || isLoadingVariables || authLoading) {
+  if (isLoadingPrompt || isLoadingVariables) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -110,5 +83,21 @@ function PromptEditorLoadingWrapper() {
     </div>
   );
 }
+
+/**
+ * Orchestrator component for prompt editor page
+ * Handles authentication and wraps children in context provider
+ */
+const PromptEditorPage = () => {
+  const { id } = useParams();
+  
+  return (
+    <ProtectedRoute>
+      <PromptEditorProvider promptId={id}>
+        <PromptEditorLoadingWrapper />
+      </PromptEditorProvider>
+    </ProtectedRoute>
+  );
+};
 
 export default PromptEditorPage;

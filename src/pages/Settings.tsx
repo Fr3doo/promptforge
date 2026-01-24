@@ -19,8 +19,9 @@ import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
 import { messages } from "@/constants/messages";
+import { ProtectedRoute } from "@/components/auth";
 
-export default function Settings() {
+function SettingsContent() {
   const authRepository = useAuthRepository();
   const profileRepository = useProfileRepository();
   const navigate = useNavigate();
@@ -413,13 +414,13 @@ export default function Settings() {
                   
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1 flex-1">
-                      <Label htmlFor="app-notifications">{messages.settings.notifications.appNotificationsTitle}</Label>
+                      <Label htmlFor="in-app-notifications">{messages.settings.notifications.appNotificationsTitle}</Label>
                       <p className="text-sm text-muted-foreground">
                         {messages.settings.notifications.appNotificationsDescription}
                       </p>
                     </div>
                     <Switch
-                      id="app-notifications"
+                      id="in-app-notifications"
                       checked={inAppNotifications}
                       onCheckedChange={(checked) => {
                         setInAppNotifications(checked);
@@ -462,43 +463,52 @@ export default function Settings() {
                   <Separator />
                   
                   <div className="space-y-2">
-                    <Label htmlFor="versions-keep">{messages.settings.data.versionsToKeepTitle}</Label>
+                    <Label htmlFor="versions-to-keep">{messages.settings.data.versionsToKeepTitle}</Label>
                     <Select value={versionsToKeep} onValueChange={(value) => {
                       setVersionsToKeep(value);
                       handleSaveSetting(messages.settings.data.versionsToKeepTitle);
                     }}>
-                      <SelectTrigger id="versions-keep">
+                      <SelectTrigger id="versions-to-keep">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="5">5 versions</SelectItem>
                         <SelectItem value="10">10 versions</SelectItem>
                         <SelectItem value="20">20 versions</SelectItem>
-                        <SelectItem value="unlimited">Illimité</SelectItem>
+                        <SelectItem value="50">50 versions</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-sm text-muted-foreground">
+                      {messages.settings.data.versionsToKeepDescription}
+                    </p>
                   </div>
                   
                   <Separator />
                   
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={handleExportData}
-                    >
-                      <Download className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{messages.settings.data.exportTitle}</span>
-                    </Button>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium">{messages.settings.data.exportTitle}</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {messages.settings.data.exportDescription}
+                      </p>
+                      <Button onClick={handleExportData} variant="outline">
+                        <Download className="mr-2 h-4 w-4" />
+                        {messages.settings.data.exportButton}
+                      </Button>
+                    </div>
                     
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-destructive hover:text-destructive"
-                      onClick={handleClearHistory}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{messages.settings.data.clearHistoryTitle}</span>
-                    </Button>
+                    <Separator />
+                    
+                    <div>
+                      <h4 className="text-sm font-medium text-destructive">{messages.settings.data.clearHistoryTitle}</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {messages.settings.data.clearHistoryDescription}
+                      </p>
+                      <Button onClick={handleClearHistory} variant="destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {messages.settings.data.clearHistoryButton}
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -516,60 +526,53 @@ export default function Settings() {
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
                     <Label>{messages.settings.security.emailLabel}</Label>
-                    <p className="text-sm font-mono bg-muted p-2 rounded">
-                      {user?.email || "Non connecté"}
+                    <Input
+                      value={user?.email || ""}
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      {messages.settings.security.accountInfoDescription}
                     </p>
                   </div>
                   
                   <Separator />
                   
-                  <div className="flex flex-col gap-3">
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => toast({ title: messages.info.featureComingSoon })}
-                    >
-                      <Shield className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{messages.settings.security.changePasswordButton}</span>
-                    </Button>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium">{messages.settings.security.changePasswordTitle}</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {messages.settings.security.changePasswordDescription}
+                      </p>
+                      <Button variant="outline" disabled>
+                        {messages.settings.security.changePasswordButton}
+                      </Button>
+                    </div>
                     
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => toast({ title: messages.info.featureComingSoon })}
-                    >
-                      <Shield className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{messages.settings.security.twoFactorButton}</span>
-                    </Button>
+                    <Separator />
                     
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={handleSignOut}
-                    >
-                      <LogOut className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{messages.settings.security.signOutButton}</span>
-                    </Button>
+                    <div>
+                      <h4 className="text-sm font-medium">{messages.settings.security.twoFactorTitle}</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {messages.settings.security.twoFactorDescription}
+                      </p>
+                      <Button variant="outline" disabled>
+                        {messages.settings.security.twoFactorButton}
+                      </Button>
+                    </div>
                   </div>
                   
                   <Separator />
                   
-                  <div className="pt-4">
-                    <Button
-                      variant="destructive"
-                      className="w-full"
-                      onClick={() => toast({ 
-                        title: messages.actions.actionRequiredTitle,
-                        description: messages.info.accountDeletionRequired,
-                        variant: "destructive"
-                      })}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      {messages.settings.data.deleteAccountTitle}
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-2 text-center">
-                      {messages.settings.data.deleteAccountDescription}
+                  <div>
+                    <h4 className="text-sm font-medium text-destructive">{messages.settings.security.signOutButton}</h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {messages.settings.security.signOutDescription}
                     </p>
+                    <Button onClick={handleSignOut} variant="destructive">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      {messages.settings.security.signOutButton}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -586,48 +589,34 @@ export default function Settings() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
-                    <Label>{messages.settings.about.versionTitle}</Label>
-                    <p className="text-sm text-muted-foreground">{messages.settings.about.versionNumber}</p>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">{messages.settings.about.versionTitle}</span>
+                      <span className="text-sm font-medium">{messages.settings.about.versionNumber}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">{messages.settings.about.licenseTitle}</span>
+                      <span className="text-sm font-medium">{messages.settings.about.licenseType}</span>
+                    </div>
                   </div>
                   
                   <Separator />
                   
                   <div className="space-y-4">
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => navigate("/faq")}
-                    >
-                      <Info className="mr-2 h-4 w-4" />
-                      {messages.settings.about.viewFaqButton}
-                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      {messages.settings.about.appInfoDescription}
+                    </p>
                     
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => toast({ title: messages.info.featureComingSoon })}
-                    >
-                      <Info className="mr-2 h-4 w-4" />
-                      Mentions légales
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => toast({ title: messages.info.featureComingSoon })}
-                    >
-                      <Info className="mr-2 h-4 w-4" />
-                      Politique de confidentialité
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => toast({ title: messages.info.featureComingSoon })}
-                    >
-                      <Info className="mr-2 h-4 w-4" />
-                      Journal des modifications
-                    </Button>
+                    <div className="flex flex-wrap gap-4">
+                      <Button variant="link" className="p-0 h-auto">
+                        {messages.settings.about.viewFaqButton}
+                      </Button>
+                      <Button variant="link" className="p-0 h-auto">
+                        {messages.settings.about.documentationLink}
+                      </Button>
+                      <Button variant="link" className="p-0 h-auto">
+                        {messages.settings.about.joinCommunityButton}
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -638,5 +627,13 @@ export default function Settings() {
         <Footer />
       </div>
     </>
+  );
+}
+
+export default function Settings() {
+  return (
+    <ProtectedRoute>
+      <SettingsContent />
+    </ProtectedRoute>
   );
 }

@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useOwnedPrompts, useSharedWithMePrompts, useToggleFavorite, useDeletePrompt, useDuplicatePrompt, useToggleVisibility, usePrompt } from "@/hooks/usePrompts";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePromptFilters } from "@/features/prompts/hooks/usePromptFilters";
 import { PromptList } from "@/features/prompts/components/PromptList";
 import { PromptSearchBar } from "@/features/prompts/components/PromptSearchBar";
 import { Button } from "@/components/ui/button";
-import { Plus, Sparkles, Share2, X, Upload, Loader2 } from "lucide-react";
+import { Plus, Sparkles, Share2, X, Upload } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerTrigger } from "@/components/ui/drawer";
 import { PromptAnalyzer } from "@/components/PromptAnalyzer";
@@ -18,13 +18,13 @@ import { ImportPromptDialog } from "@/components/prompts/ImportPromptDialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { messages } from "@/constants/messages";
 import { ErrorCard } from "@/components/ErrorCard";
+import { ProtectedRoute } from "@/components/auth";
 import type { Visibility, Permission } from "@/constants/domain-types";
 
 
-const Prompts = () => {
-  const { user, loading: authLoading } = useAuth();
+function PromptsContent() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [analyzerOpen, setAnalyzerOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -51,14 +51,6 @@ const Prompts = () => {
       setShowShareBanner(true);
     }
   }, [justCreatedId, justCreatedPrompt]);
-
-  // Redirect to auth if not logged in
-  useEffect(() => {
-    if (!authLoading && !user) {
-      const currentPath = location.pathname + location.search;
-      navigate(`/auth?redirectTo=${encodeURIComponent(currentPath)}`);
-    }
-  }, [authLoading, user, navigate, location]);
 
   const handleDuplicate = async (id: string) => {
     duplicatePrompt(id, {
@@ -92,15 +84,6 @@ const Prompts = () => {
     // Remove query param when dialog closes
     setSearchParams({});
   };
-
-  // Show loading spinner while checking auth
-  if (authLoading || (!authLoading && !user)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -265,6 +248,12 @@ const Prompts = () => {
       <Footer />
     </div>
   );
-};
+}
+
+const Prompts = () => (
+  <ProtectedRoute>
+    <PromptsContent />
+  </ProtectedRoute>
+);
 
 export default Prompts;

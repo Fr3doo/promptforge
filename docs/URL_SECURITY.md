@@ -132,26 +132,54 @@ const Auth = () => {
 };
 ```
 
-## Intégration dans l'application
+## Pattern ProtectedRoute
+
+### Composant centralisé
+
+Toutes les pages nécessitant une authentification utilisent le composant `ProtectedRoute` :
+
+```typescript
+import { ProtectedRoute } from "@/components/auth";
+
+function MyPageContent() {
+  // Logique de la page - user est garanti non-null ici
+  const { user } = useAuth();
+  return <div>...</div>;
+}
+
+const MyPage = () => (
+  <ProtectedRoute>
+    <MyPageContent />
+  </ProtectedRoute>
+);
+
+export default MyPage;
+```
 
 ### Pages protégées
 
-Les pages suivantes préservent l'URL cible lors de la redirection vers `/auth` :
+| Page | Fichier | Protection |
+|------|---------|------------|
+| Dashboard | `src/pages/Dashboard.tsx` | `<ProtectedRoute>` |
+| Prompts | `src/pages/Prompts.tsx` | `<ProtectedRoute>` |
+| PromptEditor | `src/pages/PromptEditor.tsx` | `<ProtectedRoute>` |
+| Settings | `src/pages/Settings.tsx` | `<ProtectedRoute>` |
 
-| Page         | Fichier                     | Pattern utilisé                                |
-| ------------ | --------------------------- | ---------------------------------------------- |
-| Dashboard    | `src/pages/Dashboard.tsx`   | `location.pathname + location.search`          |
-| Prompts      | `src/pages/Prompts.tsx`     | `window.location.pathname + search`            |
-| PromptEditor | `src/pages/PromptEditor.tsx`| `location.pathname + location.search`          |
+### Fonctionnement
 
-```typescript
-// Exemple dans Dashboard.tsx
-if (!authLoading && !user) {
-  const currentPath = location.pathname + location.search;
-  navigate(`/auth?redirectTo=${encodeURIComponent(currentPath)}`);
-  return null;
-}
-```
+1. Vérifie `loading` et `user` via `useAuth()`
+2. Affiche un spinner pendant la vérification
+3. Redirige vers `/auth?redirectTo=<currentPath>` si non authentifié
+4. Rend les enfants si authentifié
+
+### Avantages
+
+- **DRY** : Logique de protection centralisée
+- **SRP** : ProtectedRoute a une seule responsabilité
+- **DIP** : Dépend de l'abstraction `useAuth()`, pas de Supabase directement
+- **Maintenabilité** : Modification unique pour changer le comportement
+
+## Intégration dans l'application
 
 ### Validation post-login
 
@@ -185,6 +213,7 @@ Les tests couvrent :
 
 ```bash
 npm run test src/lib/__tests__/urlSecurity.test.ts
+npm run test src/components/auth/__tests__/ProtectedRoute.test.tsx
 ```
 
 ## Défense en profondeur
