@@ -18,7 +18,7 @@ export function EmptyState({
   onAction,
 }: EmptyStateProps) {
   return (
-    <Card className="border-dashed">
+    <Card className="border-dashed border-muted">
       <div className="flex flex-col items-center justify-center p-12 text-center">
         <div className="rounded-full bg-muted p-4 mb-4">
           <Icon className="h-8 w-8 text-muted-foreground" />

@@ -11,7 +11,7 @@ export const VariableEmptyState = ({
   const showCodeExample = message === messages.variables.emptyState;
   
   return (
-    <Card className="p-8 text-center border-dashed">
+    <Card className="p-8 text-center border-dashed border-muted">
       <p className="text-muted-foreground">
         {message}
         {showCodeExample && (
