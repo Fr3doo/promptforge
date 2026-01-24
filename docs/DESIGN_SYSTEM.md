@@ -96,6 +96,28 @@ Le mode sombre est le mode par défaut. Vérifiez toujours que les contrastes so
 
 ---
 
+## Bordures des composants UI
+
+### Badge
+
+| Variant | Comportement |
+|---------|-------------|
+| `default`, `secondary`, `destructive` | Bordure transparente (invisible) |
+| `outline` | Bordure subtile avec `border-muted` |
+
+### Button
+
+| Variant | Comportement |
+|---------|-------------|
+| `outline` | Bordure subtile avec `border-muted` |
+| Autres | Pas de bordure explicite |
+
+### Accordion
+
+- Utiliser `border-muted/50` pour les séparateurs internes (50% d'opacité)
+
+---
+
 ## Références
 
 - `src/index.css` : Variables CSS globales
