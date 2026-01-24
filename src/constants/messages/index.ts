@@ -139,6 +139,7 @@ export const messages = {
   copy: systemMessages.copy,
   system: systemMessages.system,
   analysis: systemMessages.analysis,
+  quota: systemMessages.quota,
   
   // Messages de versioning et d'authentification
   versions: versionsMessages.versions,

@@ -134,4 +134,21 @@ export const systemMessages = {
       long: "L'analyse peut prendre jusqu'à ~45 secondes",
     },
   },
+
+  // Messages pour l'indicateur de quotas
+  quota: {
+    indicator: {
+      label: "Analyses IA",
+      tooltip: {
+        daily: "Analyses restantes aujourd'hui",
+        minute: "Cette minute",
+      },
+    },
+    status: {
+      ok: "Quotas disponibles",
+      low: "Quotas limités",
+      critical: "Quotas presque épuisés",
+      exhausted: "Quotas épuisés - réessayez demain",
+    },
+  },
 } as const;
