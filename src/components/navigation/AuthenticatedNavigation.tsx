@@ -83,6 +83,10 @@ export const AuthenticatedNavigation = () => {
                     {item.label}
                   </Button>
                 ))}
+                {/* Indicateur de quota mobile */}
+                <div className="flex justify-center py-2">
+                  <AnalysisQuotaIndicator />
+                </div>
                 <div className="border-t border-border my-2" />
                 <Button
                   variant="ghost"

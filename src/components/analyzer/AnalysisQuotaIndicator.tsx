@@ -1,6 +1,8 @@
 import { Sparkles, AlertTriangle, XCircle } from "lucide-react";
 import { useAnalysisQuota } from "@/hooks/useAnalysisQuota";
+import { useAuth } from "@/hooks/useAuth";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
@@ -10,12 +12,31 @@ import {
 import { messages } from "@/constants/messages";
 
 /**
+ * Skeleton pour l'indicateur de quota
+ * Affiche une version "fantôme" pendant le chargement
+ */
+function QuotaIndicatorSkeleton() {
+  return (
+    <div
+      className="flex items-center gap-2 px-3 py-1.5 rounded-full border bg-muted/50 border-border"
+      role="status"
+      aria-label="Chargement des quotas..."
+    >
+      <Skeleton className="h-4 w-4 rounded-full" />
+      <Skeleton className="h-4 w-12" />
+      <Skeleton className="w-12 h-1.5" />
+    </div>
+  );
+}
+
+/**
  * Indicateur de quotas d'analyse affiché dans le header
  * 
  * Affiche visuellement les analyses restantes avec :
  * - Barre de progression colorée selon le niveau
  * - Tooltip détaillant les quotas minute et jour
  * - Icônes adaptées à l'état (normal, bas, critique)
+ * - Skeleton loader pendant le chargement auth/données
  * 
  * @example
  * ```tsx
@@ -25,11 +46,18 @@ import { messages } from "@/constants/messages";
  * ```
  */
 export function AnalysisQuotaIndicator() {
-  const { data: quota, isLoading, error } = useAnalysisQuota();
+  const { loading: authLoading } = useAuth();
+  const { data: quota, isLoading, isError } = useAnalysisQuota();
 
-  // Graceful degradation : ne pas afficher si erreur ou chargement
-  if (isLoading || error || !quota) {
-    return null;
+  // Afficher skeleton pendant le chargement auth ou des quotas
+  if (authLoading || isLoading) {
+    return <QuotaIndicatorSkeleton />;
+  }
+
+  // Gestion gracieuse des erreurs : afficher skeleton plutôt que rien
+  // Cela évite un "saut" visuel si l'erreur est temporaire
+  if (isError || !quota) {
+    return <QuotaIndicatorSkeleton />;
   }
 
   const dailyPercent = (quota.dailyRemaining / quota.dailyLimit) * 100;
