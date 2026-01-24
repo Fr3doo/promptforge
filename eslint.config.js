@@ -36,6 +36,11 @@ export default tseslint.config(
               message:
                 "❌ Import direct de Supabase interdit ! Utilisez les repositories (PromptRepository, VariableRepository) pour respecter le principe d'inversion de dépendance (DIP). Voir ARCHITECTURE.md pour plus de détails.",
             },
+            {
+              group: ["**/lib/supabaseQueryBuilder"],
+              message:
+                "❌ Import du QueryBuilder interdit hors de la couche repository ! Le QueryBuilder (qb) est une abstraction interne réservée aux repositories. Utilisez les repositories via les contextes. Voir docs/SOLID_COMPLIANCE.md pour plus de détails.",
+            },
           ],
         },
       ],
@@ -44,13 +49,14 @@ export default tseslint.config(
       ...prettierConfig.rules,
     },
   },
-  // Configuration spéciale pour les fichiers autorisés à utiliser Supabase
+  // Configuration spéciale pour les fichiers autorisés à utiliser Supabase et le QueryBuilder
   {
     files: [
       "src/repositories/**/*.ts",
       "src/contexts/**/*RepositoryContext.tsx",
       "supabase/functions/**/*.ts",
       "src/hooks/useAuth.tsx",
+      "src/lib/supabaseQueryBuilder.ts",
     ],
     rules: {
       "no-restricted-imports": "off",
