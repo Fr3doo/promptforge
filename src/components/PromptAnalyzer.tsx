@@ -20,6 +20,7 @@ import { MobileExportActions } from "./analyzer/MobileExportActions";
 import { CharacterCounter } from "./analyzer/CharacterCounter";
 import { AnalysisLoadingState } from "./analyzer/AnalysisLoadingState";
 import { RateLimitState } from "./analyzer/RateLimitState";
+import { AnalysisQuotaIndicator } from "./analyzer/AnalysisQuotaIndicator";
 import { Badge } from "@/components/ui/badge";
 import { successToast, errorToast } from "@/lib/toastUtils";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
@@ -219,13 +220,18 @@ export function PromptAnalyzer({ onClose }: PromptAnalyzerProps) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            {messages.analyzer.title}
-          </CardTitle>
-          <CardDescription>
-            {messages.analyzer.subtitle}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                {messages.analyzer.title}
+              </CardTitle>
+              <CardDescription>
+                {messages.analyzer.subtitle}
+              </CardDescription>
+            </div>
+            <AnalysisQuotaIndicator />
+          </div>
         </CardHeader>
         <CardContent className="p-4 sm:p-6 space-y-4">
           <div className="space-y-3">

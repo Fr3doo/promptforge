@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      analysis_history: {
+        Row: {
+          analyzed_at: string
+          created_at: string | null
+          id: string
+          prompt_length: number
+          success: boolean
+          user_id: string
+        }
+        Insert: {
+          analyzed_at?: string
+          created_at?: string | null
+          id?: string
+          prompt_length: number
+          success?: boolean
+          user_id: string
+        }
+        Update: {
+          analyzed_at?: string
+          created_at?: string | null
+          id?: string
+          prompt_length?: number
+          success?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       analysis_quotas: {
         Row: {
           created_at: string | null

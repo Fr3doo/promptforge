@@ -782,6 +782,21 @@ serve(async (req) => {
       }
     };
 
+    // ============================================
+    // 9. LOG TO ANALYSIS HISTORY (for chart visualization)
+    // ============================================
+    try {
+      await supabaseClient.from("analysis_history").insert({
+        user_id: user.id,
+        prompt_length: validated.length,
+        success: true,
+      });
+      console.log(`[${new Date().toISOString()}] Analysis history logged for user ${user.id.substring(0, 8)}...`);
+    } catch (historyError) {
+      // Non-blocking: don't fail the request if history logging fails
+      console.error('[HISTORY] Failed to log analysis history:', historyError);
+    }
+
     console.log(`[${new Date().toISOString()}] User ${user.id.substring(0, 8)}... - Analyse réussie`);
     return new Response(
       JSON.stringify(result),
