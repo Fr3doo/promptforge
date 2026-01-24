@@ -150,5 +150,15 @@ export const systemMessages = {
       critical: "Quotas presque épuisés",
       exhausted: "Quotas épuisés - réessayez demain",
     },
+    notification: {
+      lowTitle: "Quotas d'analyse limités",
+      lowDescription: (remaining: number) =>
+        `Il vous reste ${remaining} analyse${remaining > 1 ? "s" : ""} aujourd'hui. Utilisez-les judicieusement.`,
+    },
+    history: {
+      title: "Historique des analyses",
+      total: (count: number) => `${count} cette semaine`,
+      limitNote: "Ligne rouge : limite quotidienne (50 analyses)",
+    },
   },
 } as const;

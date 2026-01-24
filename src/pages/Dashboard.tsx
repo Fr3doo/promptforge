@@ -13,6 +13,7 @@ import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 import { DashboardPromptSection } from "@/components/DashboardPromptSection";
 import { ErrorCard } from "@/components/ErrorCard";
 import { ProtectedRoute } from "@/components/auth";
+import { AnalysisHistoryChart } from "@/components/dashboard/AnalysisHistoryChart";
 
 function DashboardContent() {
   const { user } = useAuth();
@@ -80,6 +81,9 @@ function DashboardContent() {
       </div>
 
       <main id="main-content" className="container mx-auto px-4 py-8 space-y-8">
+        {/* Analysis History Chart */}
+        <AnalysisHistoryChart />
+
         {/* Usage Statistics */}
         {dashboardData?.usageStats && dashboardData.usageStats.length > 0 && (
           <section>

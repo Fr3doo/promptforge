@@ -7,6 +7,9 @@ import { useNewUserBootstrap } from "@/hooks/useNewUserBootstrap";
  * 
  * Doit être placé après AuthContextProvider dans l'arbre des providers
  * pour que useAuth() soit disponible.
+ * 
+ * Note: useLowQuotaNotification est invoqué dans LowQuotaNotificationWrapper
+ * qui doit être placé APRÈS AnalysisQuotaRepositoryProvider.
  */
 export function UserBootstrapWrapper({ children }: { children: ReactNode }) {
   useNewUserBootstrap();

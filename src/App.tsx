@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SkipLink } from "@/components/SkipLink";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { LowQuotaNotificationWrapper } from "@/providers/LowQuotaNotificationWrapper";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SignUp from "./pages/SignUp";
@@ -25,26 +26,29 @@ const App = () => (
     <TooltipProvider delayDuration={300}>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <ScrollToTop />
-        <SkipLink />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/prompts" element={<Prompts />} />
-          <Route path="/prompts/new" element={<PromptEditor />} />
-          <Route path="/prompts/:id" element={<PromptEditor />} />
-          <Route path="/resources" element={<Resources />} />
-          <Route path="/resources/:id" element={<ResourceArticle />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/methodes" element={<PromptingMethods />} />
-          <Route path="/settings" element={<Settings />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      {/* LowQuotaNotificationWrapper must be inside QueryClientProvider */}
+      <LowQuotaNotificationWrapper>
+        <BrowserRouter>
+          <ScrollToTop />
+          <SkipLink />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/prompts" element={<Prompts />} />
+            <Route path="/prompts/new" element={<PromptEditor />} />
+            <Route path="/prompts/:id" element={<PromptEditor />} />
+            <Route path="/resources" element={<Resources />} />
+            <Route path="/resources/:id" element={<ResourceArticle />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/methodes" element={<PromptingMethods />} />
+            <Route path="/settings" element={<Settings />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </LowQuotaNotificationWrapper>
     </TooltipProvider>
   </QueryClientProvider>
 );

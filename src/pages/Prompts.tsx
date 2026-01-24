@@ -10,6 +10,7 @@ import { Plus, Sparkles, Share2, X, Upload } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerTrigger } from "@/components/ui/drawer";
 import { PromptAnalyzer } from "@/components/PromptAnalyzer";
+import { QuotaStatusBadge } from "@/components/analyzer/QuotaStatusBadge";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
@@ -104,6 +105,7 @@ function PromptsContent() {
                     <Sparkles className="h-4 w-4" />
                     <span className="hidden sm:inline">Analyser un prompt</span>
                     <span className="sm:hidden">Analyser</span>
+                    <QuotaStatusBadge showIcon={false} className="ml-1" />
                   </Button>
                 </DrawerTrigger>
                 <DrawerContent className="max-h-[95vh]">

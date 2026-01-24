@@ -9,6 +9,7 @@ import { PromptCommandRepositoryProvider } from "@/contexts/PromptCommandReposit
 import { VariableRepositoryProvider } from "@/contexts/VariableRepositoryContext";
 import { AnalysisRepositoryProvider } from "@/contexts/AnalysisRepositoryContext";
 import { AnalysisQuotaRepositoryProvider } from "@/contexts/AnalysisQuotaRepositoryContext";
+import { AnalysisHistoryRepositoryProvider } from "@/contexts/AnalysisHistoryRepositoryContext";
 import { PromptShareRepositoryProvider } from "@/contexts/PromptShareRepositoryContext";
 import { PromptFavoriteServiceProvider } from "@/contexts/PromptFavoriteServiceContext";
 import { PromptVisibilityServiceProvider } from "@/contexts/PromptVisibilityServiceContext";
@@ -72,17 +73,19 @@ export function AppProviders({
                             <PromptUsageRepositoryProvider repository={usageRepository}>
                               <AnalysisRepositoryProvider repository={analysisRepository}>
                                 <AnalysisQuotaRepositoryProvider>
-                                  <PromptShareRepositoryProvider repository={shareRepository}>
-                                    <PromptFavoriteServiceProvider service={favoriteService}>
-                                      <PromptVisibilityServiceProvider service={visibilityService}>
-                                        <PromptDuplicationServiceProvider service={duplicationService}>
-                                          <PromptImportServiceProvider>
-                                            {children}
-                                          </PromptImportServiceProvider>
-                                        </PromptDuplicationServiceProvider>
-                                      </PromptVisibilityServiceProvider>
-                                    </PromptFavoriteServiceProvider>
-                                  </PromptShareRepositoryProvider>
+                                  <AnalysisHistoryRepositoryProvider>
+                                    <PromptShareRepositoryProvider repository={shareRepository}>
+                                      <PromptFavoriteServiceProvider service={favoriteService}>
+                                        <PromptVisibilityServiceProvider service={visibilityService}>
+                                          <PromptDuplicationServiceProvider service={duplicationService}>
+                                            <PromptImportServiceProvider>
+                                              {children}
+                                            </PromptImportServiceProvider>
+                                          </PromptDuplicationServiceProvider>
+                                        </PromptVisibilityServiceProvider>
+                                      </PromptFavoriteServiceProvider>
+                                    </PromptShareRepositoryProvider>
+                                  </AnalysisHistoryRepositoryProvider>
                                 </AnalysisQuotaRepositoryProvider>
                               </AnalysisRepositoryProvider>
                             </PromptUsageRepositoryProvider>
