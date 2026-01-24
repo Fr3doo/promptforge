@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
 import { toast } from "sonner";
 import { Mail, Lock } from "lucide-react";
 import { authSchema } from "@/lib/validation";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
-import { safeRedirectPath } from "@/lib/urlSecurity";
+import { useRedirectAfterAuth } from "@/hooks/useRedirectAfterAuth";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { IconInput } from "@/components/ui/icon-input";
 import { GradientButton } from "@/components/ui/gradient-button";
@@ -14,13 +14,10 @@ import { messages } from "@/constants/messages";
 
 const Auth = () => {
   const authRepository = useAuthRepository();
-  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate();
-  
-  const redirectTo = searchParams.get("redirectTo");
+  const { redirectToTarget, buildLinkWithRedirect } = useRedirectAfterAuth();
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,13 +29,10 @@ const Auth = () => {
         password,
       });
 
-      await authRepository.signIn(
-        validatedData.email,
-        validatedData.password
-      );
-      
+      await authRepository.signIn(validatedData.email, validatedData.password);
+
       toast.success(messages.auth.loginSuccess);
-      navigate(safeRedirectPath(redirectTo, "/dashboard"));
+      redirectToTarget();
     } catch (error: unknown) {
       toast.error(getSafeErrorMessage(error));
     } finally {
@@ -98,7 +92,7 @@ const Auth = () => {
         <p className="text-sm text-muted-foreground">
           {messages.auth.noAccount}{" "}
           <Link
-            to={redirectTo ? `/signup?redirectTo=${encodeURIComponent(redirectTo)}` : "/signup"}
+            to={buildLinkWithRedirect("/signup")}
             className="text-primary hover:text-primary/80 font-medium transition-colors"
           >
             {messages.auth.createAccount}

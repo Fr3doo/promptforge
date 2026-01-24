@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
 import { usePasswordCheckRepository } from "@/contexts/PasswordCheckRepositoryContext";
 import { toast } from "sonner";
 import { User, Mail, Lock, ShieldCheck } from "lucide-react";
 import { authSchema } from "@/lib/validation";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
-import { safeRedirectPath } from "@/lib/urlSecurity";
+import { useRedirectAfterAuth } from "@/hooks/useRedirectAfterAuth";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { IconInput } from "@/components/ui/icon-input";
 import { GradientButton } from "@/components/ui/gradient-button";
@@ -18,22 +18,23 @@ import { SECURITY } from "@/constants/application-config";
 const SignUp = () => {
   const authRepository = useAuthRepository();
   const passwordCheckRepository = usePasswordCheckRepository();
-  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingPassword, setIsCheckingPassword] = useState(false);
-  const [checkingStep, setCheckingStep] = useState<'strength' | 'breach' | null>(null);
+  const [checkingStep, setCheckingStep] = useState<
+    "strength" | "breach" | null
+  >(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [pseudo, setPseudo] = useState("");
-  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
-  const navigate = useNavigate();
-  
-  const redirectTo = searchParams.get("redirectTo");
+  const [confirmPasswordError, setConfirmPasswordError] = useState<
+    string | null
+  >(null);
+  const { redirectToTarget, buildLinkWithRedirect } = useRedirectAfterAuth();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate password confirmation first
     if (password !== confirmPassword) {
       setConfirmPasswordError(messages.auth.passwordMismatch);
@@ -41,7 +42,7 @@ const SignUp = () => {
       return;
     }
     setConfirmPasswordError(null);
-    
+
     setIsLoading(true);
 
     try {
@@ -55,13 +56,16 @@ const SignUp = () => {
       setIsCheckingPassword(true);
 
       // 2. Validation force du mot de passe (serveur)
-      setCheckingStep('strength');
+      setCheckingStep("strength");
       try {
-        const strengthResult = await passwordCheckRepository.validateStrength(validatedData.password);
+        const strengthResult = await passwordCheckRepository.validateStrength(
+          validatedData.password
+        );
         if (!strengthResult.isValid) {
           toast.error(messages.errors.auth.passwordTooWeak);
-          strengthResult.feedback.forEach(feedbackKey => {
-            const feedbackMessage = messages.feedback[feedbackKey as keyof typeof messages.feedback];
+          strengthResult.feedback.forEach((feedbackKey) => {
+            const feedbackMessage =
+              messages.feedback[feedbackKey as keyof typeof messages.feedback];
             if (feedbackMessage) {
               toast.info(feedbackMessage);
             }
@@ -72,13 +76,15 @@ const SignUp = () => {
           return;
         }
       } catch (strengthError) {
-        console.warn('[SignUp] Strength check failed, continuing:', strengthError);
+        console.warn("[SignUp] Strength check failed, continuing:", strengthError);
       }
 
       // 3. Vérification HIBP (mot de passe compromis)
-      setCheckingStep('breach');
+      setCheckingStep("breach");
       try {
-        const { isBreached } = await passwordCheckRepository.checkBreach(validatedData.password);
+        const { isBreached } = await passwordCheckRepository.checkBreach(
+          validatedData.password
+        );
         if (isBreached) {
           toast.error(messages.errors.auth.passwordBreached);
           setIsLoading(false);
@@ -87,9 +93,9 @@ const SignUp = () => {
           return;
         }
       } catch (checkError) {
-        console.warn('[SignUp] Password breach check failed:', checkError);
-        
-        if (SECURITY.HIBP_FAILURE_MODE === 'fail-close') {
+        console.warn("[SignUp] Password breach check failed:", checkError);
+
+        if (SECURITY.HIBP_FAILURE_MODE === "fail-close") {
           toast.error(messages.errors.auth.passwordCheckUnavailable);
           setIsLoading(false);
           setIsCheckingPassword(false);
@@ -104,17 +110,13 @@ const SignUp = () => {
       }
 
       // 4. Signup normal
-      await authRepository.signUp(
-        validatedData.email,
-        validatedData.password,
-        {
-          pseudo: validatedData.name || undefined,
-          emailRedirectTo: `${window.location.origin}/`,
-        }
-      );
-      
+      await authRepository.signUp(validatedData.email, validatedData.password, {
+        pseudo: validatedData.name || undefined,
+        emailRedirectTo: `${window.location.origin}/`,
+      });
+
       toast.success(messages.auth.signupSuccess);
-      navigate(safeRedirectPath(redirectTo, "/dashboard"));
+      redirectToTarget();
     } catch (error: unknown) {
       toast.error(getSafeErrorMessage(error));
     } finally {
@@ -126,9 +128,10 @@ const SignUp = () => {
 
   const getButtonContent = () => {
     if (isCheckingPassword) {
-      const stepMessage = checkingStep === 'strength' 
-        ? messages.security.checkingStrength 
-        : messages.security.checkingPassword;
+      const stepMessage =
+        checkingStep === "strength"
+          ? messages.security.checkingStrength
+          : messages.security.checkingPassword;
       return (
         <span className="flex items-center justify-center gap-2">
           <ShieldCheck className="h-4 w-4 animate-pulse" />
@@ -192,9 +195,7 @@ const SignUp = () => {
             minLength={6}
             autoComplete="new-password"
           />
-          {password.length > 0 && (
-            <PasswordStrengthIndicator password={password} />
-          )}
+          {password.length > 0 && <PasswordStrengthIndicator password={password} />}
         </div>
 
         <div className="space-y-2">
@@ -233,7 +234,7 @@ const SignUp = () => {
         <p className="text-sm text-muted-foreground">
           {messages.auth.alreadyHaveAccount}{" "}
           <Link
-            to={redirectTo ? `/auth?redirectTo=${encodeURIComponent(redirectTo)}` : "/auth"}
+            to={buildLinkWithRedirect("/auth")}
             className="text-primary hover:text-primary/80 font-medium transition-colors"
           >
             {messages.auth.signIn}
