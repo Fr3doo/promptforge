@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      analysis_quotas: {
+        Row: {
+          created_at: string | null
+          daily_count: number
+          daily_reset_at: string
+          id: string
+          minute_count: number
+          minute_reset_at: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          daily_count?: number
+          daily_reset_at?: string
+          id?: string
+          minute_count?: number
+          minute_reset_at?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          daily_count?: number
+          daily_reset_at?: string
+          id?: string
+          minute_count?: number
+          minute_reset_at?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null

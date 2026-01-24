@@ -41,106 +41,147 @@ const corsHeaders = {
 };
 
 // ============================================
-// RATE LIMITING (IP-based, in-memory)
+// QUOTA MANAGEMENT (Database-based, persistent)
+// Replaces in-memory rate limiting for durability
 // ============================================
-const RATE_LIMIT = {
-  WINDOW_MS: 60_000,           // Fenêtre de 1 minute
-  MAX_REQUESTS_PER_WINDOW: 10, // 10 requêtes max par minute par IP
-  MAX_REQUESTS_PER_DAY: 50,    // 50 requêtes max par jour par IP
-  CLEANUP_INTERVAL_MS: 300_000 // Nettoyage toutes les 5 minutes
+const QUOTA_LIMITS = {
+  MAX_PER_MINUTE: 10,
+  MAX_PER_DAY: 50,
 } as const;
 
-interface RateLimitEntry {
-  count: number;
-  resetTime: number;
-  dailyCount: number;
-  dailyResetTime: number;
+interface QuotaResult {
+  allowed: boolean;
+  retryAfter?: number;
+  reason?: 'minute' | 'daily';
+  minuteCount?: number;
+  dailyCount?: number;
 }
 
-const rateLimitStore = new Map<string, RateLimitEntry>();
-let lastCleanup = Date.now();
+/**
+ * Get end of day in UTC (midnight UTC next day)
+ */
+function getEndOfDayUTC(): Date {
+  const now = new Date();
+  const tomorrow = new Date(Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate() + 1,
+    0, 0, 0, 0
+  ));
+  return tomorrow;
+}
 
-function cleanupExpiredEntries(): void {
-  const now = Date.now();
-  if (now - lastCleanup < RATE_LIMIT.CLEANUP_INTERVAL_MS) return;
+/**
+ * Check and increment user quota in database
+ * Uses UPSERT pattern for atomic operations
+ * 
+ * Strategy: "Fail-open" - if DB error occurs, allow the request
+ * to avoid blocking users due to transient issues
+ * 
+ * @param supabaseClient - Authenticated Supabase client
+ * @param userId - User ID to check quota for
+ * @returns QuotaResult with allowed status and retry info
+ */
+async function checkAndIncrementQuota(
+  supabaseClient: any,
+  userId: string
+): Promise<QuotaResult> {
+  const now = new Date();
   
-  for (const [ip, entry] of rateLimitStore.entries()) {
-    if (now > entry.dailyResetTime) {
-      rateLimitStore.delete(ip);
+  try {
+    // 1. Fetch existing quota entry
+    const { data: existing, error: fetchError } = await supabaseClient
+      .from('analysis_quotas')
+      .select('*')
+      .eq('user_id', userId)
+      .single() as { data: any; error: any };
+    
+    // Handle first-time user (no existing entry)
+    if (fetchError?.code === 'PGRST116') { // PostgreSQL: No rows found
+      const { error: insertError } = await supabaseClient
+        .from('analysis_quotas')
+        .insert({
+          user_id: userId,
+          minute_count: 1,
+          minute_reset_at: new Date(now.getTime() + 60_000).toISOString(),
+          daily_count: 1,
+          daily_reset_at: getEndOfDayUTC().toISOString(),
+        } as any);
+      
+      if (insertError) {
+        console.error('[QUOTA] Insert error:', insertError);
+        // Fail-open: allow request on DB error
+        return { allowed: true };
+      }
+      
+      console.log(`[QUOTA] New user quota created for ${userId.substring(0, 8)}...`);
+      return { allowed: true, minuteCount: 1, dailyCount: 1 };
     }
-  }
-  lastCleanup = now;
-  console.log(`[RATE-LIMIT] Nettoyage effectué, ${rateLimitStore.size} entrées restantes`);
-}
-
-function isRateLimited(ip: string): { limited: boolean; retryAfter?: number; reason?: string } {
-  cleanupExpiredEntries();
-  
-  const now = Date.now();
-  let entry = rateLimitStore.get(ip);
-  
-  if (!entry) {
-    entry = {
-      count: 0,
-      resetTime: now + RATE_LIMIT.WINDOW_MS,
-      dailyCount: 0,
-      dailyResetTime: now + 86_400_000 // 24h
-    };
-  }
-  
-  // Reset minute window if expired
-  if (now > entry.resetTime) {
-    entry.count = 0;
-    entry.resetTime = now + RATE_LIMIT.WINDOW_MS;
-  }
-  
-  // Reset daily window if expired
-  if (now > entry.dailyResetTime) {
-    entry.dailyCount = 0;
-    entry.dailyResetTime = now + 86_400_000;
-  }
-  
-  // Check daily limit first (more restrictive)
-  if (entry.dailyCount >= RATE_LIMIT.MAX_REQUESTS_PER_DAY) {
+    
+    if (fetchError) {
+      console.error('[QUOTA] Fetch error:', fetchError);
+      return { allowed: true }; // Fail-open
+    }
+    
+    // 2. Calculate reset windows
+    const minuteResetAt = new Date(existing.minute_reset_at);
+    const dailyResetAt = new Date(existing.daily_reset_at);
+    
+    let minuteCount = existing.minute_count;
+    let dailyCount = existing.daily_count;
+    let newMinuteResetAt = minuteResetAt;
+    let newDailyResetAt = dailyResetAt;
+    
+    // Reset minute window if expired
+    if (now >= minuteResetAt) {
+      minuteCount = 0;
+      newMinuteResetAt = new Date(now.getTime() + 60_000);
+    }
+    
+    // Reset daily window if expired
+    if (now >= dailyResetAt) {
+      dailyCount = 0;
+      newDailyResetAt = getEndOfDayUTC();
+    }
+    
+    // 3. Check limits BEFORE incrementing
+    if (dailyCount >= QUOTA_LIMITS.MAX_PER_DAY) {
+      const retryAfter = Math.ceil((newDailyResetAt.getTime() - now.getTime()) / 1000);
+      console.warn(`[QUOTA] Daily limit reached for ${userId.substring(0, 8)}... (${dailyCount}/${QUOTA_LIMITS.MAX_PER_DAY})`);
+      return { allowed: false, retryAfter, reason: 'daily', dailyCount };
+    }
+    
+    if (minuteCount >= QUOTA_LIMITS.MAX_PER_MINUTE) {
+      const retryAfter = Math.ceil((newMinuteResetAt.getTime() - now.getTime()) / 1000);
+      console.warn(`[QUOTA] Minute limit reached for ${userId.substring(0, 8)}... (${minuteCount}/${QUOTA_LIMITS.MAX_PER_MINUTE})`);
+      return { allowed: false, retryAfter, reason: 'minute', minuteCount };
+    }
+    
+    // 4. Increment counters atomically
+    const { error: updateError } = await supabaseClient
+      .from('analysis_quotas')
+      .update({
+        minute_count: minuteCount + 1,
+        minute_reset_at: newMinuteResetAt.toISOString(),
+        daily_count: dailyCount + 1,
+        daily_reset_at: newDailyResetAt.toISOString(),
+      } as any)
+      .eq('user_id', userId);
+    
+    if (updateError) {
+      console.error('[QUOTA] Update error:', updateError);
+      return { allowed: true }; // Fail-open
+    }
+    
     return { 
-      limited: true, 
-      retryAfter: Math.ceil((entry.dailyResetTime - now) / 1000),
-      reason: 'daily'
+      allowed: true, 
+      minuteCount: minuteCount + 1, 
+      dailyCount: dailyCount + 1 
     };
+  } catch (err) {
+    console.error('[QUOTA] Unexpected error:', err);
+    return { allowed: true }; // Fail-open on unexpected errors
   }
-  
-  // Check minute limit
-  if (entry.count >= RATE_LIMIT.MAX_REQUESTS_PER_WINDOW) {
-    return { 
-      limited: true, 
-      retryAfter: Math.ceil((entry.resetTime - now) / 1000),
-      reason: 'minute'
-    };
-  }
-  
-  // Increment counters
-  entry.count++;
-  entry.dailyCount++;
-  rateLimitStore.set(ip, entry);
-  
-  return { limited: false };
-}
-
-function getClientIP(req: Request): string {
-  // Try x-forwarded-for first (proxy/load balancer)
-  const forwarded = req.headers.get('x-forwarded-for');
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-  
-  // Try x-real-ip (nginx)
-  const realIP = req.headers.get('x-real-ip');
-  if (realIP) {
-    return realIP.trim();
-  }
-  
-  // Fallback
-  return 'unknown';
 }
 
 // === VALIDATION (FAIL-FAST) ===
@@ -572,31 +613,31 @@ serve(async (req) => {
     console.log(`[AUTH] User authenticated: ${user.id.substring(0, 8)}...`);
 
     // ============================================
-    // 1. RATE LIMITING (user-based, fallback to IP)
+    // 1. QUOTA CHECK (Database-based, persistent)
     // ============================================
-    // Use user ID for rate limiting (more secure than IP-based)
-    const rateLimitKey = user.id;
-    const { limited, retryAfter, reason } = isRateLimited(rateLimitKey);
-    
-    if (limited) {
-      console.warn(`[RATE-LIMIT] User ${user.id.substring(0, 8)}... bloqué (raison: ${reason}, retry-after: ${retryAfter}s)`);
+    const quotaResult = await checkAndIncrementQuota(supabaseClient, user.id);
+
+    if (!quotaResult.allowed) {
+      console.warn(`[QUOTA] User ${user.id.substring(0, 8)}... blocked (reason: ${quotaResult.reason}, retry-after: ${quotaResult.retryAfter}s)`);
       return new Response(
-        JSON.stringify({ 
-          error: reason === 'daily' 
+        JSON.stringify({
+          error: quotaResult.reason === 'daily'
             ? 'Limite journalière atteinte (50 analyses/jour). Réessayez demain.'
             : 'Trop de requêtes. Veuillez patienter avant de réessayer.',
-          retry_after: retryAfter 
+          retry_after: quotaResult.retryAfter,
         }),
-        { 
+        {
           status: 429,
-          headers: { 
-            ...corsHeaders, 
+          headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json',
-            'Retry-After': String(retryAfter)
-          }
+            'Retry-After': String(quotaResult.retryAfter),
+          },
         }
       );
     }
+
+    console.log(`[QUOTA] User ${user.id.substring(0, 8)}... allowed (minute: ${quotaResult.minuteCount}/${QUOTA_LIMITS.MAX_PER_MINUTE}, daily: ${quotaResult.dailyCount}/${QUOTA_LIMITS.MAX_PER_DAY})`);
 
     // ============================================
     // 2. INPUT VALIDATION (fail-fast)
