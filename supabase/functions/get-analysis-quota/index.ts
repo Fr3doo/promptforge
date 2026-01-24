@@ -28,9 +28,14 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Vérification de l'authentification
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
+  // Vérification de l'authentification (pattern identique à analyze-prompt)
+  const authHeader = req.headers.get("Authorization") || "";
+  const jwt = authHeader.startsWith("Bearer ") 
+    ? authHeader.slice(7).trim() 
+    : authHeader.trim();
+
+  // Strict JWT validation to reject invalid values
+  if (!jwt || jwt === "" || jwt === "undefined" || jwt === "null") {
     console.warn("[get-analysis-quota] Missing or invalid Authorization header");
     return new Response(
       JSON.stringify({ error: "Non authentifié" }),
@@ -41,17 +46,15 @@ serve(async (req) => {
     );
   }
 
-  const jwt = authHeader.replace("Bearer ", "").trim();
-  
   const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
     {
-      global: { headers: { Authorization: authHeader } },
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
     }
   );
 
-  // Valider le JWT et récupérer l'utilisateur
+  // Valider le JWT et récupérer l'utilisateur (avec le token comme paramètre)
   const { data: { user }, error: authError } = await supabaseClient.auth.getUser(jwt);
   
   if (authError || !user) {
