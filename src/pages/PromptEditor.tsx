@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAutoSave } from "@/features/prompts/hooks/useAutoSave";
 import { PromptEditorProvider, usePromptEditorContext } from "@/features/prompts/contexts/PromptEditorContext";
@@ -69,14 +69,16 @@ function PromptEditorMainContent() {
 const PromptEditorPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   
   // Redirect if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate("/auth");
+      const currentPath = location.pathname + location.search;
+      navigate(`/auth?redirectTo=${encodeURIComponent(currentPath)}`);
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, location]);
   
   return (
     <PromptEditorProvider promptId={id}>

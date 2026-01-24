@@ -1,9 +1,10 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboard } from "@/hooks/useDashboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToggleFavorite, useToggleVisibility } from "@/hooks/usePrompts";
-import { TrendingUp, Star, Share2, Clock } from "lucide-react";
+import { TrendingUp, Star, Share2, Clock, Loader2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PageBreadcrumb } from "@/components/PageBreadcrumb";
@@ -16,13 +17,26 @@ import { ErrorCard } from "@/components/ErrorCard";
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { data: dashboardData, isLoading, error, refetch } = useDashboard();
   const { mutate: toggleFavorite } = useToggleFavorite();
   const { mutateAsync: toggleVisibility } = useToggleVisibility();
 
-  if (!authLoading && !user) {
-    navigate("/auth");
-    return null;
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!authLoading && !user) {
+      const currentPath = location.pathname + location.search;
+      navigate(`/auth?redirectTo=${encodeURIComponent(currentPath)}`);
+    }
+  }, [authLoading, user, navigate, location]);
+
+  // Show loading spinner while checking auth
+  if (authLoading || (!authLoading && !user)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   const loadingState = useLoadingState({

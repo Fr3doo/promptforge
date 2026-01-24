@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
 import { toast } from "sonner";
 import { Mail, Lock } from "lucide-react";
 import { authSchema } from "@/lib/validation";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
+import { safeRedirectPath } from "@/lib/urlSecurity";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { IconInput } from "@/components/ui/icon-input";
 import { GradientButton } from "@/components/ui/gradient-button";
@@ -13,10 +14,13 @@ import { messages } from "@/constants/messages";
 
 const Auth = () => {
   const authRepository = useAuthRepository();
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  
+  const redirectTo = searchParams.get("redirectTo");
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +38,7 @@ const Auth = () => {
       );
       
       toast.success(messages.auth.loginSuccess);
-      navigate("/dashboard");
+      navigate(safeRedirectPath(redirectTo, "/dashboard"));
     } catch (error: unknown) {
       toast.error(getSafeErrorMessage(error));
     } finally {
@@ -94,7 +98,7 @@ const Auth = () => {
         <p className="text-sm text-muted-foreground">
           {messages.auth.noAccount}{" "}
           <Link
-            to="/signup"
+            to={redirectTo ? `/signup?redirectTo=${encodeURIComponent(redirectTo)}` : "/signup"}
             className="text-primary hover:text-primary/80 font-medium transition-colors"
           >
             {messages.auth.createAccount}
