@@ -27,13 +27,13 @@ export const ANALYSIS_QUOTA_QUERY_KEY = "analysis-quota";
  */
 export function useAnalysisQuota() {
   const repository = useAnalysisQuotaRepository();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   return useQuery<AnalysisQuota>({
     queryKey: [ANALYSIS_QUOTA_QUERY_KEY, user?.id],
     queryFn: () => repository.fetchQuota(),
-    // Ne pas fetch si pas d'utilisateur authentifié
-    enabled: !!user,
+    // Ne pas fetch si auth en cours de chargement ou pas d'utilisateur
+    enabled: !loading && !!user,
     // Rafraîchir toutes les 30 secondes pour garder les quotas à jour
     refetchInterval: 30_000,
     // Considérer les données comme fraîches pendant 10 secondes
