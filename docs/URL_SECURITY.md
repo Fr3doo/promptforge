@@ -111,26 +111,67 @@ if (isValidRedirectPath(redirectTo)) {
 
 ```typescript
 // pages/Auth.tsx
-import { safeRedirectPath } from '@/lib/urlSecurity';
+import { useRedirectAfterAuth } from "@/hooks/useRedirectAfterAuth";
 
 const Auth = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const redirectTo = searchParams.get('redirectTo');
+  const { redirectToTarget, buildLinkWithRedirect } = useRedirectAfterAuth();
 
   const handleLoginSuccess = async () => {
-    // Naviguer de façon sécurisée avec fallback
-    navigate(safeRedirectPath(redirectTo, '/dashboard'));
+    // Naviguer de façon sécurisée avec fallback automatique
+    redirectToTarget();
   };
 
   // Préserver redirectTo dans le lien vers signup
   return (
-    <Link to={redirectTo ? `/signup?redirectTo=${encodeURIComponent(redirectTo)}` : '/signup'}>
+    <Link to={buildLinkWithRedirect("/signup")}>
       Créer un compte
     </Link>
   );
 };
 ```
+
+## Hook useRedirectAfterAuth
+
+### Responsabilité
+
+Le hook `useRedirectAfterAuth` centralise toute la logique de redirection 
+post-authentification, respectant les principes DRY et SRP :
+
+| Fonction | Description |
+|----------|-------------|
+| `targetPath` | Chemin validé pour la redirection (ou `/dashboard` par défaut) |
+| `rawRedirectTo` | Paramètre brut (pour debug/logging) |
+| `redirectToTarget()` | Navigue vers la destination sécurisée |
+| `buildLinkWithRedirect(path)` | Génère un lien avec préservation du `redirectTo` |
+
+### Utilisation
+
+```typescript
+import { useRedirectAfterAuth } from "@/hooks/useRedirectAfterAuth";
+
+function AuthForm() {
+  const { redirectToTarget, buildLinkWithRedirect } = useRedirectAfterAuth();
+
+  const handleSubmit = async () => {
+    await authRepository.signIn(email, password);
+    redirectToTarget(); // Navigation sécurisée
+  };
+
+  return (
+    <Link to={buildLinkWithRedirect("/signup")}>
+      Créer un compte
+    </Link>
+  );
+}
+```
+
+### Sécurité
+
+Le hook utilise `safeRedirectPath()` en interne, garantissant que :
+- Les URLs externes sont bloquées
+- Les schémas dangereux (javascript:, data:) sont rejetés
+- Seuls les chemins internes absolus sont acceptés
+- Le fallback est toujours `/dashboard`
 
 ## Pattern ProtectedRoute
 
@@ -183,23 +224,19 @@ export default MyPage;
 
 ### Validation post-login
 
-`Auth.tsx` et `SignUp.tsx` utilisent `safeRedirectPath()` pour valider le paramètre avant navigation :
+`Auth.tsx` et `SignUp.tsx` utilisent le hook `useRedirectAfterAuth()` pour :
+- Valider le paramètre `redirectTo` via `safeRedirectPath()` en interne
+- Naviguer de façon sécurisée avec `redirectToTarget()`
+- Préserver le `redirectTo` dans les liens inter-pages avec `buildLinkWithRedirect()`
 
 ```typescript
-const redirectTo = searchParams.get("redirectTo");
-navigate(safeRedirectPath(redirectTo, "/dashboard"));
-```
+const { redirectToTarget, buildLinkWithRedirect } = useRedirectAfterAuth();
 
-### Préservation entre Auth ↔ SignUp
+// Après authentification réussie
+redirectToTarget();
 
-Le paramètre `redirectTo` est automatiquement préservé dans les liens de navigation :
-
-```typescript
-// Dans Auth.tsx → vers SignUp
-<Link to={redirectTo ? `/signup?redirectTo=${encodeURIComponent(redirectTo)}` : "/signup"}>
-
-// Dans SignUp.tsx → vers Auth
-<Link to={redirectTo ? `/auth?redirectTo=${encodeURIComponent(redirectTo)}` : "/auth"}>
+// Lien vers l'autre page (Auth ↔ SignUp)
+<Link to={buildLinkWithRedirect("/signup")}>Créer un compte</Link>
 ```
 
 Les tests couvrent :
@@ -210,9 +247,11 @@ Les tests couvrent :
 - ✅ Tentatives de contournement (backslash, newline, null byte)
 - ✅ Gestion des valeurs null/undefined/vides
 - ✅ Fallback personnalisé
+- ✅ Hook useRedirectAfterAuth (targetPath, redirectToTarget, buildLinkWithRedirect)
 
 ```bash
 npm run test src/lib/__tests__/urlSecurity.test.ts
+npm run test src/hooks/__tests__/useRedirectAfterAuth.test.tsx
 npm run test src/components/auth/__tests__/ProtectedRoute.test.tsx
 ```
 
