@@ -202,7 +202,7 @@ const PromptingMethods = () => {
 
                       <Accordion type="single" collapsible className="w-full">
                         <AccordionItem value="example" className="border-none">
-                          <AccordionTrigger className="hover:no-underline pt-4 border-t">
+                          <AccordionTrigger className="hover:no-underline pt-4 border-t border-muted/50">
                             <div className="flex items-center gap-2 text-sm font-semibold">
                               <Code className="h-4 w-4 text-primary" />
                               <span>Voir un exemple</span>
