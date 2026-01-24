@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
 import { usePasswordCheckRepository } from "@/contexts/PasswordCheckRepositoryContext";
 import { toast } from "sonner";
 import { User, Mail, Lock, ShieldCheck } from "lucide-react";
 import { authSchema } from "@/lib/validation";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
+import { safeRedirectPath } from "@/lib/urlSecurity";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { IconInput } from "@/components/ui/icon-input";
 import { GradientButton } from "@/components/ui/gradient-button";
@@ -17,6 +18,7 @@ import { SECURITY } from "@/constants/application-config";
 const SignUp = () => {
   const authRepository = useAuthRepository();
   const passwordCheckRepository = usePasswordCheckRepository();
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingPassword, setIsCheckingPassword] = useState(false);
   const [checkingStep, setCheckingStep] = useState<'strength' | 'breach' | null>(null);
@@ -26,6 +28,8 @@ const SignUp = () => {
   const [pseudo, setPseudo] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
   const navigate = useNavigate();
+  
+  const redirectTo = searchParams.get("redirectTo");
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,7 +114,7 @@ const SignUp = () => {
       );
       
       toast.success(messages.auth.signupSuccess);
-      navigate("/dashboard");
+      navigate(safeRedirectPath(redirectTo, "/dashboard"));
     } catch (error: unknown) {
       toast.error(getSafeErrorMessage(error));
     } finally {
@@ -229,7 +233,7 @@ const SignUp = () => {
         <p className="text-sm text-muted-foreground">
           {messages.auth.alreadyHaveAccount}{" "}
           <Link
-            to="/auth"
+            to={redirectTo ? `/auth?redirectTo=${encodeURIComponent(redirectTo)}` : "/auth"}
             className="text-primary hover:text-primary/80 font-medium transition-colors"
           >
             {messages.auth.signIn}

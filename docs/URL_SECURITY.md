@@ -116,20 +116,63 @@ import { safeRedirectPath } from '@/lib/urlSecurity';
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const redirectTo = searchParams.get('redirectTo');
 
   const handleLoginSuccess = async () => {
-    // Récupérer la destination demandée
-    const redirectTo = searchParams.get('redirectTo');
-    
-    // Naviguer de façon sécurisée
+    // Naviguer de façon sécurisée avec fallback
     navigate(safeRedirectPath(redirectTo, '/dashboard'));
   };
 
-  // ...
+  // Préserver redirectTo dans le lien vers signup
+  return (
+    <Link to={redirectTo ? `/signup?redirectTo=${encodeURIComponent(redirectTo)}` : '/signup'}>
+      Créer un compte
+    </Link>
+  );
 };
 ```
 
-## Tests
+## Intégration dans l'application
+
+### Pages protégées
+
+Les pages suivantes préservent l'URL cible lors de la redirection vers `/auth` :
+
+| Page         | Fichier                     | Pattern utilisé                                |
+| ------------ | --------------------------- | ---------------------------------------------- |
+| Dashboard    | `src/pages/Dashboard.tsx`   | `location.pathname + location.search`          |
+| Prompts      | `src/pages/Prompts.tsx`     | `window.location.pathname + search`            |
+| PromptEditor | `src/pages/PromptEditor.tsx`| `location.pathname + location.search`          |
+
+```typescript
+// Exemple dans Dashboard.tsx
+if (!authLoading && !user) {
+  const currentPath = location.pathname + location.search;
+  navigate(`/auth?redirectTo=${encodeURIComponent(currentPath)}`);
+  return null;
+}
+```
+
+### Validation post-login
+
+`Auth.tsx` et `SignUp.tsx` utilisent `safeRedirectPath()` pour valider le paramètre avant navigation :
+
+```typescript
+const redirectTo = searchParams.get("redirectTo");
+navigate(safeRedirectPath(redirectTo, "/dashboard"));
+```
+
+### Préservation entre Auth ↔ SignUp
+
+Le paramètre `redirectTo` est automatiquement préservé dans les liens de navigation :
+
+```typescript
+// Dans Auth.tsx → vers SignUp
+<Link to={redirectTo ? `/signup?redirectTo=${encodeURIComponent(redirectTo)}` : "/signup"}>
+
+// Dans SignUp.tsx → vers Auth
+<Link to={redirectTo ? `/auth?redirectTo=${encodeURIComponent(redirectTo)}` : "/auth"}>
+```
 
 Les tests couvrent :
 
