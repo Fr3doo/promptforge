@@ -414,20 +414,6 @@ const serverPrompt = await promptQueryRepository.fetchById(promptId);
 
 ---
 
-## Historique des validations
-
-| Date | Validation | Changements |
-|------|------------|-------------|
-| 2025-01 | Phase 12 SRP | Refactoring usePromptSave en 6 hooks |
-| 2025-01 | Phase 10 DIP | Migration vers Query/Command repositories |
-| 2025-01 | Correction DIP | useOptimisticLocking via contexte |
-| 2025-01 | LSP | Ajout annotations @throws interfaces Prompt/Version |
-| 2025-01 | LSP 100% | Annotations @throws sur toutes les interfaces (32 méthodes) |
-| 2025-01 | LSP complet | Couverture étendue à 46 méthodes (13 interfaces) + script validation |
-| 2025-01 | Murphy | Ajout useRetryCounter pour limiter les tentatives de retry (MAX_ATTEMPTS=3) |
-
----
-
 ## Patterns de résilience
 
 ### Loi de Murphy - Limitation des retries
@@ -519,12 +505,18 @@ return qb.selectMany<Prompt>("prompts", {
 | `selectMany<T>` | `.select().eq().order().limit()` | Listes filtrées |
 | `selectOne<T>` | `.select().eq().maybeSingle()` | Enregistrement optionnel |
 | `selectOneRequired<T>` | `.select().eq().single()` | Enregistrement obligatoire |
+| `selectFirst<T>` | `.select(columns).eq().limit(1).maybeSingle()` | Premier enregistrement |
+| `selectManyByIds<T>` | `.select().in("id")` | Batch fetch par IDs |
+| `selectWithJoin<T>` | `.select("col, rel:fk (*)")` | Jointures relationnelles |
 | `countRows` | `.select("*", { count: "exact", head: true })` | Comptage |
 | `insertOne<T>` | `.insert().select().single()` | Création avec retour |
+| `insertWithoutReturn` | `.insert(data)` | Insertion sans retour |
 | `insertMany` | `.insert()` | Batch insert |
-| `updateById<T>` | `.update().eq("id").select().single()` | Mise à jour |
+| `updateById<T>` | `.update().eq("id").select().single()` | Mise à jour par ID |
+| `updateWhere` | `.update(data).eq(column, value)` | Mise à jour par colonne |
 | `deleteById` | `.delete().eq("id")` | Suppression unitaire |
 | `deleteByIds` | `.delete().in("id")` | Suppression par liste |
+| `deleteWhere` | `.delete().eq(column, value)` | Suppression par colonne |
 | `upsertMany<T>` | `.upsert().select().order()` | Upsert atomique |
 
 ### Injectabilité pour tests
@@ -548,18 +540,22 @@ const testQb = createSupabaseQueryBuilder(fakeClient);
 | `insertMany([])` | No-op (pas d'appel réseau) |
 | `deleteByIds([])` | No-op (pas d'appel réseau) |
 
-### Migration progressive
+### Statut de migration des repositories
 
-La migration des repositories vers le QueryBuilder est **opt-in** et progressive :
+| Repository | Méthodes | Statut | Notes |
+|------------|----------|--------|-------|
+| `PromptCommandRepository` | 3 | ✅ Migré | insertOne, updateById, deleteByIds |
+| `ProfileRepository` | 2 | ✅ Migré | selectOne, updateById |
+| `VersionRepository` | 7 | ✅ Migré | selectMany, selectOne, insertOne, updateById, deleteById |
+| `VariableRepository` | 5 | ✅ Migré | selectMany, insertOne, updateById, deleteWhere, upsertMany |
+| `PromptQueryRepository` | 8 | ✅ Migré | selectMany, selectOneRequired, selectWithJoin, countRows |
+| `PromptShareRepository` | 6/7 | ✅ Migré | 6 méthodes via qb, getUserByEmail reste RPC direct |
 
-| Priorité | Repository | Complexité |
-|----------|------------|------------|
-| Haute | `PromptCommandRepository` | Simple (3 méthodes) |
-| Haute | `ProfileRepository` | Simple (2 méthodes) |
-| Moyenne | `VersionRepository` | Modérée (7 méthodes) |
-| Moyenne | `VariableRepository` | Modérée (5 méthodes) |
-| Basse | `PromptQueryRepository` | Complexe (jointures) |
-| Basse | `PromptShareRepository` | Complexe (RPC) |
+**Total : 31 méthodes migrées sur 32 (97%)**
+
+Appels Supabase directs restants (intentionnels) :
+- `AuthRepository` : Opérations auth core (signIn, signUp, signOut, etc.)
+- `PromptShareRepository.getUserByEmail` : Appel RPC (`supabase.rpc`)
 
 ### Bénéfices
 
@@ -570,3 +566,19 @@ La migration des repositories vers le QueryBuilder est **opt-in** et progressive
 | Testabilité | Mock global | Injection client fake |
 | Gestion erreurs | `handleSupabaseError` répété | Centralisé dans QB |
 | Migration future | Réécrire tous les repos | Modifier le QueryBuilder |
+| Réduction code | ~150 lignes/repo | ~90 lignes/repo (-40%) |
+
+---
+
+## Historique des validations
+
+| Date | Validation | Changements |
+|------|------------|-------------|
+| 2025-01 | Phase 12 SRP | Refactoring usePromptSave en 6 hooks |
+| 2025-01 | Phase 10 DIP | Migration vers Query/Command repositories |
+| 2025-01 | Correction DIP | useOptimisticLocking via contexte |
+| 2025-01 | LSP | Ajout annotations @throws interfaces Prompt/Version |
+| 2025-01 | LSP 100% | Annotations @throws sur toutes les interfaces (32 méthodes) |
+| 2025-01 | LSP complet | Couverture étendue à 46 méthodes (13 interfaces) + script validation |
+| 2025-01 | Murphy | Ajout useRetryCounter pour limiter les tentatives de retry (MAX_ATTEMPTS=3) |
+| 2025-01 | QueryBuilder 100% | Migration complète de tous les repositories vers qb (31/32 méthodes) |
