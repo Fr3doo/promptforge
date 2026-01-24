@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 // ============================================
 // VALIDATION LIMITS (synchronized with frontend)
@@ -520,43 +521,101 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Rate limiting check (before any processing)
-  const clientIP = getClientIP(req);
-  const { limited, retryAfter, reason } = isRateLimited(clientIP);
-  
-  if (limited) {
-    console.warn(`[RATE-LIMIT] IP ${clientIP} bloquée (raison: ${reason}, retry-after: ${retryAfter}s)`);
-    return new Response(
-      JSON.stringify({ 
-        error: reason === 'daily' 
-          ? 'Limite journalière atteinte (50 requêtes/jour). Réessayez demain.'
-          : 'Trop de requêtes. Veuillez patienter avant de réessayer.',
-        retry_after: retryAfter 
-      }),
-      { 
-        status: 429,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'Retry-After': String(retryAfter)
+  try {
+    // ============================================
+    // 0. AUTHENTICATION (JWT Validation)
+    // ============================================
+    const authHeader = req.headers.get('Authorization') || '';
+    const jwt = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : authHeader.trim();
+
+    // Strict JWT validation to reject invalid values
+    if (!jwt || jwt === '' || jwt === 'undefined' || jwt === 'null') {
+      console.warn('[AUTH] Missing or invalid JWT token:', { 
+        headerPresent: !!authHeader, 
+        jwtValue: jwt ? '[REDACTED]' : jwt 
+      });
+      return new Response(
+        JSON.stringify({ error: 'Non authentifié. Veuillez vous connecter.' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
+      );
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: `Bearer ${jwt}` },
+        },
       }
     );
-  }
 
-  try {
-    // 1. Validation (fail-fast)
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseClient.auth.getUser(jwt);
+
+    if (authError || !user) {
+      console.warn('[AUTH] Authentication failed:', authError?.message || 'User not found');
+      return new Response(
+        JSON.stringify({ error: 'Session invalide ou expirée. Veuillez vous reconnecter.' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log(`[AUTH] User authenticated: ${user.id.substring(0, 8)}...`);
+
+    // ============================================
+    // 1. RATE LIMITING (user-based, fallback to IP)
+    // ============================================
+    // Use user ID for rate limiting (more secure than IP-based)
+    const rateLimitKey = user.id;
+    const { limited, retryAfter, reason } = isRateLimited(rateLimitKey);
+    
+    if (limited) {
+      console.warn(`[RATE-LIMIT] User ${user.id.substring(0, 8)}... bloqué (raison: ${reason}, retry-after: ${retryAfter}s)`);
+      return new Response(
+        JSON.stringify({ 
+          error: reason === 'daily' 
+            ? 'Limite journalière atteinte (50 analyses/jour). Réessayez demain.'
+            : 'Trop de requêtes. Veuillez patienter avant de réessayer.',
+          retry_after: retryAfter 
+        }),
+        { 
+          status: 429,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Retry-After': String(retryAfter)
+          }
+        }
+      );
+    }
+
+    // ============================================
+    // 2. INPUT VALIDATION (fail-fast)
+    // ============================================
     const { promptContent } = await req.json();
     const validated = validateInput(promptContent);
     
-    // 2. Config check
+    // ============================================
+    // 3. CONFIG CHECK
+    // ============================================
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY non configurée');
     }
 
-    // 3. AI call with timeout protection
-    console.log(`[${new Date().toISOString()}] Appel Lovable AI (timeout: ${EDGE_TIMEOUT_MS}ms)...`);
+    // ============================================
+    // 4. AI CALL WITH TIMEOUT PROTECTION
+    // ============================================
+    console.log(`[${new Date().toISOString()}] User ${user.id.substring(0, 8)}... - Appel Lovable AI (timeout: ${EDGE_TIMEOUT_MS}ms)...`);
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -607,12 +666,16 @@ serve(async (req) => {
       throw fetchError;
     }
 
-    // 4. Error handling (fail-fast)
+    // ============================================
+    // 5. ERROR HANDLING (fail-fast)
+    // ============================================
     if (!response.ok) {
       return handleAIError(response.status);
     }
 
-    // 5. Parse response (DÉFENSIF pour debug)
+    // ============================================
+    // 6. PARSE RESPONSE (defensive for debug)
+    // ============================================
     const rawBody = await response.text();
     const MAX_LOG_LENGTH = 2000;
 
@@ -653,14 +716,18 @@ serve(async (req) => {
 
     const structured = JSON.parse(toolCall.function.arguments);
     
-    // 6. Validation (fail-fast)
+    // ============================================
+    // 7. VALIDATION (fail-fast)
+    // ============================================
     validateAIResponse(structured);
     console.log(`[${new Date().toISOString()}] Validation réussie (${structured.variables?.length || 0} variables, ${structured.metadata?.categories?.length || 0} catégories)`);
 
-    // 6.1 Sanitize variable names (DB constraint compliance)
+    // 7.1 Sanitize variable names (DB constraint compliance)
     structured.variables = sanitizeVariableNames(structured.variables);
 
-    // 7. Generate exports (DRY - une seule structure)
+    // ============================================
+    // 8. GENERATE EXPORTS (DRY - single structure)
+    // ============================================
     const result = {
       ...structured,
       exports: {
@@ -674,7 +741,7 @@ serve(async (req) => {
       }
     };
 
-    console.log(`[${new Date().toISOString()}] Analyse réussie`);
+    console.log(`[${new Date().toISOString()}] User ${user.id.substring(0, 8)}... - Analyse réussie`);
     return new Response(
       JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
