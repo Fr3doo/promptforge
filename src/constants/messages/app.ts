@@ -175,6 +175,7 @@ export const appMessages = {
       language: "Langue",
       notifications: "Notifications",
       data: "Données",
+      statistics: "Statistiques",
       security: "Sécurité",
       about: "À propos",
     },

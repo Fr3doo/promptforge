@@ -160,5 +160,35 @@ export const systemMessages = {
       total: (count: number) => `${count} cette semaine`,
       limitNote: "Ligne rouge : limite quotidienne (50 analyses)",
     },
+    statistics: {
+      title: "Statistiques d'analyse",
+      description: "Consultez l'historique et les statistiques de vos analyses de prompts.",
+      overview: {
+        totalAnalyses: "Total des analyses",
+        successRate: "Taux de réussite",
+        averageLength: "Longueur moyenne",
+        activityPeriod: "Période d'activité",
+        noData: "Aucune analyse effectuée pour le moment",
+      },
+      monthly: {
+        title: "Analyses par mois",
+        subtitle: "6 derniers mois",
+        currentMonth: "Ce mois-ci",
+      },
+      history: {
+        title: "Historique complet",
+        columns: {
+          date: "Date",
+          time: "Heure",
+          length: "Longueur",
+          status: "Statut",
+        },
+        pagination: {
+          previous: "Précédent",
+          next: "Suivant",
+          page: (current: number, total: number) => `Page ${current}/${total}`,
+        },
+      },
+    },
   },
 } as const;
