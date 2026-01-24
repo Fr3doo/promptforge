@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAnalysisMessages } from "@/features/prompts/hooks/useAnalysisMessages";
 import { useAnalysisRepository } from "@/contexts/AnalysisRepositoryContext";
 import { useAnalysisProgress } from "./useAnalysisProgress";
+import { useInvalidateAnalysisQuota } from "./useAnalysisQuota";
 import type { AnalysisResult } from "@/repositories/AnalysisRepository";
 import { AnalysisTimeoutError, RateLimitError } from "@/repositories/AnalysisRepository";
 import { captureException } from "@/lib/logger";
@@ -23,6 +24,7 @@ export function usePromptAnalysis() {
   const analysisRepository = useAnalysisRepository();
   const analysisMessages = useAnalysisMessages();
   const progress = useAnalysisProgress();
+  const invalidateQuota = useInvalidateAnalysisQuota();
 
   // Countdown automatique pour rate limiting
   useEffect(() => {
@@ -84,6 +86,8 @@ export function usePromptAnalysis() {
       const data = await analysisRepository.analyzePrompt(promptContent);
       setResult(data);
       analysisMessages.showAnalysisComplete();
+      // Invalider le cache des quotas après une analyse réussie
+      invalidateQuota();
     } catch (error: any) {
       const isTimeoutError = error instanceof AnalysisTimeoutError;
       const isRateLimitError = error instanceof RateLimitError;
@@ -95,6 +99,8 @@ export function usePromptAnalysis() {
         setRateLimitRetryAfter(error.retryAfter);
         setRateLimitReason(error.reason);
         analysisMessages.showRateLimitError(error.reason, error.retryAfter);
+        // Invalider le cache des quotas après un rate limit
+        invalidateQuota();
       } else {
         captureException(error, 'Erreur lors de l\'analyse du prompt', {
           promptContentLength: promptContent.length,

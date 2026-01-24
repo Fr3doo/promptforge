@@ -3,8 +3,17 @@ project_id = "blwjxiryohsrevcdynss"
 [functions.analyze-prompt]
 verify_jwt = true
 
+[functions.get-analysis-quota]
+verify_jwt = true
+
 [functions.check-password-breach]
 verify_jwt = false
 
 [functions.validate-password-strength]
 verify_jwt = false
+
+[functions.create-initial-version]
+verify_jwt = true
+
+[functions.restore-version]
+verify_jwt = true

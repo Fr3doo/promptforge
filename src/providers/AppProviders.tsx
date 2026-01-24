@@ -8,6 +8,7 @@ import { PromptQueryRepositoryProvider } from "@/contexts/PromptQueryRepositoryC
 import { PromptCommandRepositoryProvider } from "@/contexts/PromptCommandRepositoryContext";
 import { VariableRepositoryProvider } from "@/contexts/VariableRepositoryContext";
 import { AnalysisRepositoryProvider } from "@/contexts/AnalysisRepositoryContext";
+import { AnalysisQuotaRepositoryProvider } from "@/contexts/AnalysisQuotaRepositoryContext";
 import { PromptShareRepositoryProvider } from "@/contexts/PromptShareRepositoryContext";
 import { PromptFavoriteServiceProvider } from "@/contexts/PromptFavoriteServiceContext";
 import { PromptVisibilityServiceProvider } from "@/contexts/PromptVisibilityServiceContext";
@@ -70,17 +71,19 @@ export function AppProviders({
                           <EdgeFunctionRepositoryProvider>
                             <PromptUsageRepositoryProvider repository={usageRepository}>
                               <AnalysisRepositoryProvider repository={analysisRepository}>
-                                <PromptShareRepositoryProvider repository={shareRepository}>
-                                  <PromptFavoriteServiceProvider service={favoriteService}>
-                                    <PromptVisibilityServiceProvider service={visibilityService}>
-                                      <PromptDuplicationServiceProvider service={duplicationService}>
-                                        <PromptImportServiceProvider>
-                                          {children}
-                                        </PromptImportServiceProvider>
-                                      </PromptDuplicationServiceProvider>
-                                    </PromptVisibilityServiceProvider>
-                                  </PromptFavoriteServiceProvider>
-                                </PromptShareRepositoryProvider>
+                                <AnalysisQuotaRepositoryProvider>
+                                  <PromptShareRepositoryProvider repository={shareRepository}>
+                                    <PromptFavoriteServiceProvider service={favoriteService}>
+                                      <PromptVisibilityServiceProvider service={visibilityService}>
+                                        <PromptDuplicationServiceProvider service={duplicationService}>
+                                          <PromptImportServiceProvider>
+                                            {children}
+                                          </PromptImportServiceProvider>
+                                        </PromptDuplicationServiceProvider>
+                                      </PromptVisibilityServiceProvider>
+                                    </PromptFavoriteServiceProvider>
+                                  </PromptShareRepositoryProvider>
+                                </AnalysisQuotaRepositoryProvider>
                               </AnalysisRepositoryProvider>
                             </PromptUsageRepositoryProvider>
                           </EdgeFunctionRepositoryProvider>

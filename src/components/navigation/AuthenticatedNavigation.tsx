@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Logo } from "./Logo";
 import { NavLink } from "./NavLink";
+import { AnalysisQuotaIndicator } from "@/components/analyzer/AnalysisQuotaIndicator";
 import { messages } from "@/constants/messages";
 import { useAuthRepository } from "@/contexts/AuthRepositoryContext";
 import { toast } from "sonner";
@@ -51,6 +52,7 @@ export const AuthenticatedNavigation = () => {
                 {item.label}
               </NavLink>
             ))}
+            <AnalysisQuotaIndicator />
             <Button variant="ghost" onClick={handleSignOut} className="gap-2">
               <LogOut className="h-4 w-4" />
               {messages.auth.logout}
