@@ -17,6 +17,7 @@ import { PromptVisibilityServiceProvider } from "@/contexts/PromptVisibilityServ
 import { PromptDuplicationServiceProvider } from "@/contexts/PromptDuplicationServiceContext";
 import { PromptImportServiceProvider } from "@/contexts/PromptImportServiceContext";
 import { VersionRepositoryProvider } from "@/contexts/VersionRepositoryContext";
+import { VersionDeletionServiceProvider } from "@/contexts/VersionDeletionServiceContext";
 import { EdgeFunctionRepositoryProvider } from "@/contexts/EdgeFunctionRepositoryContext";
 import { PromptUsageRepositoryProvider } from "@/contexts/PromptUsageRepositoryContext";
 import { PasswordCheckRepositoryProvider } from "@/contexts/PasswordCheckRepositoryContext";
@@ -71,27 +72,30 @@ export function AppProviders({
                         {/* UserBootstrapWrapper AFTER Query/Command providers for useNewUserBootstrap access */}
                         <UserBootstrapWrapper>
                           <VersionRepositoryProvider>
-                            <EdgeFunctionRepositoryProvider>
-                              <PromptUsageRepositoryProvider repository={usageRepository}>
-                                <AnalysisRepositoryProvider repository={analysisRepository}>
-                                  <AnalysisQuotaRepositoryProvider>
-                                    <AnalysisHistoryRepositoryProvider>
-                                      <PromptShareRepositoryProvider repository={shareRepository}>
-                                        <PromptFavoriteServiceProvider service={favoriteService}>
-                                          <PromptVisibilityServiceProvider service={visibilityService}>
-                                            <PromptDuplicationServiceProvider service={duplicationService}>
-                                              <PromptImportServiceProvider>
-                                                {children}
-                                              </PromptImportServiceProvider>
-                                            </PromptDuplicationServiceProvider>
-                                          </PromptVisibilityServiceProvider>
-                                        </PromptFavoriteServiceProvider>
-                                      </PromptShareRepositoryProvider>
-                                    </AnalysisHistoryRepositoryProvider>
-                                  </AnalysisQuotaRepositoryProvider>
-                                </AnalysisRepositoryProvider>
-                              </PromptUsageRepositoryProvider>
-                            </EdgeFunctionRepositoryProvider>
+                            {/* VersionDeletionServiceProvider AFTER VersionRepositoryProvider (DIP) */}
+                            <VersionDeletionServiceProvider>
+                              <EdgeFunctionRepositoryProvider>
+                                <PromptUsageRepositoryProvider repository={usageRepository}>
+                                  <AnalysisRepositoryProvider repository={analysisRepository}>
+                                    <AnalysisQuotaRepositoryProvider>
+                                      <AnalysisHistoryRepositoryProvider>
+                                        <PromptShareRepositoryProvider repository={shareRepository}>
+                                          <PromptFavoriteServiceProvider service={favoriteService}>
+                                            <PromptVisibilityServiceProvider service={visibilityService}>
+                                              <PromptDuplicationServiceProvider service={duplicationService}>
+                                                <PromptImportServiceProvider>
+                                                  {children}
+                                                </PromptImportServiceProvider>
+                                              </PromptDuplicationServiceProvider>
+                                            </PromptVisibilityServiceProvider>
+                                          </PromptFavoriteServiceProvider>
+                                        </PromptShareRepositoryProvider>
+                                      </AnalysisHistoryRepositoryProvider>
+                                    </AnalysisQuotaRepositoryProvider>
+                                  </AnalysisRepositoryProvider>
+                                </PromptUsageRepositoryProvider>
+                              </EdgeFunctionRepositoryProvider>
+                            </VersionDeletionServiceProvider>
                           </VersionRepositoryProvider>
                         </UserBootstrapWrapper>
                       </PromptCommandRepositoryProvider>

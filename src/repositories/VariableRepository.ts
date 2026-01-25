@@ -1,6 +1,10 @@
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 import { qb } from "@/lib/supabaseQueryBuilder";
 import { captureException } from "@/lib/logger";
+import { 
+  DefaultVariableDiffCalculator, 
+  type VariableDiffCalculator 
+} from "./variable/VariableDiffCalculator";
 
 export type Variable = Tables<"variables">;
 export type VariableInsert = TablesInsert<"variables">;
@@ -81,14 +85,23 @@ export interface VariableRepository {
  * 
  * The upsertMany method uses an atomic transaction-like approach:
  * 1. Fetches existing variables to maintain their IDs
- * 2. Maps new variables to existing ones by name
+ * 2. Delegates diff calculation to VariableDiffCalculator (SRP)
  * 3. Deletes variables that are no longer present
  * 4. Upserts remaining variables (updates existing, inserts new)
  * 
  * This approach avoids mass deletions and preserves variable IDs,
  * ensuring referential integrity and preventing data loss.
+ * 
+ * @remarks
+ * Follows DIP: VariableDiffCalculator is injected via constructor
  */
 export class SupabaseVariableRepository implements VariableRepository {
+  private readonly diffCalculator: VariableDiffCalculator;
+
+  constructor(diffCalculator: VariableDiffCalculator = new DefaultVariableDiffCalculator()) {
+    this.diffCalculator = diffCalculator;
+  }
+
   async fetch(promptId: string): Promise<Variable[]> {
     if (!promptId) return [];
     return qb.selectMany<Variable>("variables", {
@@ -110,65 +123,10 @@ export class SupabaseVariableRepository implements VariableRepository {
   }
 
   /**
-   * Prepares variables for upsert by mapping them to existing IDs
-   * Supports both name-based matching (updates) and ID-based matching (renames)
-   * @private
-   */
-  private prepareVariablesForUpsert(
-    variables: VariableUpsertInput[],
-    promptId: string,
-    existingVariables: Variable[]
-  ): VariableInsert[] {
-    const existingByName = new Map(existingVariables.map(v => [v.name, v]));
-    const existingById = new Map(existingVariables.map(v => [v.id, v]));
-
-    return variables.map((v, index) => {
-      // If the variable has an ID, use it (supports renaming)
-      if (v.id && existingById.has(v.id)) {
-        return {
-          ...v,
-          id: v.id,
-          prompt_id: promptId,
-          order_index: index,
-        } as VariableInsert;
-      }
-      
-      // Otherwise, try to match by name (normal update)
-      const existingByNameMatch = existingByName.get(v.name);
-      return {
-        ...v,
-        prompt_id: promptId,
-        order_index: index,
-        ...(existingByNameMatch ? { id: existingByNameMatch.id } : {}),
-      } as VariableInsert;
-    });
-  }
-
-  /**
-   * Identifies and deletes variables that are no longer present
-   * Takes into account both ID and name to avoid deleting renamed variables
-   * @private
-   */
-  private async deleteObsoleteVariables(
-    newVariables: VariableUpsertInput[],
-    existingVariables: Variable[]
-  ): Promise<void> {
-    const newVariableIds = new Set(newVariables.filter(v => v.id).map(v => v.id));
-    const newVariableNames = new Set(newVariables.map(v => v.name));
-    
-    const idsToDelete = existingVariables
-      .filter(ev => !newVariableIds.has(ev.id) && !newVariableNames.has(ev.name))
-      .map(v => v.id);
-
-    if (idsToDelete.length > 0) {
-      await qb.deleteByIds("variables", idsToDelete);
-    }
-  }
-
-  /**
    * Atomic upsert of variables for a prompt
    * 
    * This method ensures data integrity by:
+   * - Delegating diff calculation to VariableDiffCalculator (pure, testable)
    * - Matching variables by name to preserve IDs (updates)
    * - Matching variables by ID to support renaming
    * - Only deleting variables that are truly removed
@@ -205,18 +163,16 @@ export class SupabaseVariableRepository implements VariableRepository {
       // Step 1: Fetch existing variables
       const existingVariables = await this.fetch(promptId);
 
-      // Step 2: Prepare variables with preserved IDs
-      const variablesWithIds = this.prepareVariablesForUpsert(
-        variables,
-        promptId,
-        existingVariables
-      );
+      // Step 2: Calculate diff using injected calculator (SRP)
+      const diff = this.diffCalculator.calculate(promptId, existingVariables, variables);
 
       // Step 3: Delete obsolete variables
-      await this.deleteObsoleteVariables(variables, existingVariables);
+      if (diff.toDeleteIds.length > 0) {
+        await qb.deleteByIds("variables", diff.toDeleteIds);
+      }
 
       // Step 4: Perform atomic upsert via qb
-      return await qb.upsertMany<Variable, VariableInsert>("variables", variablesWithIds, {
+      return await qb.upsertMany<Variable, VariableInsert>("variables", diff.toUpsert, {
         onConflict: "id",
         order: { column: "order_index", ascending: true },
       });
