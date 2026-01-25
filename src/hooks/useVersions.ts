@@ -5,7 +5,9 @@ import { logDebug, logError, logInfo } from "@/lib/logger";
 import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
 import { useVersionRepository } from "@/contexts/VersionRepositoryContext";
 import { useEdgeFunctionRepository } from "@/contexts/EdgeFunctionRepositoryContext";
+import { useVersionDeletionService } from "@/contexts/VersionDeletionServiceContext";
 import type { Version } from "@/repositories/VersionRepository";
+import type { VersionDeletionParams } from "@/services/VersionDeletionService";
 
 type VersionInsert = TablesInsert<"versions">;
 
@@ -51,58 +53,29 @@ export function useCreateVersion() {
   });
 }
 
+/**
+ * Hook pour supprimer des versions avec gestion cascade
+ * 
+ * Délègue la logique métier au VersionDeletionService (SRP)
+ * pour améliorer la testabilité et la séparation des responsabilités.
+ */
 export function useDeleteVersions() {
   const queryClient = useQueryClient();
   const versionMessages = useVersionMessages();
-  const versionRepository = useVersionRepository();
+  const deletionService = useVersionDeletionService();
 
   return useMutation({
-    mutationFn: async ({ 
-      versionIds, 
-      promptId,
-      currentVersion
-    }: { 
-      versionIds: string[]; 
-      promptId: string;
-      currentVersion?: string;
-    }) => {
-      logDebug("Suppression de versions", { count: versionIds.length, promptId });
-      
-      // Récupérer les versions à supprimer pour vérifier si la version courante est incluse
-      const versionsToDelete = await versionRepository.fetchByIds(versionIds);
-
-      const isCurrentVersionIncluded = versionsToDelete?.some(
-        v => v.semver === currentVersion
-      );
-
-      // Supprimer les versions
-      await versionRepository.delete(versionIds);
-
-      // Si la version courante a été supprimée, mettre à jour le prompt avec la dernière version restante
-      if (isCurrentVersionIncluded) {
-        logInfo("Version courante supprimée, mise à jour du prompt");
-        
-        const latestVersion = await versionRepository.fetchLatestByPromptId(promptId);
-
-        if (latestVersion) {
-          // Mettre à jour vers la version la plus récente
-          await versionRepository.updatePromptVersion(promptId, latestVersion.semver);
-          logInfo("Prompt mis à jour vers version", { semver: latestVersion.semver });
-        } else {
-          // Aucune version restante, réinitialiser à 1.0.0
-          await versionRepository.updatePromptVersion(promptId, "1.0.0");
-          logInfo("Aucune version restante, réinitialisation à 1.0.0");
-        }
-      }
-
-      logInfo("Versions supprimées", { count: versionIds.length, promptId });
-      return { promptId };
+    mutationFn: async (params: VersionDeletionParams) => {
+      logDebug("Appel du service de suppression de versions", { 
+        count: params.versionIds.length 
+      });
+      return await deletionService.deleteWithCascade(params);
     },
     retry: shouldRetryMutation,
     retryDelay: getRetryDelay,
-    onSuccess: (_, { promptId }) => {
-      queryClient.invalidateQueries({ queryKey: ["versions", promptId] });
-      queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["versions", result.promptId] });
+      queryClient.invalidateQueries({ queryKey: ["prompts", result.promptId] });
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
       versionMessages.showVersionDeleted();
     },

@@ -23,7 +23,13 @@ interface TemplateVariableSet {
   values: Record<string, string>;
 }
 
-interface ExampleTemplate {
+/**
+ * Définition d'un template d'exemple
+ * 
+ * Utilisé par TemplateInitializationService pour créer
+ * les prompts d'exemple lors de la première connexion
+ */
+export interface ExampleTemplate {
   title: string;
   description: string;
   content: string;
