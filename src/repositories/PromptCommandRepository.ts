@@ -44,6 +44,11 @@ export class SupabasePromptCommandRepository
     return qb.updateById<Prompt>("prompts", id, updates);
   }
 
+  async updateVersion(promptId: string, semver: string): Promise<void> {
+    if (!promptId) throw new Error("ID prompt requis");
+    await qb.updateWhere("prompts", "id", promptId, { version: semver });
+  }
+
   async delete(id: string): Promise<void> {
     if (!id) throw new Error("ID requis");
     return qb.deleteById("prompts", id);

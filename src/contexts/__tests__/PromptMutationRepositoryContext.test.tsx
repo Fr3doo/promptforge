@@ -8,9 +8,10 @@ import {
 } from "../PromptMutationRepositoryContext";
 
 // Mock du repository pour les tests d'injection
-// PromptMutationRepository n'expose que la méthode update
+// PromptMutationRepository expose update et updateVersion
 const createMockMutationRepository = (): PromptMutationRepository => ({
   update: vi.fn(),
+  updateVersion: vi.fn(),
 });
 
 describe("PromptMutationRepositoryContext", () => {
@@ -24,6 +25,7 @@ describe("PromptMutationRepositoryContext", () => {
 
       expect(result.current).toBeDefined();
       expect(typeof result.current.update).toBe("function");
+      expect(typeof result.current.updateVersion).toBe("function");
     });
 
     it("uses the injected repository when provided", () => {

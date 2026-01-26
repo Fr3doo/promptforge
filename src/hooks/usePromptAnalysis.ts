@@ -5,7 +5,7 @@ import { useAnalysisProgress } from "./useAnalysisProgress";
 import { useInvalidateAnalysisQuota } from "./useAnalysisQuota";
 import { useInvalidateAnalysisHistory } from "./useAnalysisHistory";
 import type { AnalysisResult } from "@/repositories/AnalysisRepository";
-import { AnalysisTimeoutError, RateLimitError } from "@/repositories/AnalysisRepository";
+import { classifyAnalysisError } from "@/lib/analysis/AnalysisErrorClassifier";
 import { captureException } from "@/lib/logger";
 import { VALIDATION } from "@/constants/application-config";
 import { toast } from "sonner";
@@ -91,30 +91,40 @@ export function usePromptAnalysis() {
       // Invalider les caches des quotas et historique après une analyse réussie
       invalidateQuota();
       invalidateHistory();
-    } catch (error: any) {
-      const isTimeoutError = error instanceof AnalysisTimeoutError;
-      const isRateLimitError = error instanceof RateLimitError;
+    } catch (error: unknown) {
+      // Classification de l'erreur via module dédié (SRP)
+      const classified = classifyAnalysisError(error);
       
-      setIsTimeout(isTimeoutError);
+      setIsTimeout(classified.type === "TIMEOUT");
       
-      if (isRateLimitError) {
-        setIsRateLimited(true);
-        setRateLimitRetryAfter(error.retryAfter);
-        setRateLimitReason(error.reason);
-        analysisMessages.showRateLimitError(error.reason, error.retryAfter);
-        // Invalider le cache des quotas après un rate limit
-        invalidateQuota();
-      } else {
-        captureException(error, 'Erreur lors de l\'analyse du prompt', {
-          promptContentLength: promptContent.length,
-          isTimeout: isTimeoutError,
-        });
-        
-        if (isTimeoutError) {
+      switch (classified.type) {
+        case "RATE_LIMIT":
+          setIsRateLimited(true);
+          setRateLimitRetryAfter(classified.retryAfter ?? 60);
+          setRateLimitReason(classified.reason ?? "minute");
+          analysisMessages.showRateLimitError(
+            classified.reason ?? "minute",
+            classified.retryAfter ?? 60
+          );
+          // Invalider le cache des quotas après un rate limit
+          invalidateQuota();
+          break;
+          
+        case "TIMEOUT":
+          captureException(error, "Erreur lors de l'analyse du prompt", {
+            promptContentLength: promptContent.length,
+            isTimeout: true,
+          });
           analysisMessages.showTimeoutError();
-        } else {
-          analysisMessages.showAnalysisFailed(error.message);
-        }
+          break;
+          
+        case "GENERIC":
+          captureException(error, "Erreur lors de l'analyse du prompt", {
+            promptContentLength: promptContent.length,
+            isTimeout: false,
+          });
+          analysisMessages.showAnalysisFailed(classified.message ?? "Erreur inconnue");
+          break;
       }
       
       setResult(null);
