@@ -147,7 +147,7 @@ export interface PromptCommandRepository {
 
 /**
  * Interface ségrégée : Opérations de MUTATION partielles
- * Utilisée par : PromptFavoriteService, PromptVisibilityService
+ * Utilisée par : PromptFavoriteService, PromptVisibilityService, VersionDeletionService
  * 
  * @remarks
  * Interface minimale pour les services ne nécessitant que la mise à jour.
@@ -168,6 +168,18 @@ export interface PromptMutationRepository {
    * @throws {Error} Si la requête échoue (erreur réseau/base de données)
    */
   update(id: string, updates: Partial<Prompt>): Promise<Prompt>;
+
+  /**
+   * Met à jour le champ version d'un prompt (synchronisation semver)
+   * Utilisé après création/suppression de versions pour maintenir la cohérence
+   * 
+   * @param promptId - Identifiant du prompt (requis, non vide)
+   * @param semver - Nouvelle version au format semver (ex: "1.2.0")
+   * @throws {Error} Si promptId est vide
+   * @throws {Error} Si violation RLS (non propriétaire)
+   * @throws {Error} Si la requête échoue
+   */
+  updateVersion(promptId: string, semver: string): Promise<void>;
 }
 
 /**

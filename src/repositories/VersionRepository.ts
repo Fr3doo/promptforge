@@ -57,6 +57,11 @@ export interface VersionRepository {
 
   /**
    * Met à jour le champ version d'un prompt (synchronisation semver)
+   * 
+   * @deprecated Utiliser PromptMutationRepository.updateVersion() à la place
+   * pour respecter l'encapsulation (SRP). Cette méthode sera supprimée
+   * dans une future version.
+   * 
    * @param promptId - Identifiant du prompt (requis, non vide)
    * @param semver - Nouvelle version au format semver (ex: "1.2.0")
    * @throws {Error} Si promptId est vide

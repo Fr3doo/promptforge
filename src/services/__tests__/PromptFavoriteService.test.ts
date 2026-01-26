@@ -5,6 +5,7 @@ import type { PromptMutationRepository } from "@/repositories/PromptRepository.i
 // Mock du PromptMutationRepository
 const mockMutationRepository: PromptMutationRepository = {
   update: vi.fn(),
+  updateVersion: vi.fn(),
 };
 
 describe("PromptFavoriteService", () => {

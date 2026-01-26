@@ -9,6 +9,7 @@ import type {
 // Mock repositories
 const mockMutationRepository: PromptMutationRepository = {
   update: vi.fn(),
+  updateVersion: vi.fn(),
 };
 
 const mockQueryRepository: PromptQueryRepository = {

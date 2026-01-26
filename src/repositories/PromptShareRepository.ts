@@ -2,6 +2,13 @@ import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { handleSupabaseError } from "@/lib/errorHandler";
 import { qb } from "@/lib/supabaseQueryBuilder";
+import {
+  assertSession,
+  assertNotSelfShare,
+  assertPromptOwner,
+  assertShareExists,
+  assertShareModifyAuthorization,
+} from "@/lib/authorization/ShareAuthorizationChecker";
 
 export type PromptShare = Tables<"prompt_shares">;
 
@@ -146,18 +153,12 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
     permission: "READ" | "WRITE",
     currentUserId: string
   ): Promise<void> {
-    if (!currentUserId) throw new Error("SESSION_EXPIRED");
+    // Vérifications d'autorisation via module dédié
+    assertSession(currentUserId);
+    assertNotSelfShare(sharedWithUserId, currentUserId);
 
-    // Prevent sharing with oneself
-    if (sharedWithUserId === currentUserId) {
-      throw new Error("SELF_SHARE");
-    }
-
-    // Verify that the user is the prompt owner
     const isOwner = await this.isPromptOwner(promptId, currentUserId);
-    if (!isOwner) {
-      throw new Error("NOT_PROMPT_OWNER");
-    }
+    assertPromptOwner(isOwner);
 
     await qb.insertWithoutReturn("prompt_shares", {
       prompt_id: promptId,
@@ -172,41 +173,27 @@ export class SupabasePromptShareRepository implements PromptShareRepository {
     permission: "READ" | "WRITE",
     currentUserId: string
   ): Promise<void> {
-    if (!currentUserId) throw new Error("SESSION_EXPIRED");
+    // Vérifications d'autorisation via module dédié
+    assertSession(currentUserId);
 
-    // Get share details
     const share = await this.getShareById(shareId);
-    if (!share) {
-      throw new Error("SHARE_NOT_FOUND");
-    }
+    assertShareExists(share);
 
-    // Verify authorization: user must be either the share creator or the prompt owner
-    const isSharedBy = share.shared_by === currentUserId;
-    const isPromptOwner = await this.isPromptOwner(share.prompt_id, currentUserId);
-
-    if (!isSharedBy && !isPromptOwner) {
-      throw new Error("UNAUTHORIZED_UPDATE");
-    }
+    const isOwner = await this.isPromptOwner(share.prompt_id, currentUserId);
+    assertShareModifyAuthorization(share, currentUserId, isOwner, "UPDATE");
 
     await qb.updateWhere("prompt_shares", "id", shareId, { permission });
   }
 
   async deleteShare(shareId: string, currentUserId: string): Promise<void> {
-    if (!currentUserId) throw new Error("SESSION_EXPIRED");
+    // Vérifications d'autorisation via module dédié
+    assertSession(currentUserId);
 
-    // Get share details
     const share = await this.getShareById(shareId);
-    if (!share) {
-      throw new Error("SHARE_NOT_FOUND");
-    }
+    assertShareExists(share);
 
-    // Verify authorization: user must be either the share creator or the prompt owner
-    const isSharedBy = share.shared_by === currentUserId;
-    const isPromptOwner = await this.isPromptOwner(share.prompt_id, currentUserId);
-
-    if (!isSharedBy && !isPromptOwner) {
-      throw new Error("UNAUTHORIZED_DELETE");
-    }
+    const isOwner = await this.isPromptOwner(share.prompt_id, currentUserId);
+    assertShareModifyAuthorization(share, currentUserId, isOwner, "DELETE");
 
     await qb.deleteById("prompt_shares", shareId);
   }

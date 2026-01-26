@@ -18,14 +18,11 @@ import type {
   PromptQueryRepository,
   Prompt,
   PromptWithSharePermission,
-  SharePermission,
 } from "./PromptRepository.interfaces";
-
-// Type interne pour le résultat de jointure
-interface ShareJoinResult {
-  permission: string;
-  prompts: Prompt | null;
-}
+import {
+  mapShareJoinToPromptWithPermission,
+  type ShareJoinResult,
+} from "@/lib/mappers/ShareJoinResultMapper";
 
 export class SupabasePromptQueryRepository implements PromptQueryRepository {
   async fetchAll(userId: string): Promise<Prompt[]> {
@@ -53,22 +50,8 @@ export class SupabasePromptQueryRepository implements PromptQueryRepository {
       { eq: { shared_with_user_id: userId } }
     );
 
-    if (!data || data.length === 0) {
-      return [];
-    }
-
-    // Mapping métier (préservé du code original)
-    return data
-      .filter((row) => row.prompts != null)
-      .map((row) => ({
-        ...(row.prompts as Prompt),
-        shared_permission: row.permission as SharePermission,
-      }))
-      .sort(
-        (a, b) =>
-          new Date(b.updated_at ?? 0).getTime() -
-          new Date(a.updated_at ?? 0).getTime()
-      );
+    // Délégation au mapper dédié (SRP)
+    return mapShareJoinToPromptWithPermission(data ?? []);
   }
 
   async fetchById(id: string): Promise<Prompt> {
