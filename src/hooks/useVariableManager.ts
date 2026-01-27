@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToastNotifier } from "@/hooks/useToastNotifier";
 import { useVariableDetection } from "@/hooks/useVariableDetection";
+import { filterValidVariables, needsFiltering } from "@/lib/variables/variableFilters";
 import { messages } from "@/constants/messages";
 import type { Variable } from "@/features/prompts/types";
 
@@ -30,12 +31,11 @@ export function useVariableManager({ content, initialVariables = [] }: UseVariab
   useEffect(() => {
     // Remove variables that are no longer in content using functional update
     setVariables(prevVariables => {
-      const validVariables = prevVariables.filter(v => detectedNames.includes(v.name));
       // Only update if there's an actual change to avoid unnecessary re-renders
-      if (validVariables.length !== prevVariables.length) {
-        return validVariables;
+      if (!needsFiltering(prevVariables, detectedNames)) {
+        return prevVariables;
       }
-      return prevVariables;
+      return filterValidVariables(prevVariables, detectedNames);
     });
   }, [detectedNames]);
 

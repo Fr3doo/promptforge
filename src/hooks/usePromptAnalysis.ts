@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useAnalysisMessages } from "@/features/prompts/hooks/useAnalysisMessages";
 import { useAnalysisRepository } from "@/contexts/AnalysisRepositoryContext";
 import { useAnalysisProgress } from "./useAnalysisProgress";
 import { useInvalidateAnalysisQuota } from "./useAnalysisQuota";
 import { useInvalidateAnalysisHistory } from "./useAnalysisHistory";
+import { useCountdown } from "./useCountdown";
 import type { AnalysisResult } from "@/repositories/AnalysisRepository";
 import { classifyAnalysisError } from "@/lib/analysis/AnalysisErrorClassifier";
 import { captureException } from "@/lib/logger";
@@ -19,42 +20,17 @@ export function usePromptAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isTimeout, setIsTimeout] = useState(false);
   const [isRateLimited, setIsRateLimited] = useState(false);
-  const [rateLimitRetryAfter, setRateLimitRetryAfter] = useState(0);
   const [rateLimitReason, setRateLimitReason] = useState<'minute' | 'daily'>('minute');
-  const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const countdown = useCountdown({
+    onComplete: () => setIsRateLimited(false)
+  });
+  
   const analysisRepository = useAnalysisRepository();
   const analysisMessages = useAnalysisMessages();
   const progress = useAnalysisProgress();
   const invalidateQuota = useInvalidateAnalysisQuota();
   const invalidateHistory = useInvalidateAnalysisHistory();
-
-  // Countdown automatique pour rate limiting
-  useEffect(() => {
-    if (!isRateLimited || rateLimitRetryAfter <= 0) {
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-        countdownRef.current = null;
-      }
-      return;
-    }
-
-    countdownRef.current = setInterval(() => {
-      setRateLimitRetryAfter((prev) => {
-        if (prev <= 1) {
-          setIsRateLimited(false);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-        countdownRef.current = null;
-      }
-    };
-  }, [isRateLimited, rateLimitRetryAfter > 0]);
 
   const analyze = async (promptContent: string) => {
     if (!promptContent.trim()) {
@@ -100,7 +76,7 @@ export function usePromptAnalysis() {
       switch (classified.type) {
         case "RATE_LIMIT":
           setIsRateLimited(true);
-          setRateLimitRetryAfter(classified.retryAfter ?? 60);
+          countdown.start(classified.retryAfter ?? 60);
           setRateLimitReason(classified.reason ?? "minute");
           analysisMessages.showRateLimitError(
             classified.reason ?? "minute",
@@ -138,7 +114,7 @@ export function usePromptAnalysis() {
     setResult(null);
     setIsTimeout(false);
     setIsRateLimited(false);
-    setRateLimitRetryAfter(0);
+    countdown.reset();
   };
 
   return { 
@@ -146,7 +122,7 @@ export function usePromptAnalysis() {
     isAnalyzing, 
     isTimeout, 
     isRateLimited,
-    rateLimitRetryAfter,
+    rateLimitRetryAfter: countdown.remaining,
     rateLimitReason,
     analyze, 
     reset,
