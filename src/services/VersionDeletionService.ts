@@ -1,4 +1,5 @@
 import type { VersionRepository } from "@/repositories/VersionRepository";
+import type { PromptMutationRepository } from "@/repositories/PromptRepository.interfaces";
 import { logDebug, logInfo } from "@/lib/logger";
 
 /**
@@ -68,7 +69,10 @@ export interface VersionDeletionService {
  * ```
  */
 export class DefaultVersionDeletionService implements VersionDeletionService {
-  constructor(private readonly versionRepository: VersionRepository) {}
+  constructor(
+    private readonly versionRepository: VersionRepository,
+    private readonly promptMutationRepository: PromptMutationRepository
+  ) {}
 
   async deleteWithCascade(params: VersionDeletionParams): Promise<VersionDeletionResult> {
     const { versionIds, promptId, currentVersion } = params;
@@ -127,11 +131,11 @@ export class DefaultVersionDeletionService implements VersionDeletionService {
     const latestVersion = await this.versionRepository.fetchLatestByPromptId(promptId);
 
     if (latestVersion) {
-      await this.versionRepository.updatePromptVersion(promptId, latestVersion.semver);
+      await this.promptMutationRepository.updateVersion(promptId, latestVersion.semver);
       logInfo("Prompt mis à jour vers version", { semver: latestVersion.semver });
       return latestVersion.semver;
     } else {
-      await this.versionRepository.updatePromptVersion(promptId, "1.0.0");
+      await this.promptMutationRepository.updateVersion(promptId, "1.0.0");
       logInfo("Aucune version restante, réinitialisation à 1.0.0");
       return "1.0.0";
     }

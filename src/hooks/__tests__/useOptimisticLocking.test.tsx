@@ -12,7 +12,6 @@ const createMockVersionRepository = (): VersionRepository => ({
   create: vi.fn(),
   delete: vi.fn(),
   fetchByIds: vi.fn(),
-  updatePromptVersion: vi.fn(),
   fetchLatestByPromptId: vi.fn(),
   existsBySemver: vi.fn(),
 });
