@@ -11,6 +11,7 @@
 | **LSP** - Liskov Substitution | ✅ Conforme | 100% |
 | **ISP** - Interface Segregation | ✅ Conforme | 100% |
 | **DIP** - Dependency Inversion | ✅ Conforme | 100% |
+| **DRY** - Don't Repeat Yourself | ✅ Conforme | 100% |
 
 ---
 
@@ -77,12 +78,15 @@ Le projet a subi un refactoring SRP systématique en 3 phases :
 | 2.4 | 🟠 Moyenne | ShareAuthorizationChecker | `src/lib/authorization/ShareAuthorizationChecker.ts` |
 | 3.1 | 🟡 Faible | useCountdown | `src/hooks/useCountdown.ts` |
 | 3.2 | 🟡 Faible | variableFilters | `src/lib/variables/variableFilters.ts` |
+| DRY.1 | 🟢 Transverse | requireId, requireIds | `src/lib/validation/requireId.ts` |
+| DRY.2 | 🟢 Transverse | variableMappers | `src/lib/variables/variableMappers.ts` |
 
 **Patterns établis :**
 - **Classifier** : Fonctions pures pour classification d'erreurs
 - **Mapper** : Fonctions pures pour transformation de données
 - **Checker** : Fonctions assertion pour autorisation
 - **Hook réutilisable** : Logique React encapsulée
+- **Validator** : Fonctions de validation avec type narrowing
 
 ### Pattern appliqué
 
@@ -608,3 +612,85 @@ Appels Supabase directs restants (intentionnels) :
 | 2025-01 | SRP Phase 1 | Extraction VariableDiffCalculator, VersionDeletionService, décomposition TemplateInitializationService |
 | 2025-01 | SRP Phase 2 | Extraction AnalysisErrorClassifier, ShareJoinResultMapper, ShareAuthorizationChecker, encapsulation VersionRepository |
 | 2025-01 | SRP Phase 3 | Extraction useCountdown, variableFilters |
+| 2025-01 | DRY Phase 1 | Centralisation requireId (18 occurrences), variableMappers (2 services) |
+
+---
+
+## 6. DRY - Don't Repeat Yourself
+
+> "Chaque connaissance doit avoir une représentation unique, non ambiguë, au sein d'un système."
+
+### État : ✅ Conforme
+
+### Modules de centralisation
+
+#### 6.1 Validation d'ID : requireId.ts
+
+**Fichier** : `src/lib/validation/requireId.ts`
+
+**Problème résolu** : 18+ occurrences du pattern `if (!id) throw new Error("... requis")` dans repositories et services.
+
+**API** :
+- `requireId(value, fieldName)` : Valide un ID string, retourne la valeur (type narrowing)
+- `requireIds(values, fieldName)` : Valide un tableau non vide
+- `RequiredIdError` : Classe d'erreur pour filtrage
+
+**Pattern d'utilisation** :
+
+```typescript
+// ❌ Avant (répétitif)
+if (!userId) throw new Error("ID utilisateur requis");
+await repository.fetchById(userId);
+
+// ✅ Après (DRY + type narrowing)
+const validId = requireId(userId, "ID utilisateur");
+await repository.fetchById(validId); // validId: string garanti
+```
+
+**Fichiers migrés** :
+- VersionRepository (3 occurrences)
+- PromptCommandRepository (3 occurrences)
+- PromptQueryRepository (7 occurrences)
+- ProfileRepository (2 occurrences)
+- PromptDuplicationService (1 occurrence)
+- PromptImportService (1 occurrence)
+- usePrompts (1 occurrence)
+- usePromptShares (1 occurrence)
+
+#### 6.2 Mapping de variables : variableMappers.ts
+
+**Fichier** : `src/lib/variables/variableMappers.ts`
+
+**Problème résolu** : Duplication de logique de transformation entre `PromptDuplicationService.mapVariablesForDuplication()` et `PromptImportService.mapVariablesForImport()`.
+
+**API** :
+- `toVariableUpsertInput(variable)` : Transforme Variable → VariableUpsertInput (pour duplication)
+- `toVariableUpsertInputs(variables)` : Version tableau
+- `fromImportable(variable, index)` : Transforme ImportableVariable → VariableUpsertInput (avec defaults)
+- `fromImportables(variables)` : Version tableau avec order_index séquentiel
+
+**Séparation des responsabilités** :
+- `toVariableUpsertInput` : Copie directe des champs métier (duplication)
+- `fromImportable` : Applique des valeurs par défaut (import JSON/Markdown)
+
+**Services migrés** :
+- PromptDuplicationService : suppression méthode privée `mapVariablesForDuplication`
+- PromptImportService : suppression méthode privée `mapVariablesForImport`
+
+### Métriques DRY
+
+| Métrique | Avant | Après | Amélioration |
+|----------|-------|-------|--------------|
+| Occurrences `if (!id) throw` | 18+ | 0 | -100% |
+| Méthodes de mapping dupliquées | 2 | 0 | -100% |
+| Fonctions pures dans lib/ | 19 | 25 | +32% |
+| Tests unitaires modules utilitaires | 12 | 39 | +225% |
+
+### Duplications restantes identifiées
+
+| Duplication | Priorité | Impact | Recommandation |
+|-------------|----------|--------|----------------|
+| Vérification auth hooks (`if (!user) throw`) | Moyenne | -9 occurrences | Implémenter `requireAuthUser` |
+| `toastUtils` deprecated | Moyenne | Consistance | Migrer progressivement |
+| Pattern `onSuccess/onError` mutations | Basse | Lisibilité | Reporter |
+| Pattern `invalidateQueries` | Basse | -6 lignes | Reporter |
