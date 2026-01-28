@@ -3,7 +3,9 @@ import type {
   PromptCommandRepository,
   Prompt 
 } from "@/repositories/PromptRepository.interfaces";
-import type { VariableRepository, VariableUpsertInput, Variable } from "@/repositories/VariableRepository";
+import type { VariableRepository } from "@/repositories/VariableRepository";
+import { requireId } from "@/lib/validation/requireId";
+import { toVariableUpsertInputs } from "@/lib/variables/variableMappers";
 
 /**
  * Service dédié à la duplication de prompts et de leurs variables
@@ -63,7 +65,7 @@ export class SupabasePromptDuplicationService implements PromptDuplicationServic
     promptId: string,
     variableRepository: VariableRepository
   ): Promise<Prompt> {
-    if (!userId) throw new Error("ID utilisateur requis");
+    requireId(userId, "ID utilisateur");
 
     // Step 1: Fetch original prompt (delegated to repository)
     const originalPrompt = await this.queryRepository.fetchById(promptId);
@@ -84,31 +86,12 @@ export class SupabasePromptDuplicationService implements PromptDuplicationServic
       public_permission: "READ",
     });
 
-    // Step 4: Duplicate variables if any exist
+    // Step 4: Duplicate variables if any exist (using centralized mapper)
     if (originalVariables.length > 0) {
-      const variableInputs = this.mapVariablesForDuplication(originalVariables);
+      const variableInputs = toVariableUpsertInputs(originalVariables);
       await variableRepository.upsertMany(duplicatedPrompt.id, variableInputs);
     }
 
     return duplicatedPrompt;
-  }
-
-  /**
-   * Maps original variables to input format for duplication
-   * @private
-   * @param originalVariables - Array of original variables
-   * @returns Array of variable inputs ready for upsert (without IDs and prompt_id)
-   */
-  private mapVariablesForDuplication(originalVariables: Variable[]): VariableUpsertInput[] {
-    return originalVariables.map((variable) => ({
-      name: variable.name,
-      type: variable.type,
-      required: variable.required,
-      default_value: variable.default_value,
-      help: variable.help,
-      pattern: variable.pattern,
-      options: variable.options,
-      order_index: variable.order_index,
-    }));
   }
 }

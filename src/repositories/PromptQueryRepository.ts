@@ -23,17 +23,18 @@ import {
   mapShareJoinToPromptWithPermission,
   type ShareJoinResult,
 } from "@/lib/mappers/ShareJoinResultMapper";
+import { requireId } from "@/lib/validation/requireId";
 
 export class SupabasePromptQueryRepository implements PromptQueryRepository {
   async fetchAll(userId: string): Promise<Prompt[]> {
-    if (!userId) throw new Error("ID utilisateur requis");
+    requireId(userId, "ID utilisateur");
     return qb.selectMany<Prompt>("prompts_with_share_count", {
       order: { column: "updated_at", ascending: false },
     });
   }
 
   async fetchOwned(userId: string): Promise<Prompt[]> {
-    if (!userId) throw new Error("ID utilisateur requis");
+    requireId(userId, "ID utilisateur");
     return qb.selectMany<Prompt>("prompts_with_share_count", {
       filters: { eq: { owner_id: userId } },
       order: { column: "updated_at", ascending: false },
@@ -41,7 +42,7 @@ export class SupabasePromptQueryRepository implements PromptQueryRepository {
   }
 
   async fetchSharedWithMe(userId: string): Promise<PromptWithSharePermission[]> {
-    if (!userId) throw new Error("ID utilisateur requis");
+    requireId(userId, "ID utilisateur");
 
     // Jointure via qb.selectWithJoin
     const data = await qb.selectWithJoin<ShareJoinResult>(
@@ -55,7 +56,7 @@ export class SupabasePromptQueryRepository implements PromptQueryRepository {
   }
 
   async fetchById(id: string): Promise<Prompt> {
-    if (!id) throw new Error("ID requis");
+    requireId(id, "ID");
     return qb.selectOneRequired<Prompt>("prompts", "id", id);
   }
 
@@ -64,7 +65,7 @@ export class SupabasePromptQueryRepository implements PromptQueryRepository {
     days: number = 7,
     limit: number = 5
   ): Promise<Prompt[]> {
-    if (!userId) throw new Error("ID utilisateur requis");
+    requireId(userId, "ID utilisateur");
 
     const daysAgo = new Date();
     daysAgo.setDate(daysAgo.getDate() - days);
@@ -80,7 +81,7 @@ export class SupabasePromptQueryRepository implements PromptQueryRepository {
   }
 
   async fetchFavorites(userId: string, limit: number = 5): Promise<Prompt[]> {
-    if (!userId) throw new Error("ID utilisateur requis");
+    requireId(userId, "ID utilisateur");
     return qb.selectMany<Prompt>("prompts", {
       filters: { eq: { owner_id: userId, is_favorite: true } },
       order: { column: "updated_at", ascending: false },
@@ -89,7 +90,7 @@ export class SupabasePromptQueryRepository implements PromptQueryRepository {
   }
 
   async fetchPublicShared(userId: string, limit: number = 5): Promise<Prompt[]> {
-    if (!userId) throw new Error("ID utilisateur requis");
+    requireId(userId, "ID utilisateur");
     return qb.selectMany<Prompt>("prompts", {
       filters: {
         eq: { visibility: "SHARED" },

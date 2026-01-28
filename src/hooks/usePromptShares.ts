@@ -4,6 +4,7 @@ import { usePromptMessages } from "@/features/prompts/hooks/usePromptMessages";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
 import { useAuth } from "@/hooks/useAuth";
+import { requireId } from "@/lib/validation/requireId";
 
 // Hook to fetch shares for a prompt
 export function usePromptShares(promptId: string | undefined) {
@@ -12,7 +13,7 @@ export function usePromptShares(promptId: string | undefined) {
   return useQuery({
     queryKey: ["prompt-shares", promptId],
     queryFn: () => {
-      if (!promptId) throw new Error("Prompt ID requis");
+      requireId(promptId, "Prompt ID");
       return repository.getShares(promptId);
     },
     enabled: !!promptId,

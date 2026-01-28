@@ -1,5 +1,6 @@
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 import { qb } from "@/lib/supabaseQueryBuilder";
+import { requireId, requireIds } from "@/lib/validation/requireId";
 
 export type Version = Tables<"versions">;
 export type VersionInsert = TablesInsert<"versions">;
@@ -77,7 +78,7 @@ export interface VersionRepository {
 
 export class SupabaseVersionRepository implements VersionRepository {
   async fetchByPromptId(promptId: string): Promise<Version[]> {
-    if (!promptId) throw new Error("ID prompt requis");
+    requireId(promptId, "ID prompt");
     return qb.selectMany<Version>("versions", {
       filters: { eq: { prompt_id: promptId } },
       order: { column: "created_at", ascending: false },
@@ -89,17 +90,17 @@ export class SupabaseVersionRepository implements VersionRepository {
   }
 
   async delete(versionIds: string[]): Promise<void> {
-    if (!versionIds.length) throw new Error("IDs version requis");
+    requireIds(versionIds, "IDs version");
     return qb.deleteByIds("versions", versionIds);
   }
 
   async fetchByIds(versionIds: string[]): Promise<Version[]> {
-    if (!versionIds.length) throw new Error("IDs version requis");
+    requireIds(versionIds, "IDs version");
     return qb.selectManyByIds<Version>("versions", versionIds);
   }
 
   async fetchLatestByPromptId(promptId: string): Promise<Version | null> {
-    if (!promptId) throw new Error("ID prompt requis");
+    requireId(promptId, "ID prompt");
     return qb.selectFirst<Version>("versions", {
       filters: { eq: { prompt_id: promptId } },
       order: { column: "created_at", ascending: false },
@@ -107,8 +108,8 @@ export class SupabaseVersionRepository implements VersionRepository {
   }
 
   async existsBySemver(promptId: string, semver: string): Promise<boolean> {
-    if (!promptId) throw new Error("ID prompt requis");
-    if (!semver) throw new Error("Version semver requise");
+    requireId(promptId, "ID prompt");
+    requireId(semver, "Version semver");
     return qb.exists("versions", {
       eq: { prompt_id: promptId, semver },
     });
