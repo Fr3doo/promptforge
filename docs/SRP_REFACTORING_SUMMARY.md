@@ -347,6 +347,45 @@ favorisées pour leur testabilité. Chaque extraction respecte SRP et évite la 
 
 ---
 
+## Phase DRY : Centralisation des opérations récurrentes
+
+### DRY.1 Extraction de requireId
+
+**Problème** : 18+ occurrences du pattern `if (!id) throw new Error("... requis")` dans repositories, services et hooks.
+
+**Solution** : Création du module `src/lib/validation/requireId.ts` avec :
+- `requireId(value, fieldName)` : Validation + type narrowing
+- `requireIds(values, fieldName)` : Validation tableau non vide
+- `RequiredIdError` : Classe d'erreur pour filtrage
+
+**Fichiers migrés** :
+- VersionRepository (3), PromptCommandRepository (3), PromptQueryRepository (7)
+- ProfileRepository (2), PromptDuplicationService (1), PromptImportService (1)
+- usePrompts (1), usePromptShares (1)
+
+### DRY.2 Extraction de variableMappers
+
+**Problème** : Logique de transformation dupliquée entre `PromptDuplicationService` et `PromptImportService`.
+
+**Solution** : Création du module `src/lib/variables/variableMappers.ts` avec :
+- `toVariableUpsertInputs(variables)` : Pour duplication
+- `fromImportables(variables)` : Pour import avec valeurs par défaut
+
+**Services migrés** :
+- PromptDuplicationService : suppression `mapVariablesForDuplication`
+- PromptImportService : suppression `mapVariablesForImport`
+
+### Fichiers créés (Phase DRY)
+
+| Fichier | Description |
+|---------|-------------|
+| `src/lib/validation/requireId.ts` | Validation d'ID avec type narrowing |
+| `src/lib/validation/__tests__/requireId.test.ts` | 12+ tests |
+| `src/lib/variables/variableMappers.ts` | Fonctions de mapping pures |
+| `src/lib/variables/__tests__/variableMappers.test.ts` | 15+ tests |
+
+---
+
 **Auteur** : Architecture Team  
 **Date de création** : Janvier 2025  
-**Version** : 2.0.0 (Phase 2 & 3 complétées)
+**Version** : 3.0.0 (Phase DRY complétée)
