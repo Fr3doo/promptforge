@@ -60,6 +60,29 @@ Chaque service a une responsabilité unique :
 | `PromptFavoriteService` | Gestion de l'état favori |
 | `PromptVisibilityService` | Changement de visibilité (PRIVATE/SHARED) |
 | `PromptImportService` | Import de prompts depuis JSON/Markdown |
+| `VersionDeletionService` | Suppression cascade de versions avec mise à jour prompt |
+
+#### Extractions SRP - Phases 1, 2 et 3
+
+Le projet a subi un refactoring SRP systématique en 3 phases :
+
+| Phase | Sévérité | Extraction | Fichier |
+|-------|----------|------------|---------|
+| 1.1 | 🔴 Haute | VariableDiffCalculator | `src/repositories/variable/VariableDiffCalculator.ts` |
+| 1.2 | 🔴 Haute | VersionDeletionService | `src/services/VersionDeletionService.ts` |
+| 1.3 | 🔴 Haute | TemplateInitializationService (décomposition) | `src/services/TemplateInitializationService.ts` |
+| 2.1 | 🟠 Moyenne | AnalysisErrorClassifier | `src/lib/analysis/AnalysisErrorClassifier.ts` |
+| 2.2 | 🟠 Moyenne | ShareJoinResultMapper | `src/lib/mappers/ShareJoinResultMapper.ts` |
+| 2.3 | 🟠 Moyenne | Encapsulation VersionRepository | `PromptMutationRepository.updateVersion` |
+| 2.4 | 🟠 Moyenne | ShareAuthorizationChecker | `src/lib/authorization/ShareAuthorizationChecker.ts` |
+| 3.1 | 🟡 Faible | useCountdown | `src/hooks/useCountdown.ts` |
+| 3.2 | 🟡 Faible | variableFilters | `src/lib/variables/variableFilters.ts` |
+
+**Patterns établis :**
+- **Classifier** : Fonctions pures pour classification d'erreurs
+- **Mapper** : Fonctions pures pour transformation de données
+- **Checker** : Fonctions assertion pour autorisation
+- **Hook réutilisable** : Logique React encapsulée
 
 ### Pattern appliqué
 
@@ -582,3 +605,6 @@ Appels Supabase directs restants (intentionnels) :
 | 2025-01 | LSP complet | Couverture étendue à 46 méthodes (13 interfaces) + script validation |
 | 2025-01 | Murphy | Ajout useRetryCounter pour limiter les tentatives de retry (MAX_ATTEMPTS=3) |
 | 2025-01 | QueryBuilder 100% | Migration complète de tous les repositories vers qb (31/32 méthodes) |
+| 2025-01 | SRP Phase 1 | Extraction VariableDiffCalculator, VersionDeletionService, décomposition TemplateInitializationService |
+| 2025-01 | SRP Phase 2 | Extraction AnalysisErrorClassifier, ShareJoinResultMapper, ShareAuthorizationChecker, encapsulation VersionRepository |
+| 2025-01 | SRP Phase 3 | Extraction useCountdown, variableFilters |

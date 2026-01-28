@@ -4,6 +4,7 @@ import type { TablesInsert } from "@/integrations/supabase/types";
 import { logDebug, logError, logInfo } from "@/lib/logger";
 import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
 import { useVersionRepository } from "@/contexts/VersionRepositoryContext";
+import { usePromptMutationRepository } from "@/contexts/PromptMutationRepositoryContext";
 import { useEdgeFunctionRepository } from "@/contexts/EdgeFunctionRepositoryContext";
 import { useVersionDeletionService } from "@/contexts/VersionDeletionServiceContext";
 import type { Version } from "@/repositories/VersionRepository";
@@ -28,14 +29,15 @@ export function useCreateVersion() {
   const queryClient = useQueryClient();
   const versionMessages = useVersionMessages();
   const versionRepository = useVersionRepository();
+  const promptMutationRepository = usePromptMutationRepository();
 
   return useMutation({
     mutationFn: async (version: VersionInsert) => {
       // Créer la nouvelle version
       const data = await versionRepository.create(version);
       
-      // Mettre à jour le numéro de version du prompt
-      await versionRepository.updatePromptVersion(version.prompt_id, version.semver);
+      // Mettre à jour le numéro de version du prompt (via PromptMutationRepository pour SRP)
+      await promptMutationRepository.updateVersion(version.prompt_id, version.semver);
 
       return data;
     },
