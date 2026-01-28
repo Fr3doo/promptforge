@@ -1,166 +1,174 @@
 
 
-# Plan : Documentation SRP + Migration useCreateVersion
+# Plan : Suppression de `VersionRepository.updatePromptVersion`
 
 ## Objectif
 
-1. **Mettre à jour `docs/SOLID_COMPLIANCE.md`** avec les extractions SRP des phases 1, 2 et 3
-2. **Enrichir `docs/SRP_REFACTORING_SUMMARY.md`** avec les détails Phase 1 manquants
-3. **Migrer `useCreateVersion`** pour utiliser `PromptMutationRepository.updateVersion` au lieu de `VersionRepository.updatePromptVersion` (déprecié)
+Supprimer la méthode dépréciée `updatePromptVersion` de `VersionRepository` en migrant d'abord les derniers usages vers `PromptMutationRepository.updateVersion`.
 
 ---
 
-## Analyse de l'existant
+## Analyse des usages actuels
 
-### SOLID_COMPLIANCE.md (lignes 17-83)
-- Section SRP existante couvre le refactoring `usePromptSave` (7 hooks)
-- Ne mentionne **pas** les extractions Phase 1, 2, 3
-- Tableau des services métier incomplet (manque VersionDeletionService)
-
-### SRP_REFACTORING_SUMMARY.md
-- Phase 1 présente mais résumée (détails manquants pour VariableDiffCalculator, etc.)
-- Phases 2 et 3 bien documentées
-- Manque la liste des fichiers créés en Phase 1
-
-### useCreateVersion (lignes 27-53)
-- Appelle `versionRepository.updatePromptVersion()` (déprecié)
-- Doit utiliser `promptMutationRepository.updateVersion()` conformément à Phase 2.3
+| Fichier | Usage | Action requise |
+|---------|-------|----------------|
+| `src/services/VersionDeletionService.ts` | Appels lignes 130, 134 | ⚠️ Migrer vers PromptMutationRepository |
+| `src/hooks/useVersions.ts` | ✅ Déjà migré | Aucune |
+| `src/repositories/VersionRepository.ts` | Définition interface + implémentation | Supprimer |
+| Tests et mocks | 6 fichiers avec mocks | Mettre à jour |
+| Documentation | 2 fichiers | Mettre à jour |
 
 ---
 
 ## Étapes atomiques
 
-### Étape 1 : Mettre à jour SOLID_COMPLIANCE.md
+### Étape 1 : Migrer `VersionDeletionService`
 
-Ajouter une nouvelle section après le tableau des services métier (après ligne 63) :
-
-```markdown
-#### Extractions SRP - Phases 1, 2 et 3
-
-Le projet a subi un refactoring SRP systématique en 3 phases :
-
-| Phase | Sévérité | Extraction | Fichier |
-|-------|----------|------------|---------|
-| 1.1 | 🔴 Haute | VariableDiffCalculator | `src/repositories/variable/VariableDiffCalculator.ts` |
-| 1.2 | 🔴 Haute | VersionDeletionService | `src/services/VersionDeletionService.ts` |
-| 1.3 | 🔴 Haute | TemplateInitializationService (décomposition) | `src/services/TemplateInitializationService.ts` |
-| 2.1 | 🟠 Moyenne | AnalysisErrorClassifier | `src/lib/analysis/AnalysisErrorClassifier.ts` |
-| 2.2 | 🟠 Moyenne | ShareJoinResultMapper | `src/lib/mappers/ShareJoinResultMapper.ts` |
-| 2.3 | 🟠 Moyenne | Encapsulation VersionRepository | `PromptMutationRepository.updateVersion` |
-| 2.4 | 🟠 Moyenne | ShareAuthorizationChecker | `src/lib/authorization/ShareAuthorizationChecker.ts` |
-| 3.1 | 🟡 Faible | useCountdown | `src/hooks/useCountdown.ts` |
-| 3.2 | 🟡 Faible | variableFilters | `src/lib/variables/variableFilters.ts` |
-
-**Patterns établis :**
-- **Classifier** : Fonctions pures pour classification d'erreurs
-- **Mapper** : Fonctions pures pour transformation de données
-- **Checker** : Fonctions assertion pour autorisation
-- **Hook réutilisable** : Logique React encapsulée
-```
-
-Mettre à jour le tableau des services (ligne 54-62) pour inclure :
-
-| Service | Responsabilité |
-|---------|---------------|
-| `VersionDeletionService` | Suppression cascade de versions avec mise à jour prompt |
-
-Ajouter dans l'historique des validations (après ligne 584) :
-
-```markdown
-| 2025-01 | SRP Phase 1 | Extraction VariableDiffCalculator, VersionDeletionService, décomposition TemplateInitializationService |
-| 2025-01 | SRP Phase 2 | Extraction AnalysisErrorClassifier, ShareJoinResultMapper, ShareAuthorizationChecker, encapsulation VersionRepository |
-| 2025-01 | SRP Phase 3 | Extraction useCountdown, variableFilters |
-```
-
-### Étape 2 : Compléter SRP_REFACTORING_SUMMARY.md
-
-Ajouter les fichiers créés Phase 1 (après ligne 183) :
-
-```markdown
-### Phase 1 (4 fichiers + 2 tests)
-
-| Fichier | Description |
-|---------|-------------|
-| `src/repositories/variable/VariableDiffCalculator.ts` | Calculateur de diff variables |
-| `src/repositories/variable/__tests__/VariableDiffCalculator.test.ts` | Tests du calculateur |
-| `src/services/VersionDeletionService.ts` | Service suppression cascade |
-| `src/services/__tests__/VersionDeletionService.test.ts` | Tests du service |
-| `src/contexts/VersionDeletionServiceContext.tsx` | Contexte React pour injection |
-```
-
-Mettre à jour les métriques (ligne 233-238) :
-
-```markdown
-| Métrique | Avant | Après | Amélioration |
-|----------|-------|-------|--------------|
-| Lignes de code dupliquées | ~120 | ~20 | **-83%** |
-| Fonctions pures testables | 3 | 15 | **+400%** |
-| Couverture tests SRP | - | 55+ tests | **100%** |
-| Hooks avec logique inline | 4 | 0 | **-100%** |
-| Services avec injection DI | 3 | 6 | **+100%** |
-```
-
-### Étape 3 : Migrer useCreateVersion
-
-**Fichier modifié** : `src/hooks/useVersions.ts`
+**Fichier** : `src/services/VersionDeletionService.ts`
 
 Changements :
-1. Ajouter import `usePromptMutationRepository`
-2. Remplacer `versionRepository.updatePromptVersion()` par `promptMutationRepository.updateVersion()`
+1. Ajouter import de `PromptMutationRepository`
+2. Modifier le constructeur pour accepter les deux repositories
+3. Remplacer les appels `versionRepository.updatePromptVersion()` par `promptMutationRepository.updateVersion()`
 
 ```typescript
-// Avant (lignes 27-41)
-export function useCreateVersion() {
-  const queryClient = useQueryClient();
-  const versionMessages = useVersionMessages();
-  const versionRepository = useVersionRepository();
-
-  return useMutation({
-    mutationFn: async (version: VersionInsert) => {
-      const data = await versionRepository.create(version);
-      await versionRepository.updatePromptVersion(version.prompt_id, version.semver);
-      return data;
-    },
-    // ...
-  });
+// Avant
+export class DefaultVersionDeletionService implements VersionDeletionService {
+  constructor(private readonly versionRepository: VersionRepository) {}
+  
+  // ... utilise versionRepository.updatePromptVersion()
 }
 
 // Après
-export function useCreateVersion() {
-  const queryClient = useQueryClient();
-  const versionMessages = useVersionMessages();
-  const versionRepository = useVersionRepository();
-  const promptMutationRepository = usePromptMutationRepository();
+import type { PromptMutationRepository } from "@/repositories/PromptRepository.interfaces";
 
-  return useMutation({
-    mutationFn: async (version: VersionInsert) => {
-      const data = await versionRepository.create(version);
-      await promptMutationRepository.updateVersion(version.prompt_id, version.semver);
-      return data;
-    },
-    // ...
-  });
+export class DefaultVersionDeletionService implements VersionDeletionService {
+  constructor(
+    private readonly versionRepository: VersionRepository,
+    private readonly promptMutationRepository: PromptMutationRepository
+  ) {}
+  
+  // ... utilise promptMutationRepository.updateVersion()
 }
 ```
 
 ---
 
-## Fichiers impactés
+### Étape 2 : Mettre à jour le contexte `VersionDeletionServiceContext`
+
+**Fichier** : `src/contexts/VersionDeletionServiceContext.tsx`
+
+Changements :
+1. Ajouter import de `usePromptMutationRepository`
+2. Injecter le repository dans le constructeur du service
+
+```typescript
+// Avant
+const versionRepository = useVersionRepository();
+return new DefaultVersionDeletionService(versionRepository);
+
+// Après
+const versionRepository = useVersionRepository();
+const promptMutationRepository = usePromptMutationRepository();
+return new DefaultVersionDeletionService(versionRepository, promptMutationRepository);
+```
+
+---
+
+### Étape 3 : Supprimer `updatePromptVersion` de `VersionRepository`
+
+**Fichier** : `src/repositories/VersionRepository.ts`
+
+Changements :
+1. Supprimer la méthode de l'interface (lignes 56-70)
+2. Supprimer l'implémentation dans `SupabaseVersionRepository` (lignes 116-118)
+
+```typescript
+// Supprimer de l'interface VersionRepository :
+/**
+ * @deprecated Utiliser PromptMutationRepository.updateVersion() à la place
+ */
+updatePromptVersion(promptId: string, semver: string): Promise<void>;
+
+// Supprimer de SupabaseVersionRepository :
+async updatePromptVersion(promptId: string, semver: string): Promise<void> {
+  return qb.updateWhere("prompts", "id", promptId, { version: semver });
+}
+```
+
+---
+
+### Étape 4 : Mettre à jour les tests
+
+**Fichiers impactés** :
+
+| Fichier | Changements |
+|---------|-------------|
+| `src/services/__tests__/VersionDeletionService.test.ts` | Ajouter mock `PromptMutationRepository`, adapter les assertions |
+| `src/repositories/__tests__/VersionRepository.test.ts` | Supprimer les tests de `updatePromptVersion` |
+| `src/hooks/__tests__/useOptimisticLocking.test.tsx` | Supprimer `updatePromptVersion` du mock |
+
+**Exemple pour VersionDeletionService.test.ts** :
+
+```typescript
+// Avant
+const mockVersionRepository = {
+  // ...
+  updatePromptVersion: vi.fn(),
+};
+
+// Après
+const mockVersionRepository = {
+  // ... sans updatePromptVersion
+};
+
+const mockPromptMutationRepository = {
+  updateVersion: vi.fn(),
+  // autres méthodes si nécessaire
+};
+
+const service = new DefaultVersionDeletionService(
+  mockVersionRepository,
+  mockPromptMutationRepository
+);
+
+// Assertions
+expect(mockPromptMutationRepository.updateVersion).toHaveBeenCalledWith("prompt-1", "1.5.0");
+```
+
+---
+
+### Étape 5 : Mettre à jour la documentation
+
+**Fichiers impactés** :
+
+| Fichier | Changements |
+|---------|-------------|
+| `docs/PHASE_5_MIGRATION_AUTH_REPO_PATTERN.md` | Supprimer `updatePromptVersion` de l'interface exemple |
+| `docs/SRP_REFACTORING_SUMMARY.md` | Marquer la migration comme **complète** |
+
+---
+
+## Résumé des fichiers
 
 | Action | Fichier |
 |--------|---------|
-| Modifier | `docs/SOLID_COMPLIANCE.md` |
+| Modifier | `src/services/VersionDeletionService.ts` |
+| Modifier | `src/contexts/VersionDeletionServiceContext.tsx` |
+| Modifier | `src/repositories/VersionRepository.ts` |
+| Modifier | `src/services/__tests__/VersionDeletionService.test.ts` |
+| Modifier | `src/repositories/__tests__/VersionRepository.test.ts` |
+| Modifier | `src/hooks/__tests__/useOptimisticLocking.test.tsx` |
+| Modifier | `docs/PHASE_5_MIGRATION_AUTH_REPO_PATTERN.md` |
 | Modifier | `docs/SRP_REFACTORING_SUMMARY.md` |
-| Modifier | `src/hooks/useVersions.ts` |
 
 ---
 
 ## Validation
 
-1. **Documentation** : Vérifier la cohérence des tableaux et références croisées
-2. **Migration** : Exécuter les tests existants de `useVersions`
-3. **TypeScript** : `npm run typecheck` pour valider les imports
-4. **Tests** : `npm run test` pour non-régression
+1. **TypeScript** : `npm run typecheck` - aucune erreur de type
+2. **Tests** : `npm run test` - tous les tests passent
+3. **Recherche** : `grep -r "updatePromptVersion"` - aucun résultat (sauf dans l'historique git)
 
 ---
 
@@ -168,24 +176,15 @@ export function useCreateVersion() {
 
 | Risque | Probabilité | Mitigation |
 |--------|-------------|------------|
-| Régression useCreateVersion | Faible | Tests existants + même comportement |
-| Contexte manquant | Très faible | PromptMutationRepositoryProvider déjà dans AppProviders |
-| Incohérence documentation | Aucune | Mise à jour atomique des deux fichiers |
+| Contexte PromptMutation manquant | Très faible | Déjà présent dans AppProviders, vérifié |
+| Régression VersionDeletionService | Faible | Tests existants adaptés |
+| Usages cachés | Très faible | Recherche exhaustive effectuée |
 
 ---
 
-## Section technique : Détails de migration useCreateVersion
+## Bénéfices attendus
 
-### Vérification des dépendances
-
-`PromptMutationRepositoryProvider` est déjà dans `AppProviders.tsx`, donc le hook `usePromptMutationRepository()` est disponible partout où `useVersionRepository()` l'est.
-
-### Comportement identique
-
-Les deux méthodes effectuent la même opération :
-```sql
-UPDATE prompts SET version = $semver WHERE id = $promptId
-```
-
-La seule différence est l'encapsulation correcte : `PromptMutationRepository` gère la table `prompts`, `VersionRepository` gère la table `versions`.
+1. **Encapsulation respectée** : `VersionRepository` ne modifie plus la table `prompts`
+2. **Interface simplifiée** : Suppression de la méthode dépréciée
+3. **SRP complet** : Chaque repository gère uniquement sa table
 
