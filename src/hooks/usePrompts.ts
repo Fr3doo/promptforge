@@ -3,6 +3,7 @@ import { usePromptMessages } from "@/features/prompts/hooks/usePromptMessages";
 import { successToast, errorToast } from "@/lib/toastUtils";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { messages } from "@/constants/messages";
+import { requireId } from "@/lib/validation/requireId";
 
 import { usePromptQueryRepository } from "@/contexts/PromptQueryRepositoryContext";
 import { usePromptCommandRepository } from "@/contexts/PromptCommandRepositoryContext";
@@ -69,7 +70,7 @@ export function usePrompt(id: string | undefined) {
   return useQuery({
     queryKey: ["prompts", id],
     queryFn: () => {
-      if (!id) throw new Error("ID requis");
+      requireId(id, "ID");
       return queryRepository.fetchById(id);
     },
     enabled: !!id,

@@ -1,5 +1,6 @@
 import type { Tables, TablesUpdate } from "@/integrations/supabase/types";
 import { qb } from "@/lib/supabaseQueryBuilder";
+import { requireId } from "@/lib/validation/requireId";
 
 export type Profile = Tables<"profiles">;
 export type ProfileUpdate = TablesUpdate<"profiles">;
@@ -41,12 +42,12 @@ export interface ProfileRepository {
  */
 export class SupabaseProfileRepository implements ProfileRepository {
   async fetchByUserId(userId: string): Promise<Profile | null> {
-    if (!userId) throw new Error("ID utilisateur requis");
+    requireId(userId, "ID utilisateur");
     return qb.selectOne<Profile>("profiles", "id", userId);
   }
 
   async update(userId: string, updates: Partial<ProfileUpdate>): Promise<Profile> {
-    if (!userId) throw new Error("ID utilisateur requis");
+    requireId(userId, "ID utilisateur");
     return qb.updateById<Profile>("profiles", userId, updates);
   }
 }

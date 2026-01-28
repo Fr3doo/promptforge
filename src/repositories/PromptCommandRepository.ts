@@ -24,15 +24,16 @@ import type {
   Prompt 
 } from "./PromptRepository.interfaces";
 import { qb } from "@/lib/supabaseQueryBuilder";
+import { requireId } from "@/lib/validation/requireId";
 
-export class SupabasePromptCommandRepository 
+export class SupabasePromptCommandRepository
   implements PromptCommandRepository, PromptMutationRepository {
   
   async create(
     userId: string, 
     promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">
   ): Promise<Prompt> {
-    if (!userId) throw new Error("ID utilisateur requis");
+    requireId(userId, "ID utilisateur");
     return qb.insertOne<Prompt, typeof promptData & { owner_id: string }>(
       "prompts", 
       { ...promptData, owner_id: userId }
@@ -40,17 +41,17 @@ export class SupabasePromptCommandRepository
   }
 
   async update(id: string, updates: Partial<Prompt>): Promise<Prompt> {
-    if (!id) throw new Error("ID requis");
+    requireId(id, "ID");
     return qb.updateById<Prompt>("prompts", id, updates);
   }
 
   async updateVersion(promptId: string, semver: string): Promise<void> {
-    if (!promptId) throw new Error("ID prompt requis");
+    requireId(promptId, "ID prompt");
     await qb.updateWhere("prompts", "id", promptId, { version: semver });
   }
 
   async delete(id: string): Promise<void> {
-    if (!id) throw new Error("ID requis");
+    requireId(id, "ID");
     return qb.deleteById("prompts", id);
   }
 }

@@ -1,6 +1,8 @@
 import type { PromptCommandRepository, Prompt } from "@/repositories/PromptRepository.interfaces";
-import type { VariableRepository, VariableUpsertInput } from "@/repositories/VariableRepository";
-import type { ImportResult, ImportableVariable } from "@/lib/promptImport";
+import type { VariableRepository } from "@/repositories/VariableRepository";
+import type { ImportResult } from "@/lib/promptImport";
+import { requireId } from "@/lib/validation/requireId";
+import { fromImportables } from "@/lib/variables/variableMappers";
 
 /**
  * Service dédié à l'import de prompts et de leurs variables
@@ -57,7 +59,7 @@ export class SupabasePromptImportService implements PromptImportService {
     commandRepository: PromptCommandRepository,
     variableRepository: VariableRepository
   ): Promise<Prompt> {
-    if (!userId) throw new Error("ID utilisateur requis");
+    requireId(userId, "ID utilisateur");
 
     const { prompt, variables } = data;
 
@@ -74,29 +76,12 @@ export class SupabasePromptImportService implements PromptImportService {
       public_permission: "READ",
     });
 
-    // Step 2: Create variables if any exist
+    // Step 2: Create variables if any exist (using centralized mapper)
     if (variables.length > 0) {
-      const variableInputs = this.mapVariablesForImport(variables);
+      const variableInputs = fromImportables(variables);
       await variableRepository.upsertMany(createdPrompt.id, variableInputs);
     }
 
     return createdPrompt;
-  }
-
-  /**
-   * Maps imported variables to input format for database
-   * @private
-   */
-  private mapVariablesForImport(variables: ImportableVariable[]): VariableUpsertInput[] {
-    return variables.map((variable, index) => ({
-      name: variable.name,
-      type: (variable.type as "STRING" | "NUMBER" | "BOOLEAN" | "ENUM" | "DATE" | "MULTISTRING") || "STRING",
-      required: variable.required ?? false,
-      default_value: variable.defaultValue ?? null,
-      help: variable.help ?? null,
-      pattern: null,
-      options: variable.options ?? null,
-      order_index: index,
-    }));
   }
 }
