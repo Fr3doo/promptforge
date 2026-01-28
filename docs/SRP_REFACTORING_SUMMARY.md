@@ -183,6 +183,16 @@ export function needsFiltering(
 
 ## Fichiers créés par phase
 
+### Phase 1 (5 fichiers)
+
+| Fichier | Description |
+|---------|-------------|
+| `src/repositories/variable/VariableDiffCalculator.ts` | Calculateur de diff variables |
+| `src/repositories/variable/__tests__/VariableDiffCalculator.test.ts` | Tests du calculateur |
+| `src/services/VersionDeletionService.ts` | Service suppression cascade |
+| `src/services/__tests__/VersionDeletionService.test.ts` | Tests du service |
+| `src/contexts/VersionDeletionServiceContext.tsx` | Contexte React pour injection |
+
 ### Phase 2 (6 fichiers)
 
 | Fichier | Description |
@@ -233,9 +243,10 @@ export function needsFiltering(
 | Métrique | Avant | Après | Amélioration |
 |----------|-------|-------|--------------|
 | Lignes de code dupliquées | ~120 | ~20 | **-83%** |
-| Fonctions pures testables | 3 | 12 | **+300%** |
-| Couverture tests Phase 2/3 | - | 35 tests | **100%** |
-| Hooks avec logique inline | 2 | 0 | **-100%** |
+| Fonctions pures testables | 3 | 15 | **+400%** |
+| Couverture tests SRP | - | 55+ tests | **100%** |
+| Hooks avec logique inline | 4 | 0 | **-100%** |
+| Services avec injection DI | 3 | 6 | **+100%** |
 
 ---
 
