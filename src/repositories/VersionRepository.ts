@@ -56,21 +56,6 @@ export interface VersionRepository {
   fetchByIds(versionIds: string[]): Promise<Version[]>;
 
   /**
-   * Met à jour le champ version d'un prompt (synchronisation semver)
-   * 
-   * @deprecated Utiliser PromptMutationRepository.updateVersion() à la place
-   * pour respecter l'encapsulation (SRP). Cette méthode sera supprimée
-   * dans une future version.
-   * 
-   * @param promptId - Identifiant du prompt (requis, non vide)
-   * @param semver - Nouvelle version au format semver (ex: "1.2.0")
-   * @throws {Error} Si promptId est vide
-   * @throws {Error} Si violation RLS (non propriétaire)
-   * @throws {Error} Si la requête échoue
-   */
-  updatePromptVersion(promptId: string, semver: string): Promise<void>;
-
-  /**
    * Récupère la version la plus récente d'un prompt
    * @param promptId - Identifiant du prompt (requis, non vide)
    * @returns La dernière version ou null si aucune version n'existe
@@ -111,10 +96,6 @@ export class SupabaseVersionRepository implements VersionRepository {
   async fetchByIds(versionIds: string[]): Promise<Version[]> {
     if (!versionIds.length) throw new Error("IDs version requis");
     return qb.selectManyByIds<Version>("versions", versionIds);
-  }
-
-  async updatePromptVersion(promptId: string, semver: string): Promise<void> {
-    return qb.updateWhere("prompts", "id", promptId, { version: semver });
   }
 
   async fetchLatestByPromptId(promptId: string): Promise<Version | null> {

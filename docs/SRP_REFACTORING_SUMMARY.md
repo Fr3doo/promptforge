@@ -98,12 +98,13 @@ export function mapShareJoinToPromptWithPermission(
 
 **Solution** : 
 - Ajout de `PromptMutationRepository.updateVersion`
-- Dépréciation de `VersionRepository.updatePromptVersion`
-- Migration de `VersionDeletionService` vers le nouveau contrat
+- Migration de `useCreateVersion` et `VersionDeletionService` vers le nouveau contrat
+- **Suppression complète** de `VersionRepository.updatePromptVersion` (méthode dépréciée retirée)
 
 **Bénéfices** :
 - Chaque repository gère uniquement sa table
 - Respect strict du SRP
+- Interface `VersionRepository` simplifiée
 
 ### 2.4 Extraction de ShareAuthorizationChecker
 

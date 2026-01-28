@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DefaultVersionDeletionService } from "../VersionDeletionService";
 import type { VersionRepository, Version } from "@/repositories/VersionRepository";
+import type { PromptMutationRepository } from "@/repositories/PromptRepository.interfaces";
 
 describe("DefaultVersionDeletionService", () => {
   const mockVersionRepository: VersionRepository = {
@@ -8,12 +9,19 @@ describe("DefaultVersionDeletionService", () => {
     create: vi.fn(),
     delete: vi.fn(),
     fetchByIds: vi.fn(),
-    updatePromptVersion: vi.fn(),
     fetchLatestByPromptId: vi.fn(),
     existsBySemver: vi.fn(),
   };
 
-  const service = new DefaultVersionDeletionService(mockVersionRepository);
+  const mockPromptMutationRepository: PromptMutationRepository = {
+    update: vi.fn(),
+    updateVersion: vi.fn(),
+  };
+
+  const service = new DefaultVersionDeletionService(
+    mockVersionRepository,
+    mockPromptMutationRepository
+  );
 
   const createMockVersion = (overrides: Partial<Version> = {}): Version => ({
     id: "version-1",
@@ -47,7 +55,7 @@ describe("DefaultVersionDeletionService", () => {
       expect(result.deletedCount).toBe(1);
       expect(result.newCurrentVersion).toBeUndefined();
       expect(mockVersionRepository.delete).toHaveBeenCalledWith(["v1"]);
-      expect(mockVersionRepository.updatePromptVersion).not.toHaveBeenCalled();
+      expect(mockPromptMutationRepository.updateVersion).not.toHaveBeenCalled();
     });
 
     it("should update to latest version when current version is deleted", async () => {
@@ -58,7 +66,7 @@ describe("DefaultVersionDeletionService", () => {
       vi.mocked(mockVersionRepository.fetchLatestByPromptId).mockResolvedValue(
         createMockVersion({ semver: "1.5.0" })
       );
-      vi.mocked(mockVersionRepository.updatePromptVersion).mockResolvedValue();
+      vi.mocked(mockPromptMutationRepository.updateVersion).mockResolvedValue();
 
       const result = await service.deleteWithCascade({
         versionIds: ["v1"],
@@ -68,7 +76,7 @@ describe("DefaultVersionDeletionService", () => {
 
       expect(result.newCurrentVersion).toBe("1.5.0");
       expect(mockVersionRepository.fetchLatestByPromptId).toHaveBeenCalledWith("prompt-1");
-      expect(mockVersionRepository.updatePromptVersion).toHaveBeenCalledWith("prompt-1", "1.5.0");
+      expect(mockPromptMutationRepository.updateVersion).toHaveBeenCalledWith("prompt-1", "1.5.0");
     });
 
     it("should reset to 1.0.0 when no versions remain", async () => {
@@ -77,7 +85,7 @@ describe("DefaultVersionDeletionService", () => {
       ]);
       vi.mocked(mockVersionRepository.delete).mockResolvedValue();
       vi.mocked(mockVersionRepository.fetchLatestByPromptId).mockResolvedValue(null);
-      vi.mocked(mockVersionRepository.updatePromptVersion).mockResolvedValue();
+      vi.mocked(mockPromptMutationRepository.updateVersion).mockResolvedValue();
 
       const result = await service.deleteWithCascade({
         versionIds: ["v1"],
@@ -86,7 +94,7 @@ describe("DefaultVersionDeletionService", () => {
       });
 
       expect(result.newCurrentVersion).toBe("1.0.0");
-      expect(mockVersionRepository.updatePromptVersion).toHaveBeenCalledWith("prompt-1", "1.0.0");
+      expect(mockPromptMutationRepository.updateVersion).toHaveBeenCalledWith("prompt-1", "1.0.0");
     });
 
     it("should not update prompt when current version is not provided", async () => {
@@ -102,7 +110,7 @@ describe("DefaultVersionDeletionService", () => {
       });
 
       expect(result.newCurrentVersion).toBeUndefined();
-      expect(mockVersionRepository.updatePromptVersion).not.toHaveBeenCalled();
+      expect(mockPromptMutationRepository.updateVersion).not.toHaveBeenCalled();
     });
 
     it("should handle multiple versions deletion", async () => {
@@ -115,7 +123,7 @@ describe("DefaultVersionDeletionService", () => {
       vi.mocked(mockVersionRepository.fetchLatestByPromptId).mockResolvedValue(
         createMockVersion({ semver: "0.9.0" })
       );
-      vi.mocked(mockVersionRepository.updatePromptVersion).mockResolvedValue();
+      vi.mocked(mockPromptMutationRepository.updateVersion).mockResolvedValue();
 
       const result = await service.deleteWithCascade({
         versionIds: ["v1", "v2", "v3"],

@@ -4,6 +4,7 @@ import {
   DefaultVersionDeletionService,
 } from "@/services/VersionDeletionService";
 import { useVersionRepository } from "@/contexts/VersionRepositoryContext";
+import { usePromptMutationRepository } from "@/contexts/PromptMutationRepositoryContext";
 
 const VersionDeletionServiceContext = createContext<VersionDeletionService | null>(null);
 
@@ -29,12 +30,13 @@ export function VersionDeletionServiceProvider({
   service,
 }: VersionDeletionServiceProviderProps) {
   const versionRepository = useVersionRepository();
+  const promptMutationRepository = usePromptMutationRepository();
 
   // Mémoïser le service pour éviter les re-créations inutiles
   const deletionService = useMemo(() => {
     if (service) return service;
-    return new DefaultVersionDeletionService(versionRepository);
-  }, [service, versionRepository]);
+    return new DefaultVersionDeletionService(versionRepository, promptMutationRepository);
+  }, [service, versionRepository, promptMutationRepository]);
 
   return (
     <VersionDeletionServiceContext.Provider value={deletionService}>

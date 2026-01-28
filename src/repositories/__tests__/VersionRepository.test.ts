@@ -95,18 +95,6 @@ describe("SupabaseVersionRepository", () => {
     });
   });
 
-  describe("updatePromptVersion", () => {
-    it("should call qb.updateWhere with prompts table", async () => {
-      mockUpdateWhere.mockResolvedValue(undefined);
-
-      await repository.updatePromptVersion("prompt-1", "2.0.0");
-
-      expect(mockUpdateWhere).toHaveBeenCalledWith("prompts", "id", "prompt-1", {
-        version: "2.0.0",
-      });
-    });
-  });
-
   describe("fetchLatestByPromptId", () => {
     it("should call qb.selectFirst with correct params", async () => {
       const mockVersion = { id: "v1", semver: "1.0.0" };

@@ -192,8 +192,8 @@ export interface VersionRepository {
   create(version: VersionInsert): Promise<Version>;
   delete(versionIds: string[]): Promise<void>;
   fetchByIds(versionIds: string[]): Promise<Version[]>;
-  updatePromptVersion(promptId: string, semver: string): Promise<void>;
   fetchLatestByPromptId(promptId: string): Promise<Version | null>;
+  existsBySemver(promptId: string, semver: string): Promise<boolean>;
 }
 ```
 
