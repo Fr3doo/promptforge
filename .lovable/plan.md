@@ -1,625 +1,228 @@
 
+# Plan : Documentation DRY et Analyse des duplications restantes
 
-# Plan : Centralisation DRY - Validation ID et Mapping Variables
+## Partie 1 : Documentation des nouveaux modules dans SOLID_COMPLIANCE.md
 
-## Objectif
+### Ajouts à la section SRP (Extractions)
 
-Implémenter deux modules utilitaires pour éliminer la duplication de code identifiée, avec une approche **atomique non-cassante** qui respecte l'architecture SOLID existante.
+Ajouter dans le tableau des phases SRP :
 
----
+| Phase | Sévérité | Extraction | Fichier |
+|-------|----------|------------|---------|
+| DRY.1 | 🟢 Transverse | requireId, requireIds | `src/lib/validation/requireId.ts` |
+| DRY.2 | 🟢 Transverse | variableMappers | `src/lib/variables/variableMappers.ts` |
 
-## Prise en compte des remarques
+### Nouvelle section : Principe DRY - Centralisation des opérations récurrentes
 
-### 1. Séparation création/adoption
+```markdown
+## 6. DRY - Don't Repeat Yourself
 
-Le plan distingue clairement :
-- **Phase A** : Création des modules + tests (aucune modification du code existant)
-- **Phase B** : Adoption progressive (migration fichier par fichier)
-- **Phase C** : Validation complète
+> "Chaque connaissance doit avoir une représentation unique, non ambiguë, au sein d'un système."
 
-### 2. Tests d'intégration pour messages d'erreur
+### Etat : Conforme
 
-Les tests vérifient explicitement que les messages d'erreur **restent identiques** au comportement actuel.
+### Modules de centralisation
 
-### 3. Compatibilité avec la gestion d'erreur globale
-
-Analyse de l'existant :
-- Le projet utilise `classifyError()` dans `usePromptSaveErrorHandler.ts` qui classifie les erreurs par **code** (PGRST116, 23505) ou **message** (contenant "permission", "network", etc.)
-- Les erreurs "ID requis" ne sont pas actuellement captées par le classifier (elles passent dans le fallback `SERVER`)
-- **Décision** : `RequiredIdError` doit hériter de `Error` standard pour rester compatible
-
----
-
-## Phase A : Création des modules utilitaires (additions pures)
-
-### A.1 : Module `requireId.ts`
+#### 6.1 Validation d'ID : requireId.ts
 
 **Fichier** : `src/lib/validation/requireId.ts`
 
-```typescript
-/**
- * Erreur levée lorsqu'un ID requis est manquant
- * 
- * @remarks
- * Hérite de Error standard pour compatibilité avec :
- * - try/catch classiques
- * - classifyError() qui filtre par code/message
- * - Les tests existants qui vérifient les messages
- * 
- * Le message conserve le format existant : "${fieldName} requis"
- */
-export class RequiredIdError extends Error {
-  readonly fieldName: string;
-  
-  constructor(fieldName: string = "ID") {
-    super(`${fieldName} requis`);
-    this.name = "RequiredIdError";
-    this.fieldName = fieldName;
-  }
-}
+**Probleme resolu** : 18+ occurrences du pattern `if (!id) throw new Error("... requis")` dans repositories et services.
 
-/**
- * Vérifie qu'un ID est défini et non vide
- * 
- * @param value - Valeur à vérifier (string | undefined | null)
- * @param fieldName - Nom du champ pour le message d'erreur
- * @returns La valeur validée (type narrowing vers string)
- * @throws {RequiredIdError} Si la valeur est undefined, null ou chaîne vide
- * 
- * @example
- * ```typescript
- * // Avant (15+ occurrences répétées)
- * if (!userId) throw new Error("ID utilisateur requis");
- * 
- * // Après (DRY + type narrowing)
- * const validId = requireId(userId, "ID utilisateur");
- * // validId est garanti non-null ici
- * ```
- */
-export function requireId(value: string | undefined | null, fieldName: string = "ID"): string {
-  if (!value) {
-    throw new RequiredIdError(fieldName);
-  }
-  return value;
-}
+**API** :
+- `requireId(value, fieldName)` : Valide un ID string, retourne la valeur (type narrowing)
+- `requireIds(values, fieldName)` : Valide un tableau non vide
+- `RequiredIdError` : Classe d'erreur pour filtrage
 
-/**
- * Vérifie qu'un tableau d'IDs est non vide
- * 
- * @param values - Tableau de valeurs à vérifier
- * @param fieldName - Nom du champ pour le message d'erreur
- * @returns Le tableau validé (type assertion)
- * @throws {RequiredIdError} Si le tableau est vide
- */
-export function requireIds(values: string[], fieldName: string = "IDs"): string[] {
-  if (!values.length) {
-    throw new RequiredIdError(fieldName);
-  }
-  return values;
-}
-```
+**Pattern d'utilisation** :
+// Avant (repetitif)
+if (!userId) throw new Error("ID utilisateur requis");
+await repository.fetchById(userId);
 
-**Tests** : `src/lib/validation/__tests__/requireId.test.ts`
+// Apres (DRY + type narrowing)
+const validId = requireId(userId, "ID utilisateur");
+await repository.fetchById(validId); // validId: string garanti
 
-```typescript
-describe("requireId", () => {
-  // Cas positifs
-  it("retourne la valeur si présente", () => {
-    expect(requireId("abc-123", "ID")).toBe("abc-123");
-  });
+**Fichiers migres** :
+- VersionRepository (3 occurrences)
+- PromptCommandRepository (3 occurrences)
+- PromptQueryRepository (7 occurrences)
+- ProfileRepository (2 occurrences)
+- PromptDuplicationService (1 occurrence)
+- PromptImportService (1 occurrence)
+- usePrompts (1 occurrence)
+- usePromptShares (1 occurrence)
 
-  // Cas négatifs - compatibilité messages existants
-  it("lève RequiredIdError si undefined", () => {
-    expect(() => requireId(undefined, "ID utilisateur")).toThrow("ID utilisateur requis");
-  });
-
-  it("lève RequiredIdError si null", () => {
-    expect(() => requireId(null, "ID")).toThrow("ID requis");
-  });
-
-  it("lève RequiredIdError si chaîne vide", () => {
-    expect(() => requireId("", "ID prompt")).toThrow("ID prompt requis");
-  });
-
-  // Test d'intégration : format du message identique
-  it("produit un message identique à l'ancien pattern", () => {
-    const oldPattern = () => { 
-      const id = undefined; 
-      if (!id) throw new Error("ID utilisateur requis"); 
-    };
-    const newPattern = () => requireId(undefined, "ID utilisateur");
-    
-    expect(() => oldPattern()).toThrow("ID utilisateur requis");
-    expect(() => newPattern()).toThrow("ID utilisateur requis");
-  });
-
-  // Vérification de l'instance pour filtrage éventuel
-  it("lève une instance de RequiredIdError", () => {
-    try {
-      requireId(undefined, "ID");
-    } catch (e) {
-      expect(e).toBeInstanceOf(RequiredIdError);
-      expect(e).toBeInstanceOf(Error);
-    }
-  });
-});
-
-describe("requireIds", () => {
-  it("retourne le tableau si non vide", () => {
-    expect(requireIds(["a", "b"], "IDs")).toEqual(["a", "b"]);
-  });
-
-  it("lève RequiredIdError si tableau vide", () => {
-    expect(() => requireIds([], "IDs version")).toThrow("IDs version requis");
-  });
-});
-
-describe("RequiredIdError", () => {
-  it("a le nom RequiredIdError", () => {
-    const error = new RequiredIdError("test");
-    expect(error.name).toBe("RequiredIdError");
-  });
-
-  it("expose fieldName pour filtrage", () => {
-    const error = new RequiredIdError("ID utilisateur");
-    expect(error.fieldName).toBe("ID utilisateur");
-  });
-
-  it("est compatible avec classifyError (fallback SERVER)", () => {
-    // Vérifie que RequiredIdError n'interfère pas avec le classifier existant
-    const error = new RequiredIdError("ID");
-    expect(error.message).not.toContain("permission");
-    expect((error as any).code).toBeUndefined();
-    // => classifyError retournera "SERVER" (fallback)
-  });
-});
-```
-
-### A.2 : Module `variableMappers.ts`
+#### 6.2 Mapping de variables : variableMappers.ts
 
 **Fichier** : `src/lib/variables/variableMappers.ts`
 
-```typescript
-import type { Variable, VariableUpsertInput } from "@/repositories/VariableRepository";
-import type { ImportableVariable } from "@/lib/promptImport";
+**Probleme resolu** : Duplication de logique de transformation entre `PromptDuplicationService.mapVariablesForDuplication()` et `PromptImportService.mapVariablesForImport()`.
 
-/**
- * Transforme une variable existante en input pour upsert
- * 
- * Utilisé pour la duplication de prompts.
- * Préserve tous les champs métier sans les IDs (id, prompt_id).
- * 
- * @param variable - Variable source à transformer
- * @returns Input prêt pour upsertMany
- * 
- * @example
- * ```typescript
- * const variable: Variable = { id: "...", prompt_id: "...", name: "var1", ... };
- * const input = toVariableUpsertInput(variable);
- * // input n'a pas id ni prompt_id
- * ```
- */
-export function toVariableUpsertInput(variable: Variable): VariableUpsertInput {
-  return {
-    name: variable.name,
-    type: variable.type,
-    required: variable.required,
-    default_value: variable.default_value,
-    help: variable.help,
-    pattern: variable.pattern,
-    options: variable.options,
-    order_index: variable.order_index,
-  };
-}
+**API** :
+- `toVariableUpsertInput(variable)` : Transforme Variable -> VariableUpsertInput (pour duplication)
+- `toVariableUpsertInputs(variables)` : Version tableau
+- `fromImportable(variable, index)` : Transforme ImportableVariable -> VariableUpsertInput (avec defaults)
+- `fromImportables(variables)` : Version tableau avec order_index sequentiel
 
-/**
- * Transforme un tableau de variables pour duplication
- * 
- * @param variables - Tableau de variables sources
- * @returns Tableau d'inputs prêts pour upsertMany
- */
-export function toVariableUpsertInputs(variables: Variable[]): VariableUpsertInput[] {
-  return variables.map(toVariableUpsertInput);
-}
+**Separation des responsabilites** :
+- `toVariableUpsertInput` : Copie directe des champs metier (duplication)
+- `fromImportable` : Applique des valeurs par defaut (import JSON/Markdown)
 
-/**
- * Transforme une variable importée en input pour upsert
- * 
- * Utilisé lors de l'import depuis JSON/Markdown.
- * Applique les valeurs par défaut pour les champs optionnels.
- * 
- * @param variable - Variable importée (format externe)
- * @param index - Position pour order_index
- * @returns Input prêt pour upsertMany
- * 
- * @remarks
- * Différences avec toVariableUpsertInput :
- * - Type casté vers les valeurs autorisées (fallback "STRING")
- * - required par défaut à false
- * - Mapping defaultValue → default_value
- * - pattern forcé à null (non supporté à l'import)
- */
-export function fromImportable(variable: ImportableVariable, index: number): VariableUpsertInput {
-  return {
-    name: variable.name,
-    type: (variable.type as "STRING" | "NUMBER" | "BOOLEAN" | "ENUM" | "DATE" | "MULTISTRING") || "STRING",
-    required: variable.required ?? false,
-    default_value: variable.defaultValue ?? null,
-    help: variable.help ?? null,
-    pattern: null, // Non supporté à l'import
-    options: variable.options ?? null,
-    order_index: index,
-  };
-}
-
-/**
- * Transforme un tableau de variables importées
- * 
- * @param variables - Tableau de variables importées
- * @returns Tableau d'inputs avec order_index séquentiel
- */
-export function fromImportables(variables: ImportableVariable[]): VariableUpsertInput[] {
-  return variables.map((v, i) => fromImportable(v, i));
-}
+**Services migres** :
+- PromptDuplicationService : suppression methode privee mapVariablesForDuplication
+- PromptImportService : suppression methode privee mapVariablesForImport
 ```
 
-**Tests** : `src/lib/variables/__tests__/variableMappers.test.ts`
+### Mise à jour de l'historique des validations
 
-```typescript
-import type { Variable } from "@/repositories/VariableRepository";
-import type { ImportableVariable } from "@/lib/promptImport";
+Ajouter une nouvelle ligne :
 
-describe("toVariableUpsertInput", () => {
-  const fullVariable: Variable = {
-    id: "var-123",
-    prompt_id: "prompt-456",
-    name: "myVar",
-    type: "STRING",
-    required: true,
-    default_value: "default",
-    help: "Help text",
-    pattern: "^[a-z]+$",
-    options: ["a", "b"],
-    order_index: 2,
-    created_at: "2024-01-01T00:00:00Z",
-  };
-
-  it("copie tous les champs métier", () => {
-    const result = toVariableUpsertInput(fullVariable);
-    expect(result).toEqual({
-      name: "myVar",
-      type: "STRING",
-      required: true,
-      default_value: "default",
-      help: "Help text",
-      pattern: "^[a-z]+$",
-      options: ["a", "b"],
-      order_index: 2,
-    });
-  });
-
-  it("exclut id, prompt_id et created_at", () => {
-    const result = toVariableUpsertInput(fullVariable);
-    expect(result).not.toHaveProperty("id");
-    expect(result).not.toHaveProperty("prompt_id");
-    expect(result).not.toHaveProperty("created_at");
-  });
-
-  it("préserve null pour les optionnels", () => {
-    const variable: Variable = {
-      ...fullVariable,
-      default_value: null,
-      help: null,
-      pattern: null,
-      options: null,
-    };
-    const result = toVariableUpsertInput(variable);
-    expect(result.default_value).toBeNull();
-    expect(result.help).toBeNull();
-    expect(result.pattern).toBeNull();
-    expect(result.options).toBeNull();
-  });
-
-  // Test d'intégration : résultat identique à l'ancienne méthode
-  it("produit le même résultat que mapVariablesForDuplication", () => {
-    // Simule l'ancienne méthode privée de PromptDuplicationService
-    const oldMethod = (v: Variable) => ({
-      name: v.name,
-      type: v.type,
-      required: v.required,
-      default_value: v.default_value,
-      help: v.help,
-      pattern: v.pattern,
-      options: v.options,
-      order_index: v.order_index,
-    });
-    
-    expect(toVariableUpsertInput(fullVariable)).toEqual(oldMethod(fullVariable));
-  });
-});
-
-describe("fromImportable", () => {
-  it("applique STRING par défaut si type absent", () => {
-    const variable: ImportableVariable = { name: "test" };
-    const result = fromImportable(variable, 0);
-    expect(result.type).toBe("STRING");
-  });
-
-  it("applique false par défaut si required absent", () => {
-    const variable: ImportableVariable = { name: "test" };
-    const result = fromImportable(variable, 0);
-    expect(result.required).toBe(false);
-  });
-
-  it("mappe defaultValue vers default_value", () => {
-    const variable: ImportableVariable = { name: "test", defaultValue: "val" };
-    const result = fromImportable(variable, 0);
-    expect(result.default_value).toBe("val");
-  });
-
-  it("utilise l'index comme order_index", () => {
-    const variable: ImportableVariable = { name: "test" };
-    expect(fromImportable(variable, 5).order_index).toBe(5);
-  });
-
-  it("force pattern à null (non supporté)", () => {
-    const variable: ImportableVariable = { name: "test" };
-    const result = fromImportable(variable, 0);
-    expect(result.pattern).toBeNull();
-  });
-
-  it("applique null aux optionnels manquants", () => {
-    const variable: ImportableVariable = { name: "test" };
-    const result = fromImportable(variable, 0);
-    expect(result.default_value).toBeNull();
-    expect(result.help).toBeNull();
-    expect(result.options).toBeNull();
-  });
-
-  // Test d'intégration : résultat identique à l'ancienne méthode
-  it("produit le même résultat que mapVariablesForImport", () => {
-    const importable: ImportableVariable = {
-      name: "myVar",
-      type: "NUMBER",
-      required: true,
-      defaultValue: "42",
-      help: "Help",
-      options: ["a", "b"],
-    };
-    
-    // Simule l'ancienne méthode privée de PromptImportService
-    const oldMethod = (v: ImportableVariable, index: number) => ({
-      name: v.name,
-      type: (v.type as any) || "STRING",
-      required: v.required ?? false,
-      default_value: v.defaultValue ?? null,
-      help: v.help ?? null,
-      pattern: null,
-      options: v.options ?? null,
-      order_index: index,
-    });
-    
-    expect(fromImportable(importable, 3)).toEqual(oldMethod(importable, 3));
-  });
-});
-
-describe("fromImportables", () => {
-  it("assigne order_index séquentiel", () => {
-    const variables: ImportableVariable[] = [
-      { name: "a" },
-      { name: "b" },
-      { name: "c" },
-    ];
-    const results = fromImportables(variables);
-    expect(results[0].order_index).toBe(0);
-    expect(results[1].order_index).toBe(1);
-    expect(results[2].order_index).toBe(2);
-  });
-
-  it("retourne un tableau vide si entrée vide", () => {
-    expect(fromImportables([])).toEqual([]);
-  });
-});
-```
+| Date | Validation | Changements |
+|------|------------|-------------|
+| 2025-01 | DRY Phase 1 | Centralisation requireId (18 occurrences), variableMappers (2 services) |
 
 ---
 
-## Phase B : Adoption progressive (migration fichier par fichier)
+## Partie 2 : Analyse des duplications restantes
 
-### Ordre de migration (risque minimal → risque modéré)
+### Duplication 1 : Vérification d'authentification dans les hooks (PRIORITE MOYENNE)
 
-| Étape | Fichier | Occurrences | Risque |
-|-------|---------|-------------|--------|
-| B.1 | `VersionRepository.ts` | 3 requireId + 2 requireIds | Faible |
-| B.2 | `PromptCommandRepository.ts` | 3 requireId | Faible |
-| B.3 | `PromptQueryRepository.ts` | 7 requireId | Faible |
-| B.4 | `ProfileRepository.ts` | 2 requireId | Faible |
-| B.5 | `PromptDuplicationService.ts` | 1 requireId + mapper | Modéré |
-| B.6 | `PromptImportService.ts` | 1 requireId + mapper | Modéré |
-| B.7 | `usePrompts.ts` | 1 requireId | Faible |
-| B.8 | `usePromptShares.ts` | 1 requireId | Faible |
+**Pattern identifie** : `if (!user) throw new Error("...")` repete 9 fois dans 3 fichiers
 
-### B.1 : Migration `VersionRepository.ts`
+**Fichiers concernes** :
+- `usePrompts.ts` : 5 occurrences (usePrompts, useOwnedPrompts, useSharedWithMePrompts, useCreatePrompt, useDuplicatePrompt)
+- `usePromptShares.ts` : 3 occurrences
+- `useDashboard.ts` : 1 occurrence
 
-```typescript
-// Avant (lignes 79-80)
-async fetchByPromptId(promptId: string): Promise<Version[]> {
-  if (!promptId) throw new Error("ID prompt requis");
-  // ...
-}
+**Messages d'erreur inconsistants** :
+- "Utilisateur non authentifie"
+- "Non authentifie"
+- "SESSION_EXPIRED"
+- "User not authenticated"
 
-// Après
-import { requireId, requireIds } from "@/lib/validation/requireId";
-
-async fetchByPromptId(promptId: string): Promise<Version[]> {
-  requireId(promptId, "ID prompt");
-  // ...
-}
-
-async delete(versionIds: string[]): Promise<void> {
-  requireIds(versionIds, "IDs version");
-  // ...
-}
-```
-
-### B.5 : Migration `PromptDuplicationService.ts`
+**Solution proposee** : Creer `requireAuthUser(user, context?)` dans `src/lib/validation/requireAuth.ts`
 
 ```typescript
-// Avant
-import type { Variable, VariableUpsertInput } from "@/repositories/VariableRepository";
-
-async duplicate(...) {
-  if (!userId) throw new Error("ID utilisateur requis");
-  // ...
-  const variableInputs = this.mapVariablesForDuplication(originalVariables);
-  // ...
+export class AuthRequiredError extends Error {
+  constructor(context?: string) {
+    super(context ? `${context}: authentification requise` : "Authentification requise");
+    this.name = "AuthRequiredError";
+  }
 }
 
-private mapVariablesForDuplication(originalVariables: Variable[]): VariableUpsertInput[] {
-  return originalVariables.map((variable) => ({
-    name: variable.name,
-    // ...
-  }));
+export function requireAuthUser<T extends { id: string }>(
+  user: T | null | undefined, 
+  context?: string
+): T {
+  if (!user) throw new AuthRequiredError(context);
+  return user;
 }
-
-// Après
-import { requireId } from "@/lib/validation/requireId";
-import { toVariableUpsertInputs } from "@/lib/variables/variableMappers";
-
-async duplicate(...) {
-  requireId(userId, "ID utilisateur");
-  // ...
-  const variableInputs = toVariableUpsertInputs(originalVariables);
-  // ...
-}
-
-// Suppression de la méthode privée mapVariablesForDuplication
 ```
 
-### B.6 : Migration `PromptImportService.ts`
+**Impact** : 9 occurrences -> 0, messages uniformises
+
+---
+
+### Duplication 2 : Pattern onSuccess/onError dans mutations (PRIORITE BASSE)
+
+**Pattern identifie** : Structure repetitive dans useMutation callbacks
 
 ```typescript
-// Avant
-async import(...) {
-  if (!userId) throw new Error("ID utilisateur requis");
-  // ...
-  const variableInputs = this.mapVariablesForImport(variables);
-  // ...
-}
-
-private mapVariablesForImport(...) { ... }
-
-// Après
-import { requireId } from "@/lib/validation/requireId";
-import { fromImportables } from "@/lib/variables/variableMappers";
-
-async import(...) {
-  requireId(userId, "ID utilisateur");
-  // ...
-  const variableInputs = fromImportables(variables);
-  // ...
-}
-
-// Suppression de la méthode privée mapVariablesForImport
+onSuccess: () => {
+  queryClient.invalidateQueries({ queryKey: ["prompts"] });
+  successToast(messages.success.xxx);
+},
+onError: (error) => {
+  errorToast(messages.labels.error, getSafeErrorMessage(error));
+},
 ```
+
+**Occurrences** : 12+ dans usePrompts.ts, useVersions.ts, usePromptShares.ts, useVariables.ts
+
+**Risque de refactoring** : MODERE - Le pattern est similaire mais pas identique (queryKeys differents, messages differents)
+
+**Solution proposee** : NON RECOMMANDE pour l'instant
+- Les differences entre callbacks sont significatives
+- Abstraire ajouterait de la complexite sans gain majeur
+- Preferer la consistance manuelle
 
 ---
 
-## Phase C : Validation complète
+### Duplication 3 : queryClient.invalidateQueries patterns (PRIORITE BASSE)
 
-### C.1 : Tests unitaires des nouveaux modules
+**Pattern identifie** : Certaines mutations invalident plusieurs queries avec pattern repetitif
 
-```bash
-npm run test -- src/lib/validation/__tests__/requireId.test.ts
-npm run test -- src/lib/variables/__tests__/variableMappers.test.ts
+```typescript
+// useVersions.ts - repete 3 fois
+queryClient.invalidateQueries({ queryKey: ["versions", promptId] });
+queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
+queryClient.invalidateQueries({ queryKey: ["prompts"] });
 ```
 
-### C.2 : Tests de non-régression
+**Solution potentielle** : Creer `invalidatePromptRelated(queryClient, promptId)`
 
-```bash
-# Tests des repositories
-npm run test -- --grep "VersionRepository|PromptCommandRepository|PromptQueryRepository"
-
-# Tests des services
-npm run test -- --grep "DuplicationService|ImportService"
-
-# Vérification des messages d'erreur existants
-npm run test -- --grep "ID.*requis"
-```
-
-### C.3 : Vérification TypeScript
-
-```bash
-npm run typecheck
-```
-
-### C.4 : Recherche de résidus
-
-```bash
-# Vérifier qu'aucun ancien pattern ne reste
-grep -r "if (!.*) throw new Error.*requis" src/repositories src/services src/hooks
-```
+**Recommandation** : REPORTER - Impact faible, risque de sur-abstraction
 
 ---
 
-## Fichiers créés/modifiés
+### Duplication 4 : Import toastUtils deprecated (PRIORITE MOYENNE)
 
-### Fichiers créés (Phase A)
+**Constat** : `src/lib/toastUtils.ts` est marque `@deprecated` mais encore utilise dans 6 fichiers
 
-| Fichier | Description |
-|---------|-------------|
-| `src/lib/validation/requireId.ts` | Module de validation d'ID avec RequiredIdError |
-| `src/lib/validation/__tests__/requireId.test.ts` | 12+ tests incluant compatibilité messages |
-| `src/lib/variables/variableMappers.ts` | Fonctions de mapping pures |
-| `src/lib/variables/__tests__/variableMappers.test.ts` | 15+ tests incluant compatibilité résultats |
+**Fichiers utilisant encore toastUtils** :
+- `usePrompts.ts` : successToast, errorToast
+- `PromptAnalyzer.tsx` : successToast, errorToast
+- `ExportActions.tsx` : successToast
+- `MobileExportActions.tsx` : successToast
+- `useLowQuotaNotification.ts` : warningToast
 
-### Fichiers modifiés (Phase B)
-
-| Fichier | Changements |
-|---------|-------------|
-| `src/repositories/VersionRepository.ts` | 3 requireId + 2 requireIds |
-| `src/repositories/PromptCommandRepository.ts` | 3 requireId |
-| `src/repositories/PromptQueryRepository.ts` | 7 requireId |
-| `src/repositories/ProfileRepository.ts` | 2 requireId |
-| `src/services/PromptDuplicationService.ts` | 1 requireId + suppression méthode privée |
-| `src/services/PromptImportService.ts` | 1 requireId + suppression méthode privée |
-| `src/hooks/usePrompts.ts` | 1 requireId |
-| `src/hooks/usePromptShares.ts` | 1 requireId |
+**Solution proposee** : Migrer vers `usePromptMessages()` ou creer des hooks specialises par domaine
 
 ---
 
-## Risques et mitigations
+## Synthese et priorisation
 
-| Risque | Probabilité | Mitigation |
-|--------|-------------|------------|
-| Changement de message d'erreur | Aucun | Messages préservés : `"${fieldName} requis"` |
-| Incompatibilité classifyError | Aucun | RequiredIdError hérite de Error, pas de code spécial |
-| Tests existants cassés | Très faible | Tests d'intégration vérifient identité des comportements |
-| Import circulaire | Aucun | Modules dans lib/ sans dépendances cycliques |
-| Performance | Aucun | Fonctions pures, overhead négligeable |
+| Duplication | Priorite | Impact DRY | Effort | Recommandation |
+|-------------|----------|------------|--------|----------------|
+| Verification auth hooks | Moyenne | -9 occurrences | Faible | Implementer requireAuthUser |
+| toastUtils deprecated | Moyenne | Consistance | Moyen | Migrer progressivement |
+| onSuccess/onError pattern | Basse | Lisibilite | Eleve | Reporter |
+| invalidateQueries pattern | Basse | -6 lignes | Faible | Reporter |
 
 ---
 
-## Métriques attendues
+## Plan d'action recommande
 
-| Métrique | Avant | Après | Amélioration |
+### Court terme (immediate)
+1. Mettre a jour `docs/SOLID_COMPLIANCE.md` avec la documentation des modules DRY
+2. Ajouter une reference dans `docs/SRP_REFACTORING_SUMMARY.md`
+
+### Moyen terme (prochaine iteration)
+3. Creer `requireAuthUser` pour uniformiser les verifications d'authentification
+4. Migrer les usages de toastUtils deprecated vers hooks specialises
+
+### Long terme (si necessaire)
+5. Evaluer l'abstraction des patterns invalidateQueries si la complexite augmente
+
+---
+
+## Fichiers a modifier
+
+| Fichier | Action |
+|---------|--------|
+| `docs/SOLID_COMPLIANCE.md` | Ajouter section DRY + modules requireId et variableMappers |
+| `docs/SRP_REFACTORING_SUMMARY.md` | Ajouter reference aux extractions DRY |
+| `.lovable/plan.md` | Archiver le plan DRY execute |
+
+---
+
+## Metriques DRY actuelles
+
+| Metrique | Avant | Apres | Amelioration |
 |----------|-------|-------|--------------|
-| Occurrences `if (!.*) throw new Error(".*requis")` | 18+ | 0 | **-100%** |
-| Méthodes de mapping dupliquées | 2 | 0 | **-100%** |
-| Lignes de code (validation ID) | ~36 | ~12 | **-67%** |
-| Fonctions pures réutilisables | 15 | 21 | **+40%** |
-| Tests unitaires ajoutés | - | 27+ | **+27** |
-
----
-
-## Conformité SOLID
-
-| Principe | Respect | Justification |
-|----------|---------|---------------|
-| **SRP** | ✅ | Modules dédiés : requireId.ts (validation), variableMappers.ts (transformation) |
-| **OCP** | ✅ | Fonctions extensibles sans modification (nouveaux types de mapping possibles) |
-| **LSP** | ✅ | RequiredIdError substituable à Error dans tout contexte |
-| **DIP** | ✅ | Fonctions pures sans dépendance infrastructure |
-| **DRY** | ✅ | Élimination de 18+ occurrences de duplication |
-| **KISS** | ✅ | Implémentation minimale, API intuitive |
-
+| Occurrences `if (!id) throw` dans repos/services | 18+ | 0 | -100% |
+| Methodes de mapping dupliquees | 2 | 0 | -100% |
+| Fonctions pures dans lib/ | 19 | 25 | +32% |
+| Tests unitaires modules utilitaires | 12 | 39 | +225% |
+| Occurrences `if (!user) throw` dans hooks | 9 | 9 | A traiter |
