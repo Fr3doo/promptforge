@@ -1,310 +1,166 @@
 
-# Plan Phase 3 : Améliorations mineures (🟡 Sévérité Faible)
+
+# Plan : Documentation SRP + Migration useCreateVersion
 
 ## Objectif
 
-Extraire de la logique réutilisable depuis les hooks existants pour améliorer la maintenabilité et la testabilité, sans modifier le comportement externe.
+1. **Mettre à jour `docs/SOLID_COMPLIANCE.md`** avec les extractions SRP des phases 1, 2 et 3
+2. **Enrichir `docs/SRP_REFACTORING_SUMMARY.md`** avec les détails Phase 1 manquants
+3. **Migrer `useCreateVersion`** pour utiliser `PromptMutationRepository.updateVersion` au lieu de `VersionRepository.updatePromptVersion` (déprecié)
 
 ---
 
-## Principes directeurs
+## Analyse de l'existant
 
-| Principe | Application |
-|----------|-------------|
-| **SRP** | Chaque fonction a une seule responsabilité |
-| **DIP** | Fonctions pures injectables |
-| **KISS** | Pas de sur-ingénierie, extraction minimale |
-| **DRY** | Code réutilisable dans d'autres contextes |
+### SOLID_COMPLIANCE.md (lignes 17-83)
+- Section SRP existante couvre le refactoring `usePromptSave` (7 hooks)
+- Ne mentionne **pas** les extractions Phase 1, 2, 3
+- Tableau des services métier incomplet (manque VersionDeletionService)
+
+### SRP_REFACTORING_SUMMARY.md
+- Phase 1 présente mais résumée (détails manquants pour VariableDiffCalculator, etc.)
+- Phases 2 et 3 bien documentées
+- Manque la liste des fichiers créés en Phase 1
+
+### useCreateVersion (lignes 27-53)
+- Appelle `versionRepository.updatePromptVersion()` (déprecié)
+- Doit utiliser `promptMutationRepository.updateVersion()` conformément à Phase 2.3
 
 ---
 
-## Phase 3.1 : Extraction du hook `useCountdown`
+## Étapes atomiques
 
-### Analyse de l'existant
+### Étape 1 : Mettre à jour SOLID_COMPLIANCE.md
 
-Le hook `usePromptAnalysis.ts` (lignes 31-57) contient une logique de countdown inline :
+Ajouter une nouvelle section après le tableau des services métier (après ligne 63) :
 
-```typescript
-// Lignes 24, 31-57 actuelles
-const countdownRef = useRef<NodeJS.Timeout | null>(null);
+```markdown
+#### Extractions SRP - Phases 1, 2 et 3
 
-useEffect(() => {
-  if (!isRateLimited || rateLimitRetryAfter <= 0) {
-    if (countdownRef.current) {
-      clearInterval(countdownRef.current);
-      countdownRef.current = null;
-    }
-    return;
-  }
+Le projet a subi un refactoring SRP systématique en 3 phases :
 
-  countdownRef.current = setInterval(() => {
-    setRateLimitRetryAfter((prev) => {
-      if (prev <= 1) {
-        setIsRateLimited(false);
-        return 0;
-      }
-      return prev - 1;
-    });
-  }, 1000);
+| Phase | Sévérité | Extraction | Fichier |
+|-------|----------|------------|---------|
+| 1.1 | 🔴 Haute | VariableDiffCalculator | `src/repositories/variable/VariableDiffCalculator.ts` |
+| 1.2 | 🔴 Haute | VersionDeletionService | `src/services/VersionDeletionService.ts` |
+| 1.3 | 🔴 Haute | TemplateInitializationService (décomposition) | `src/services/TemplateInitializationService.ts` |
+| 2.1 | 🟠 Moyenne | AnalysisErrorClassifier | `src/lib/analysis/AnalysisErrorClassifier.ts` |
+| 2.2 | 🟠 Moyenne | ShareJoinResultMapper | `src/lib/mappers/ShareJoinResultMapper.ts` |
+| 2.3 | 🟠 Moyenne | Encapsulation VersionRepository | `PromptMutationRepository.updateVersion` |
+| 2.4 | 🟠 Moyenne | ShareAuthorizationChecker | `src/lib/authorization/ShareAuthorizationChecker.ts` |
+| 3.1 | 🟡 Faible | useCountdown | `src/hooks/useCountdown.ts` |
+| 3.2 | 🟡 Faible | variableFilters | `src/lib/variables/variableFilters.ts` |
 
-  return () => { /* cleanup */ };
-}, [isRateLimited, rateLimitRetryAfter > 0]);
+**Patterns établis :**
+- **Classifier** : Fonctions pures pour classification d'erreurs
+- **Mapper** : Fonctions pures pour transformation de données
+- **Checker** : Fonctions assertion pour autorisation
+- **Hook réutilisable** : Logique React encapsulée
 ```
 
-**Problème SRP** : Logique de timer mélangée avec la logique d'analyse.
+Mettre à jour le tableau des services (ligne 54-62) pour inclure :
 
-### Étapes atomiques
+| Service | Responsabilité |
+|---------|---------------|
+| `VersionDeletionService` | Suppression cascade de versions avec mise à jour prompt |
 
-#### 3.1.1 - Créer le hook `useCountdown`
+Ajouter dans l'historique des validations (après ligne 584) :
 
-**Nouveau fichier** : `src/hooks/useCountdown.ts`
-
-```typescript
-import { useState, useEffect, useRef, useCallback } from "react";
-
-interface UseCountdownOptions {
-  /** Callback appelé quand le countdown atteint 0 */
-  onComplete?: () => void;
-}
-
-interface UseCountdownReturn {
-  /** Secondes restantes */
-  remaining: number;
-  /** Countdown actif */
-  isActive: boolean;
-  /** Démarre le countdown avec un nombre de secondes */
-  start: (seconds: number) => void;
-  /** Arrête le countdown sans reset */
-  stop: () => void;
-  /** Reset à 0 et arrête */
-  reset: () => void;
-}
-
-/**
- * Hook réutilisable pour gérer un countdown en secondes.
- * Fonction pure avec callback optionnel à la fin.
- * 
- * @example
- * ```typescript
- * const { remaining, isActive, start } = useCountdown({
- *   onComplete: () => setIsRateLimited(false)
- * });
- * 
- * // Démarrer countdown de 60s
- * start(60);
- * ```
- */
-export function useCountdown(options: UseCountdownOptions = {}): UseCountdownReturn
+```markdown
+| 2025-01 | SRP Phase 1 | Extraction VariableDiffCalculator, VersionDeletionService, décomposition TemplateInitializationService |
+| 2025-01 | SRP Phase 2 | Extraction AnalysisErrorClassifier, ShareJoinResultMapper, ShareAuthorizationChecker, encapsulation VersionRepository |
+| 2025-01 | SRP Phase 3 | Extraction useCountdown, variableFilters |
 ```
 
-**Implémentation** :
-- `start(seconds)` : Initialise `remaining` et active le countdown
-- `stop()` : Arrête l'intervalle sans reset de `remaining`
-- `reset()` : Stop + remet `remaining` à 0
-- `onComplete` : Appelé quand `remaining` atteint 0
-- Nettoyage automatique via `useEffect` cleanup
+### Étape 2 : Compléter SRP_REFACTORING_SUMMARY.md
 
-#### 3.1.2 - Écrire les tests du hook
+Ajouter les fichiers créés Phase 1 (après ligne 183) :
 
-**Nouveau fichier** : `src/hooks/__tests__/useCountdown.test.tsx`
+```markdown
+### Phase 1 (4 fichiers + 2 tests)
 
-| Test | Description |
-|------|-------------|
-| `start(60)` | Initialise `remaining` à 60, `isActive` à true |
-| Décrémentation | Décrémente chaque seconde (timer simulé via `vi.useFakeTimers()`) |
-| `stop()` | Arrête le countdown, préserve `remaining` |
-| `reset()` | Remet `remaining` à 0, `isActive` à false |
-| `onComplete` | Callback appelé quand atteint 0 |
-| Nouveau `start()` | Réinitialise un countdown en cours |
-| Cleanup | Pas de memory leak sur unmount |
+| Fichier | Description |
+|---------|-------------|
+| `src/repositories/variable/VariableDiffCalculator.ts` | Calculateur de diff variables |
+| `src/repositories/variable/__tests__/VariableDiffCalculator.test.ts` | Tests du calculateur |
+| `src/services/VersionDeletionService.ts` | Service suppression cascade |
+| `src/services/__tests__/VersionDeletionService.test.ts` | Tests du service |
+| `src/contexts/VersionDeletionServiceContext.tsx` | Contexte React pour injection |
+```
 
-#### 3.1.3 - Refactorer `usePromptAnalysis` pour utiliser `useCountdown`
+Mettre à jour les métriques (ligne 233-238) :
 
-**Fichier modifié** : `src/hooks/usePromptAnalysis.ts`
+```markdown
+| Métrique | Avant | Après | Amélioration |
+|----------|-------|-------|--------------|
+| Lignes de code dupliquées | ~120 | ~20 | **-83%** |
+| Fonctions pures testables | 3 | 15 | **+400%** |
+| Couverture tests SRP | - | 55+ tests | **100%** |
+| Hooks avec logique inline | 4 | 0 | **-100%** |
+| Services avec injection DI | 3 | 6 | **+100%** |
+```
+
+### Étape 3 : Migrer useCreateVersion
+
+**Fichier modifié** : `src/hooks/useVersions.ts`
 
 Changements :
-1. Supprimer `countdownRef` (ligne 24)
-2. Supprimer le `useEffect` countdown (lignes 31-57)
-3. Ajouter import et instanciation de `useCountdown`
-4. Modifier le case `RATE_LIMIT` pour utiliser `countdown.start()`
-5. Exposer `countdown.remaining` comme `rateLimitRetryAfter`
+1. Ajouter import `usePromptMutationRepository`
+2. Remplacer `versionRepository.updatePromptVersion()` par `promptMutationRepository.updateVersion()`
 
 ```typescript
-// Avant (lignes 21-24)
-const [isRateLimited, setIsRateLimited] = useState(false);
-const [rateLimitRetryAfter, setRateLimitRetryAfter] = useState(0);
-const [rateLimitReason, setRateLimitReason] = useState<'minute' | 'daily'>('minute');
-const countdownRef = useRef<NodeJS.Timeout | null>(null);
+// Avant (lignes 27-41)
+export function useCreateVersion() {
+  const queryClient = useQueryClient();
+  const versionMessages = useVersionMessages();
+  const versionRepository = useVersionRepository();
 
-// Après
-const [isRateLimited, setIsRateLimited] = useState(false);
-const [rateLimitReason, setRateLimitReason] = useState<'minute' | 'daily'>('minute');
-const countdown = useCountdown({
-  onComplete: () => setIsRateLimited(false)
-});
-```
-
-```typescript
-// Avant (case RATE_LIMIT, lignes 101-111)
-case "RATE_LIMIT":
-  setIsRateLimited(true);
-  setRateLimitRetryAfter(classified.retryAfter ?? 60);
-  // ...
-
-// Après
-case "RATE_LIMIT":
-  setIsRateLimited(true);
-  countdown.start(classified.retryAfter ?? 60);
-  // ...
-```
-
-```typescript
-// Return (ligne 149)
-// Avant
-rateLimitRetryAfter,
-
-// Après
-rateLimitRetryAfter: countdown.remaining,
-```
-
-#### 3.1.4 - Vérifier la non-régression
-
-- Exécuter `usePromptAnalysis.test.tsx` (7 tests existants)
-- Aucun test ne doit échouer
-- Le comportement externe est identique
-
----
-
-## Phase 3.2 : Simplification du diffing dans `useVariableManager`
-
-### Analyse de l'existant
-
-Le hook `useVariableManager.ts` (lignes 29-40) contient une logique de synchronisation :
-
-```typescript
-// Synchronize variables with detected names in content
-useEffect(() => {
-  setVariables(prevVariables => {
-    const validVariables = prevVariables.filter(v => detectedNames.includes(v.name));
-    if (validVariables.length !== prevVariables.length) {
-      return validVariables;
-    }
-    return prevVariables;
+  return useMutation({
+    mutationFn: async (version: VersionInsert) => {
+      const data = await versionRepository.create(version);
+      await versionRepository.updatePromptVersion(version.prompt_id, version.semver);
+      return data;
+    },
+    // ...
   });
-}, [detectedNames]);
-```
-
-**Problème SRP** : Logique de filtrage inline, difficile à tester indépendamment.
-
-### Étapes atomiques
-
-#### 3.2.1 - Créer les fonctions pures de filtrage
-
-**Nouveau fichier** : `src/lib/variables/variableFilters.ts`
-
-```typescript
-import type { Variable } from "@/features/prompts/types";
-
-/**
- * Filtre les variables pour ne garder que celles présentes dans la liste de noms valides.
- * Fonction **pure** pour testabilité maximale.
- * 
- * @param variables - Variables existantes à filtrer
- * @param validNames - Noms de variables détectés dans le contenu
- * @returns Variables filtrées (préservant la référence si aucun changement)
- */
-export function filterValidVariables(
-  variables: Variable[],
-  validNames: string[]
-): Variable[] {
-  return variables.filter(v => validNames.includes(v.name));
 }
 
-/**
- * Vérifie si un filtrage est nécessaire (optimisation pour éviter les re-renders inutiles).
- * 
- * @param variables - Variables existantes
- * @param validNames - Noms de variables détectés
- * @returns true si au moins une variable doit être supprimée
- */
-export function needsFiltering(
-  variables: Variable[],
-  validNames: string[]
-): boolean {
-  return variables.some(v => !validNames.includes(v.name));
+// Après
+export function useCreateVersion() {
+  const queryClient = useQueryClient();
+  const versionMessages = useVersionMessages();
+  const versionRepository = useVersionRepository();
+  const promptMutationRepository = usePromptMutationRepository();
+
+  return useMutation({
+    mutationFn: async (version: VersionInsert) => {
+      const data = await versionRepository.create(version);
+      await promptMutationRepository.updateVersion(version.prompt_id, version.semver);
+      return data;
+    },
+    // ...
+  });
 }
 ```
 
-#### 3.2.2 - Écrire les tests des fonctions pures
+---
 
-**Nouveau fichier** : `src/lib/variables/__tests__/variableFilters.test.ts`
+## Fichiers impactés
 
-| Test | Description |
-|------|-------------|
-| `filterValidVariables` liste vide | Retourne `[]` |
-| `filterValidVariables` tous valides | Retourne toutes les variables |
-| `filterValidVariables` certains invalides | Retourne uniquement les valides |
-| `filterValidVariables` aucun valide | Retourne `[]` |
-| `needsFiltering` tous présents | Retourne `false` |
-| `needsFiltering` certains absents | Retourne `true` |
-| `needsFiltering` liste vide | Retourne `false` |
-
-#### 3.2.3 - Refactorer `useVariableManager` pour utiliser les fonctions
-
-**Fichier modifié** : `src/hooks/useVariableManager.ts`
-
-```typescript
-// Ajout import
-import { filterValidVariables, needsFiltering } from "@/lib/variables/variableFilters";
-
-// Remplacement useEffect (lignes 29-40)
-useEffect(() => {
-  setVariables(prevVariables => {
-    if (!needsFiltering(prevVariables, detectedNames)) {
-      return prevVariables;
-    }
-    return filterValidVariables(prevVariables, detectedNames);
-  });
-}, [detectedNames]);
-```
-
-#### 3.2.4 - Vérifier la non-régression
-
-- Exécuter `useVariableManager.test.tsx` (16 tests existants)
-- Tous les tests doivent passer
-- Comportement identique
+| Action | Fichier |
+|--------|---------|
+| Modifier | `docs/SOLID_COMPLIANCE.md` |
+| Modifier | `docs/SRP_REFACTORING_SUMMARY.md` |
+| Modifier | `src/hooks/useVersions.ts` |
 
 ---
 
-## Résumé des fichiers
+## Validation
 
-| Action | Fichier | Phase |
-|--------|---------|-------|
-| Créer | `src/hooks/useCountdown.ts` | 3.1 |
-| Créer | `src/hooks/__tests__/useCountdown.test.tsx` | 3.1 |
-| Créer | `src/lib/variables/variableFilters.ts` | 3.2 |
-| Créer | `src/lib/variables/__tests__/variableFilters.test.ts` | 3.2 |
-| Modifier | `src/hooks/usePromptAnalysis.ts` | 3.1 |
-| Modifier | `src/hooks/useVariableManager.ts` | 3.2 |
-
----
-
-## Ordre d'implémentation recommandé
-
-1. **Phase 3.1** - `useCountdown` (indépendant)
-2. **Phase 3.2** - `variableFilters` (indépendant)
-
-Ces deux phases sont complètement indépendantes et peuvent être implémentées en parallèle.
-
----
-
-## Validation après chaque étape
-
-```bash
-npm run test           # Tous les tests passent
-npm run lint           # Aucune erreur ESLint  
-npm run typecheck      # Aucune erreur TypeScript
-```
+1. **Documentation** : Vérifier la cohérence des tableaux et références croisées
+2. **Migration** : Exécuter les tests existants de `useVersions`
+3. **TypeScript** : `npm run typecheck` pour valider les imports
+4. **Tests** : `npm run test` pour non-régression
 
 ---
 
@@ -312,61 +168,24 @@ npm run typecheck      # Aucune erreur TypeScript
 
 | Risque | Probabilité | Mitigation |
 |--------|-------------|------------|
-| Régression countdown | Faible | Tests existants + nouveaux tests |
-| Régression filtrage variables | Faible | 16 tests existants couvrent les scénarios |
-| Timer memory leak | Très faible | Cleanup explicite dans useCountdown |
+| Régression useCreateVersion | Faible | Tests existants + même comportement |
+| Contexte manquant | Très faible | PromptMutationRepositoryProvider déjà dans AppProviders |
+| Incohérence documentation | Aucune | Mise à jour atomique des deux fichiers |
 
 ---
 
-## Documentation à mettre à jour
+## Section technique : Détails de migration useCreateVersion
 
-Après Phase 3 :
-- `docs/SOLID_COMPLIANCE.md` : Ajouter section SRP Phase 3
-- `docs/SRP_REFACTORING_SUMMARY.md` : Historique complet du refactoring
+### Vérification des dépendances
 
----
+`PromptMutationRepositoryProvider` est déjà dans `AppProviders.tsx`, donc le hook `usePromptMutationRepository()` est disponible partout où `useVersionRepository()` l'est.
 
-## Section technique : Détails d'implémentation
+### Comportement identique
 
-### useCountdown - Gestion du timer
-
-```typescript
-useEffect(() => {
-  if (!isActive || remaining <= 0) {
-    clearTimer();
-    if (isActive && remaining === 0) {
-      setIsActive(false);
-      onComplete?.();
-    }
-    return;
-  }
-
-  intervalRef.current = setInterval(() => {
-    setRemaining((prev) => Math.max(0, prev - 1));
-  }, 1000);
-
-  return clearTimer;
-}, [isActive, remaining, onComplete, clearTimer]);
+Les deux méthodes effectuent la même opération :
+```sql
+UPDATE prompts SET version = $semver WHERE id = $promptId
 ```
 
-Points techniques :
-- `Math.max(0, prev - 1)` évite les valeurs négatives
-- Cleanup via `clearInterval` dans le return
-- `onComplete` appelé une seule fois quand `remaining` atteint 0
-- `isActive` permet de différencier "en pause" vs "terminé"
+La seule différence est l'encapsulation correcte : `PromptMutationRepository` gère la table `prompts`, `VersionRepository` gère la table `versions`.
 
-### variableFilters - Optimisation
-
-```typescript
-// needsFiltering vérifie s'il y a du travail à faire
-// Évite de créer un nouveau tableau si rien ne change
-if (!needsFiltering(prevVariables, detectedNames)) {
-  return prevVariables; // Même référence = pas de re-render
-}
-return filterValidVariables(prevVariables, detectedNames);
-```
-
-Cette séparation permet :
-1. D'éviter les allocations inutiles
-2. De préserver la référence React pour optimiser les re-renders
-3. De tester chaque fonction indépendamment
