@@ -5,6 +5,7 @@ import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { shouldRetryMutation, getRetryDelay } from "@/lib/network";
 import { useAuth } from "@/hooks/useAuth";
 import { requireId } from "@/lib/validation/requireId";
+import { requireAuthUser } from "@/lib/validation/requireAuthUser";
 
 // Hook to fetch shares for a prompt
 export function usePromptShares(promptId: string | undefined) {
@@ -35,7 +36,7 @@ export function useAddPromptShare(promptId: string) {
       email: string;
       permission: "READ" | "WRITE";
     }) => {
-      if (!user) throw new Error("SESSION_EXPIRED");
+      requireAuthUser(user, "SESSION_EXPIRED");
       
       // Normaliser l'email : trim + lowercase pour cohérence avec la RPC
       const normalizedEmail = email.trim().toLowerCase();
@@ -83,7 +84,7 @@ export function useUpdatePromptShare(promptId: string) {
 
   return useMutation({
     mutationFn: async ({ shareId, permission }: { shareId: string; permission: "READ" | "WRITE" }) => {
-      if (!user) throw new Error("SESSION_EXPIRED");
+      requireAuthUser(user, "SESSION_EXPIRED");
       await repository.updateSharePermission(shareId, permission, user.id);
     },
     retry: shouldRetryMutation,
@@ -115,7 +116,7 @@ export function useDeletePromptShare(promptId: string) {
 
   return useMutation({
     mutationFn: (shareId: string) => {
-      if (!user) throw new Error("SESSION_EXPIRED");
+      requireAuthUser(user, "SESSION_EXPIRED");
       return repository.deleteShare(shareId, user.id);
     },
     retry: shouldRetryMutation,

@@ -4,6 +4,7 @@ import { successToast, errorToast } from "@/lib/toastUtils";
 import { getSafeErrorMessage } from "@/lib/errorHandler";
 import { messages } from "@/constants/messages";
 import { requireId } from "@/lib/validation/requireId";
+import { requireAuthUser } from "@/lib/validation/requireAuthUser";
 
 import { usePromptQueryRepository } from "@/contexts/PromptQueryRepositoryContext";
 import { usePromptCommandRepository } from "@/contexts/PromptCommandRepositoryContext";
@@ -23,7 +24,7 @@ export function usePrompts() {
   return useQuery({
     queryKey: ["prompts", user?.id],
     queryFn: () => {
-      if (!user) throw new Error("Utilisateur non authentifié");
+      requireAuthUser(user);
       return queryRepository.fetchAll(user.id);
     },
     enabled: !!user,
@@ -39,7 +40,7 @@ export function useOwnedPrompts() {
   return useQuery({
     queryKey: ["prompts", "owned", user?.id],
     queryFn: () => {
-      if (!user) throw new Error("Utilisateur non authentifié");
+      requireAuthUser(user);
       return queryRepository.fetchOwned(user.id);
     },
     enabled: !!user,
@@ -55,7 +56,7 @@ export function useSharedWithMePrompts() {
   return useQuery({
     queryKey: ["prompts", "shared-with-me", user?.id],
     queryFn: () => {
-      if (!user) throw new Error("Utilisateur non authentifié");
+      requireAuthUser(user);
       return queryRepository.fetchSharedWithMe(user.id);
     },
     enabled: !!user,
@@ -85,7 +86,7 @@ export function useCreatePrompt() {
   
   return useMutation({
     mutationFn: (promptData: Omit<Prompt, "id" | "created_at" | "updated_at" | "owner_id">) => {
-      if (!user) throw new Error("Non authentifié");
+      requireAuthUser(user, "Non authentifié");
       return commandRepository.create(user.id, promptData);
     },
     retry: shouldRetryMutation,
@@ -191,7 +192,7 @@ export function useDuplicatePrompt() {
   
   return useMutation({
     mutationFn: (promptId: string) => {
-      if (!user) throw new Error("Non authentifié");
+      requireAuthUser(user, "Non authentifié");
       return duplicationService.duplicate(user.id, promptId, variableRepository);
     },
     retry: shouldRetryMutation,
