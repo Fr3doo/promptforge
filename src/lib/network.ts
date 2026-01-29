@@ -45,6 +45,9 @@ const UNRETRYABLE_MESSAGE_PATTERNS = [
   'not found',
   'already exists',
   'duplicate',
+  'session_expired',      // Auth expiré
+  'non authentifié',      // Auth manquant (FR)
+  'not authenticated',    // Auth manquant (EN)
 ];
 
 /**
@@ -68,6 +71,9 @@ const UNRETRYABLE_MESSAGE_PATTERNS = [
 export function isRetryableError(error: any): boolean {
   // 1. Erreurs de validation Zod → NON-REJOUABLE
   if (error?.name === 'ZodError') return false;
+
+  // 1b. Erreurs d'authentification → NON-REJOUABLE
+  if (error?.name === 'UnauthenticatedError') return false;
 
   // 2. Codes PostgreSQL → NON-REJOUABLE
   const errorCode = error?.code;

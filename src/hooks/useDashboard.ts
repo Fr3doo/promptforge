@@ -3,7 +3,7 @@ import type { Prompt } from "@/features/prompts/types";
 import { usePromptQueryRepository } from "@/contexts/PromptQueryRepositoryContext";
 import { usePromptUsageRepository } from "@/contexts/PromptUsageRepositoryContext";
 import { useAuth } from "@/hooks/useAuth";
-
+import { requireAuthUser } from "@/lib/validation/requireAuthUser";
 interface DashboardStats {
   recentPrompts: Prompt[];
   favoritePrompts: Prompt[];
@@ -24,7 +24,7 @@ export function useDashboard() {
   return useQuery({
     queryKey: ["dashboard", user?.id],
     queryFn: async (): Promise<DashboardStats> => {
-      if (!user) throw new Error("User not authenticated");
+      requireAuthUser(user, "User not authenticated");
 
       // Fetch recent prompts using repository
       const recentPrompts = await queryRepository.fetchRecent(user.id, 7, 5);
